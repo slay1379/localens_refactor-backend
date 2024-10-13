@@ -1,6 +1,5 @@
 package com.example.localens.member.domain;
 
-import com.example.localens.member.dto.MemberResponseDto;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -15,7 +14,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 @Getter
-@Setter
 public class Member {
 
     @Id
