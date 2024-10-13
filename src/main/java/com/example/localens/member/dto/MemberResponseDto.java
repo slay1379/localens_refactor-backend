@@ -1,2 +1,4 @@
-package com.example.localens.member.dto;public class MemberResponseDto {
+package com.example.localens.member.dto;
+
+public class MemberResponseDto {
 }
