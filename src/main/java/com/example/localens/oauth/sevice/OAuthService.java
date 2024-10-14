@@ -42,4 +42,5 @@ public class OAuthService extends DefaultOAuth2UserService {
             return memberRepository.save(attributes.toEntity());
         }
     }
+
 }
