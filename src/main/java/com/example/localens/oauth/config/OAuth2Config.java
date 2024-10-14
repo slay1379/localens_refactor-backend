@@ -1,5 +1,6 @@
 package com.example.localens.oauth.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -9,6 +10,25 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 
 @Configuration
 public class OAuth2Config {
+
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String googleClientId;
+
+    @Value("${spring.security.oauth2.client.registration.google.client-secret}")
+    private String googleClientSecret;
+
+    @Value("${spring.security.oauth2.client.registration.kakao.client-id}")
+    private String kakaoClientId;
+
+    @Value("${spring.security.oauth2.client.registration.kakao.client-secret}")
+    private String kakaoClientSecret;
+
+    @Value("${spring.security.oauth2.client.registration.naver.client-id}")
+    private String naverClientId;
+
+    @Value("${spring.security.oauth2.client.registration.naver.client-secret}")
+    private String naverClientSecret;
+
 
     @Bean
     public ClientRegistrationRepository clientRegistrationRepository() {
@@ -21,8 +41,8 @@ public class OAuth2Config {
 
     private ClientRegistration googleClientRegistration() {
         return ClientRegistration.withRegistrationId("google")
-                .clientId("700877174115-rj4ba7komte6a6d7v8vpk7m2qfckm83s.apps.googleusercontent.com")
-                .clientSecret("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")
+                .clientId(googleClientId)
+                .clientSecret(googleClientSecret)
                 .redirectUri("{baseUrl}/login/oauth2/code/google")
                 .scope("email", "profile")
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
