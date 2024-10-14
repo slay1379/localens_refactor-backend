@@ -1,5 +1,6 @@
 package com.example.localens.member.domain;
 
+
 import com.example.localens.member.dto.MemberResponseDto;
 import com.example.localens.oauth.domain.OAuthProvider;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -16,7 +17,6 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 @Getter
-@Setter
 public class Member {
 
     @Id
