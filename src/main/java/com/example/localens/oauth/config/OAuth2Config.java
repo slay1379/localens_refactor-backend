@@ -11,7 +11,11 @@ public class OAuth2Config {
 
     @Bean
     public ClientRegistrationRepository clientRegistrationRepository() {
-        return new InMemoryClientRegistrationRepository(googleClientRegistration(), kakakoClientRegistration(), naverClientRegistration());
+        return new InMemoryClientRegistrationRepository(
+                googleClientRegistration(),
+                kakaoClientRegistration(),
+                naverClientRegistration()
+        );
     }
 
     private ClientRegistration googleClientRegistration() {
@@ -28,7 +32,7 @@ public class OAuth2Config {
                 .build();
     }
 
-    private ClientRegistration kakakoClientRegistration() {
+    private ClientRegistration kakaoClientRegistration() {
         return ClientRegistration.withRegistrationId("kakao")
                 .clientId("YOUR_KAKAKO_CLIENT_ID")
                 .clientSecret("YOUR_KAKAKO_CLIENT_SECRET")
