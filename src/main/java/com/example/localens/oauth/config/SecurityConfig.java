@@ -1,5 +1,6 @@
 package com.example.localens.oauth.config;
 
+import com.example.localens.oauth.handler.CustomLogoutSuccessHandler;
 import com.example.localens.oauth.handler.CustomOAuth2FailureHandler;
 import com.example.localens.oauth.handler.CustomOAuth2SuccessHandler;
 import com.example.localens.oauth.sevice.OAuthService;
@@ -19,6 +20,7 @@ public class SecurityConfig {
     private final OAuthService oAuthService;
     private final CustomOAuth2SuccessHandler successHandler;
     private final CustomOAuth2FailureHandler failureHandler;
+    private final CustomLogoutSuccessHandler logoutSuccessHandler;
 
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
@@ -37,6 +39,10 @@ public class SecurityConfig {
                         .userInfoEndpoint(userInfo -> userInfo.userService(oAuthService))
                         .successHandler(successHandler)
                         .failureHandler(failureHandler)
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessHandler(logoutSuccessHandler)
                 );
 
         return http.build();

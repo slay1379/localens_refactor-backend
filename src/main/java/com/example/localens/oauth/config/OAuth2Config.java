@@ -21,8 +21,8 @@ public class OAuth2Config {
 
     private ClientRegistration googleClientRegistration() {
         return ClientRegistration.withRegistrationId("google")
-                .clientId("YOUR_GOOGLE_CLIENT_ID")
-                .clientSecret("YOUR_GOOGLE_CLIENT_SECRET")
+                .clientId("700877174115-rj4ba7komte6a6d7v8vpk7m2qfckm83s.apps.googleusercontent.com")
+                .clientSecret("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")
                 .redirectUri("{baseUrl}/login/oauth2/code/google")
                 .scope("email", "profile")
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
