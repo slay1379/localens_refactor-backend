@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.client.registration.InMemoryClientRegistrationRepository;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
 
 @Configuration
 public class OAuth2Config {
@@ -22,8 +23,9 @@ public class OAuth2Config {
         return ClientRegistration.withRegistrationId("google")
                 .clientId("YOUR_GOOGLE_CLIENT_ID")
                 .clientSecret("YOUR_GOOGLE_CLIENT_SECRET")
-                .redirectUri("{baseUrl}/login/oauth2/code/goole")
+                .redirectUri("{baseUrl}/login/oauth2/code/google")
                 .scope("email", "profile")
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationUri("https://accounts.google.com/o/oauth2/auth")
                 .tokenUri("https://oauth2.googleapis.com/token")
                 .userInfoUri("https://www.googleapis.com/oauth2/v3/userinfo")
@@ -38,6 +40,7 @@ public class OAuth2Config {
                 .clientSecret("YOUR_KAKAKO_CLIENT_SECRET")
                 .redirectUri("{baseUrl}/login/oauth2/code/kakao")
                 .scope("account_email","profile_nickname")
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationUri("https://kauth.kakao.com/oauth/authorize")
                 .tokenUri("https://kauth.kakao.com/oauth/token")
                 .userInfoUri("https://kapi.kakao.com/v2/user/me")
@@ -52,9 +55,11 @@ public class OAuth2Config {
                 .clientSecret("YOUR_NAVER_CLIENT_SECRET")
                 .redirectUri("{baseUrl}/login/oauth2/code/naver")
                 .scope("name","email")
-                .authorizationUri("https://nid.anver.com/oauth2.0/authorize")
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .authorizationUri("https://nid.naver.com/oauth2.0/authorize")
                 .tokenUri("https://nid.naver.com/oauth2.0/token")
                 .userInfoUri("https://openapi.naver.com/v1/nid/me")
+                .userNameAttributeName("response.id")
                 .clientName("Naver")
                 .build();
     }
