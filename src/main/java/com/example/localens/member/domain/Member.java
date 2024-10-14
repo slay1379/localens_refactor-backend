@@ -1,5 +1,8 @@
 package com.example.localens.member.domain;
 
+
+import com.example.localens.member.dto.MemberResponseDto;
+import com.example.localens.oauth.domain.OAuthProvider;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -42,6 +45,8 @@ public class Member {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate createdAt;
 
+    private OAuthProvider provider;
+
 
     @Builder
     public Member(String name, String email, String password) {
@@ -60,6 +65,12 @@ public class Member {
     protected void onCreate() {
         this.createdAt = LocalDate.now(); // 현재 날짜로 설정
         this.updatedAt = LocalDate.now(); // 엔티티 생성 시에도 updatedAt을 현재 날짜로 설정
+    }
+
+    public void update(String name, OAuthProvider provider) {
+        this.name = name;
+        this.provider = provider;
+        this.updatedAt = LocalDate.now();
     }
 
 
