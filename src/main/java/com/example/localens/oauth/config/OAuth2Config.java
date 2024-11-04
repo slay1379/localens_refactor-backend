@@ -36,9 +36,8 @@ public class OAuth2Config {
 
     private ClientRegistration kakaoClientRegistration() {
         return ClientRegistration.withRegistrationId("kakao")
-                .clientId("YOUR_KAKAKO_CLIENT_ID")
-                .clientSecret("YOUR_KAKAKO_CLIENT_SECRET")
-                .redirectUri("{baseUrl}/login/oauth2/code/kakao")
+                .clientId("1f7bbaf4c63d1a4afc3500d868f7c1b8")
+                .redirectUri("http://localhost:8080/auth/login/kakao")
                 .scope("account_email","profile_nickname")
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationUri("https://kauth.kakao.com/oauth/authorize")
@@ -51,9 +50,9 @@ public class OAuth2Config {
 
     private ClientRegistration naverClientRegistration() {
         return ClientRegistration.withRegistrationId("naver")
-                .clientId("YOUR_NAVER_CLIENT_ID")
-                .clientSecret("YOUR_NAVER_CLIENT_SECRET")
-                .redirectUri("{baseUrl}/login/oauth2/code/naver")
+                .clientId("ZhIoK6i2zzDd0DnUxYDn")
+                .clientSecret("ZhIoK6i2zzDd0DnUxYDn")
+                .redirectUri("http://localhost:8080/login/oauth2/code/naver")
                 .scope("name","email")
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationUri("https://nid.naver.com/oauth2.0/authorize")
