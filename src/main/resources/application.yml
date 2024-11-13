@@ -17,6 +17,7 @@ spring:
             redirect-uri: "http://localhost:8080/login/oauth2/code/google"
           kakao:
             client-id: 1f7bbaf4c63d1a4afc3500d868f7c1b8
+            client-authentication-method: none
             redirect-uri: "http://localhost:8080/auth/login/kakao"
           naver:
             client-id: ZhIoK6i2zzDd0DnUxYDn
