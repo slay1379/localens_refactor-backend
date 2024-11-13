@@ -1,0 +1,28 @@
+jwt:
+  secret: ${c3ByaW5nLWJvb3Qtc2VjdXJpdHktand0LXR1dG9yaWFsLWppd29vbi1zcHJpbmctYm9vdC1zZWN1cml0eS1qd3QtdHV0b3JpYWwK}
+
+spring:
+  application:
+    name: localens
+  profiles:
+    active: ${SPRING__PROFILES_ACTIVE:local}
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${700877174115-rj4ba7komte6a6d7v8vpk7m2qfckm83s.apps.googleusercontent.com}
+            client-secret: ${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}
+            scope: email, profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
+          naver:
+            client-id: ${NAVER_CLIENT_ID}
+            client-secret: ${NAVER_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/naver"
+
+
+
