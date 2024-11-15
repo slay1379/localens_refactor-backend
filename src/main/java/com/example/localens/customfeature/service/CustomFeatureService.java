@@ -4,6 +4,8 @@ import com.example.localens.customfeature.domain.BasicData;
 import com.example.localens.customfeature.domain.CustomFeature;
 import com.example.localens.customfeature.repository.BasicDataRepository;
 import com.example.localens.customfeature.repository.CustomFeatureRepository;
+import com.example.localens.member.domain.Member;
+import com.example.localens.member.repository.MemberRepository;
 import jakarta.transaction.Transactional;
 import java.beans.Transient;
 import java.util.List;
@@ -20,15 +22,20 @@ public class CustomFeatureService {
     @Autowired
     private CustomFeatureRepository customFeatureRepository;
 
+    @Autowired
+    private MemberRepository memberRepository;
+
     public List<BasicData> getAllBasicData() {
         return basicDataRepository.findAll();
     }
 
     @Transactional
-    public CustomFeature createCustomFeature(String metricName, String formula) {
+    public CustomFeature createCustomFeature(String metricName, String formula, String memberId) {
+        Member member = memberRepository.findById(memberId); // 수정 필요
         CustomFeature customFeature = new CustomFeature();
         customFeature.setMetricName(metricName);
         customFeature.setFormula(formula);
+        customFeature.setMember(member);
         return customFeatureRepository.save(customFeature);
     }
 
