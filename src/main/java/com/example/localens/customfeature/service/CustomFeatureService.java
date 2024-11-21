@@ -27,4 +27,8 @@ public class CustomFeatureService {
     public CustomFeature getCustomFeatureById(Long customFeatureId) {
         return customFeatureRepository.findById(customFeatureId).orElse(null);
     }
+
+    public void deleteFeature(Long customFeatureId) {
+        customFeatureRepository.deleteById(customFeatureId);
+    }
 }
