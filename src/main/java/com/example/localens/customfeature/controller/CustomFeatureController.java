@@ -14,6 +14,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -56,6 +57,14 @@ public class CustomFeatureController {
 
         customFeatureService.saveCustomFeature(customFeature);
         redirectAttributes.addFlashAttribute("message", "피처가 성공적으로 생성되었습니다.");
+        return "redirect:/customFeatures";
+    }
+
+    //피처 삭제
+    @PostMapping("/delete/{customFeatureId}")
+    public String deleteCustomFeature(@PathVariable Long customFeatureId, RedirectAttributes redirectAttributes) {
+        customFeatureService.deleteFeature(customFeatureId);
+        redirectAttributes.addFlashAttribute("message", "피처가 성공적으로 삭제되었습니다.");
         return "redirect:/customFeatures";
     }
 
