@@ -23,4 +23,8 @@ public class CustomFeatureService {
     public List<CustomFeature> getCustomFeaturesByUserId(Long userId) {
         return customFeatureRepository.findByUserId(userId);
     }
+
+    public CustomFeature getCustomFeatureById(Long customFeatureId) {
+        return customFeatureRepository.findById(customFeatureId).orElse(null);
+    }
 }
