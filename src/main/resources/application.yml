@@ -24,4 +24,9 @@ spring:
             client-secret: ZhIoK6i2zzDd0DnUxYDn
             redirect-uri: "http://localhost:8080/login/oauth2/code/naver"
 
+influxdb:
+  url: http://13.239.112.128:8086
+  token: cRtOkJ6udb_GIb1C741MVnfixXoiywyLkMM0Ji7ekqawcgOrRFw7EKR0T7uq3toui9HgqmzbisQES5M3mJEhgQ==
+  org: localens
+  bucket: hourly
 
