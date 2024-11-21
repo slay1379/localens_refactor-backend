@@ -19,4 +19,8 @@ public class CustomFeatureService {
     public CustomFeature saveCustomFeature(CustomFeature customFeature) {
         return customFeatureRepository.save(customFeature);
     }
+
+    public List<CustomFeature> getCustomFeaturesByUserId(Long userId) {
+        return customFeatureRepository.findByUserId(userId);
+    }
 }
