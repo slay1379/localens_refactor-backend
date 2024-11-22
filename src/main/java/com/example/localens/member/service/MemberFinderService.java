@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 @Service
 @RequiredArgsConstructor
 public class MemberFinderService {
@@ -18,10 +19,4 @@ public class MemberFinderService {
         return member.getEmail();
     }
 
-    @Transactional(readOnly = true)
-    public String findPasswordByNameAndEmail(String name, String email) {
-        Member member = memberRepository.findByNameAndEmail(name, email)
-                .orElseThrow(() -> new RuntimeException("해당 정보로 회원을 찾을 수 없습니다."));
-        return member.getPassword();
-    }
 }

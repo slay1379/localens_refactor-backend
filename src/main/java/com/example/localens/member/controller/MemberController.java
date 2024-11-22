@@ -41,11 +41,6 @@ public class MemberController {
         return ResponseEntity.ok(email);
     }
 
-//    @GetMapping("/find-password")
-//    public ResponseEntity<String> findPasswordByNameAndEmail(@RequestParam String name, @RequestParam String email) {
-//        String password = memberFinderService.findPasswordByNameAndEmail(name, email);
-//        return ResponseEntity.ok(password);
-//    }
 
 //    @GetMapping("/getUuid")
 //    public String getCurrentUuid(@RequestHeader("Authorization") String token) {
