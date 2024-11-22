@@ -18,7 +18,6 @@ public class MemberController {
     private final TokenProvider tokenProvider;
 
 
-
     @PostMapping("/signup")
     public ResponseEntity<MemberResponseDto> signup(@Valid @RequestBody MemberRequestDto memberRequestDto) {
         return ResponseEntity.ok(memberService.signup(memberRequestDto));
@@ -34,10 +33,16 @@ public class MemberController {
         return ResponseEntity.ok(authService.reissue(tokenRequestDto));
     }
 
-    @GetMapping("/getUuid")
-    public void getCurrentUuid(@RequestHeader("Authorization") String token) {
-        String memberUuid = tokenProvider.getCurrentUuid(token);
-    }
+//    @GetMapping("/getUuid")
+//    public String getCurrentUuid(@RequestHeader("Authorization") String token) {
+//        return tokenProvider.getCurrentUuid(token);
+//    }
+
+//    @GetMapping("/getUuid")
+//    public String getCurrentUuid(@RequestHeader("Authorization") String token) {
+//        String accessToken = token.substring(7); // "Bearer " 제거
+//        return tokenProvider.getCurrentUuid(accessToken);
+//    }
 
 }
 

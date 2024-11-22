@@ -11,6 +11,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.security.Key;
 import java.util.Collections;
@@ -84,6 +85,7 @@ public class TokenProvider {
     }
 
     public String getCurrentUuid(String accessToken) {
+        accessToken = accessToken.substring(7);
         Claims claims = parseClaims(accessToken);
         return claims.getSubject();  // 토큰에서 subject (UUID) 추출
     }
