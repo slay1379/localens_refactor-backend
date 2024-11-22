@@ -83,6 +83,11 @@ public class TokenProvider {
         return false;
     }
 
+    public String getCurrentUuid(String accessToken) {
+        Claims claims = parseClaims(accessToken);
+        return claims.getSubject();  // 토큰에서 subject (UUID) 추출
+    }
+
     private Claims parseClaims(String accessToken) {
         try {
             return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(accessToken).getBody();
