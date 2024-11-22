@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -61,21 +62,22 @@ public class CustomFeatureController {
     }
 
     // 피처 생성 처리
-    @PostMapping
-    public String createCustomFeature(@ModelAttribute CustomFeature customFeature,
-                                      RedirectAttributes redirectAttributes) {
-        // Long userId = getCurrentUserId(); 현재 사용자ID 설정
-        // customFeature.setUserId(userId);
-
-        if (!isValidFormula(customFeature.getFormula())) {
-            redirectAttributes.addFlashAttribute("message", "유효하지 않은 수식입니다.");
-            return "redirect:/customFeatures/new";
+    /*@PostMapping
+    public ResponseEntity<?> createCustomFeature(@RequestBody CustomFeature customFeature) {
+        Long userId = memberService.getCurrentUserId();
+        if (userId == null) {
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
         }
 
-        customFeatureService.saveCustomFeature(customFeature);
-        redirectAttributes.addFlashAttribute("message", "피처가 성공적으로 생성되었습니다.");
-        return "redirect:/customFeatures";
-    }
+        customFeature.setUserId(userId);
+
+        if (!isValidFormula(customFeature.getFormula())) {
+            return new ResponseEntity<>("Invalid formula", HttpStatus.BAD_REQUEST);
+        }
+
+        CustomFeature savedCustomFeature = customFeatureService.saveCustomFeature(customFeature);
+        return new ResponseEntity<>(savedCustomFeature, HttpStatus.CREATED);
+    }*/
 
     //피처 삭제
     @PostMapping("/delete/{customFeatureId}")
