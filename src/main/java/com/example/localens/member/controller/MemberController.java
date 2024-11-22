@@ -3,6 +3,7 @@ package com.example.localens.member.controller;
 import com.example.localens.member.dto.*;
 import com.example.localens.member.jwt.TokenProvider;
 import com.example.localens.member.service.AuthService;
+import com.example.localens.member.service.MemberFinderService;
 import com.example.localens.member.service.MemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,8 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
     private final MemberService memberService;
     private final AuthService authService;
-    private final TokenProvider tokenProvider;
+    private final MemberFinderService memberFinderService;
+//    private final TokenProvider tokenProvider;
 
 
     @PostMapping("/signup")
@@ -32,6 +34,18 @@ public class MemberController {
     public ResponseEntity<TokenDto> reissue(@Valid @RequestBody TokenRequestDto tokenRequestDto) {
         return ResponseEntity.ok(authService.reissue(tokenRequestDto));
     }
+
+    @GetMapping("/find-email")
+    public ResponseEntity<String> findEmailByName(@RequestParam String name) {
+        String email = memberFinderService.findEmailByName(name);
+        return ResponseEntity.ok(email);
+    }
+
+//    @GetMapping("/find-password")
+//    public ResponseEntity<String> findPasswordByNameAndEmail(@RequestParam String name, @RequestParam String email) {
+//        String password = memberFinderService.findPasswordByNameAndEmail(name, email);
+//        return ResponseEntity.ok(password);
+//    }
 
 //    @GetMapping("/getUuid")
 //    public String getCurrentUuid(@RequestHeader("Authorization") String token) {
