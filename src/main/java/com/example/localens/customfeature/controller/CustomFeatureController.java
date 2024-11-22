@@ -3,6 +3,7 @@ package com.example.localens.customfeature.controller;
 import com.example.localens.customfeature.domain.CustomFeature;
 import com.example.localens.customfeature.service.CustomFeatureService;
 import com.example.localens.influx.InfluxDBService;
+import com.example.localens.member.service.MemberService;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -10,30 +11,46 @@ import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Controller;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-@Controller
-@RequestMapping("/customFeatures")
+@RestController
+@RequestMapping("/api/customFeatures")
 public class CustomFeatureController {
 
     private final CustomFeatureService customFeatureService;
     private final InfluxDBService influxDBService;
+    private final MemberService memberService;
 
     @Value("${influxdb.measurement}")
     private String measurement;
 
     @Autowired
-    public CustomFeatureController(CustomFeatureService customFeatureService, InfluxDBService influxDBService) {
+    public CustomFeatureController(CustomFeatureService customFeatureService, InfluxDBService influxDBService,MemberService memberService) {
         this.customFeatureService = customFeatureService;
         this.influxDBService = influxDBService;
+        this.memberService = memberService;
     }
+
+    //현재 사용자 커스텀피처 조회 메소드
+    /*@GetMapping
+    public ResponseEntity<List<CustomFeature>> listCustomFeatures() {
+        Long userId = memberService.getCurrentUserId();
+        if (userId == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+
+        List<CustomFeature> customFeatures = customFeatureService.getCustomFeaturesByUserId(userId);
+        return new ResponseEntity<>(customFeatures, HttpStatus.OK);
+    }*/
 
     // 피처 생성 폼
     @GetMapping("/new")
