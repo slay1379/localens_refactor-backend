@@ -1,6 +1,7 @@
 package com.example.localens.member.controller;
 
 import com.example.localens.member.dto.*;
+import com.example.localens.member.jwt.TokenProvider;
 import com.example.localens.member.service.AuthService;
 import com.example.localens.member.service.MemberService;
 import jakarta.validation.Valid;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 public class MemberController {
     private final MemberService memberService;
     private final AuthService authService;
+    private final TokenProvider tokenProvider;
+
 
 
     @PostMapping("/signup")
@@ -29,6 +32,11 @@ public class MemberController {
     @PostMapping("/reissue")
     public ResponseEntity<TokenDto> reissue(@Valid @RequestBody TokenRequestDto tokenRequestDto) {
         return ResponseEntity.ok(authService.reissue(tokenRequestDto));
+    }
+
+    @GetMapping("/getUuid")
+    public void getCurrentUuid(@RequestHeader("Authorization") String token) {
+        String memberUuid = tokenProvider.getCurrentUuid(token);
     }
 
 }
