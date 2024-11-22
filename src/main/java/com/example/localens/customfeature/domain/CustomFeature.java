@@ -8,10 +8,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "custom_features")
 @Getter
+@Setter
 public class CustomFeature {
 
     @Id
