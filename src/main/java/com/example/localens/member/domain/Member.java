@@ -16,6 +16,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 @Getter
+@Setter
 public class Member {
 
     @Id
@@ -35,6 +36,8 @@ public class Member {
     @NotNull
     @Column(nullable = false)
     private String password;
+
+    private String resetToken; // 비밀번호 재설정 토큰
 
     @NotNull
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
@@ -64,6 +67,14 @@ public class Member {
         this.createdAt = LocalDate.now(); // 현재 날짜로 설정
         this.updatedAt = LocalDate.now(); // 엔티티 생성 시에도 updatedAt을 현재 날짜로 설정
     }
+
+    public void updatePassword(String newPassword) {
+        this.password = newPassword;
+    }
+
+//    public void setResetToken(String resetToken) {
+//        this.resetToken = resetToken;
+//    }
 
 
 
