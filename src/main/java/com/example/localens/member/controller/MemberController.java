@@ -2,7 +2,6 @@ package com.example.localens.member.controller;
 
 import com.example.localens.member.domain.Member;
 import com.example.localens.member.dto.*;
-import com.example.localens.member.jwt.TokenProvider;
 import com.example.localens.member.service.AuthService;
 import com.example.localens.member.service.MemberFinderService;
 import com.example.localens.member.service.MemberService;
@@ -54,7 +53,7 @@ public class MemberController {
             ResetResonseDto responseDto = new ResetResonseDto(resetToken);
             return ResponseEntity.ok(responseDto); // 클라이언트에 토큰 전달
         } else {
-            ErrorResponseDto errorResponse = new ErrorResponseDto("등록되지 않은 사용자입니다.");
+            MessageResponseDto errorResponse = new MessageResponseDto("등록되지 않은 사용자입니다.");
             return ResponseEntity.badRequest().body(errorResponse);
 //            return ResponseEntity.badRequest().body("등록되지 않은 사용자입니다.");
         }
@@ -62,11 +61,12 @@ public class MemberController {
 
     // 비밀번호 재설정 엔드포인트
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@Valid @RequestBody PasswordResetRequestDto passwordResetRequestDto) {
+    public ResponseEntity<MessageResponseDto> resetPassword(@Valid @RequestBody PasswordResetRequestDto passwordResetRequestDto) {
         memberService.resetPassword(passwordResetRequestDto.getResetToken(),
                 passwordResetRequestDto.getNewPassword(),
                 passwordResetRequestDto.getNewPasswordCheck());
-        return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+        MessageResponseDto messageResponse = new MessageResponseDto("비밀번호가 성공적으로 변경되었습니다.");
+        return ResponseEntity.ok(messageResponse);
     }
 
 
