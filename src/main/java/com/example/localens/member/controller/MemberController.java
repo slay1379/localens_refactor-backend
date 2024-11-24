@@ -47,13 +47,16 @@ public class MemberController {
 
     // 이름과 이메일로 사용자를 검증
     @PostMapping("/validate-member")
-    public ResponseEntity<String> validateMember(@Valid @RequestBody ValidateRequestDto validateRequestDto) {
+    public ResponseEntity<?> validateMember(@Valid @RequestBody ValidateRequestDto validateRequestDto) {
         Optional<Member> memberOptional = memberService.validateMember(validateRequestDto.getName(), validateRequestDto.getEmail());
         if (memberOptional.isPresent()) {
             String resetToken = memberService.generateResetToken(memberOptional.get());
-            return ResponseEntity.ok(resetToken); // 클라이언트에 토큰 전달
+            ResetResonseDto responseDto = new ResetResonseDto(resetToken);
+            return ResponseEntity.ok(responseDto); // 클라이언트에 토큰 전달
         } else {
-            return ResponseEntity.badRequest().body("등록되지 않은 사용자입니다.");
+            ErrorResponseDto errorResponse = new ErrorResponseDto("등록되지 않은 사용자입니다.");
+            return ResponseEntity.badRequest().body(errorResponse);
+//            return ResponseEntity.badRequest().body("등록되지 않은 사용자입니다.");
         }
     }
 
