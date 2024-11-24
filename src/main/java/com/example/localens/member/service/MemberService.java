@@ -3,6 +3,7 @@ package com.example.localens.member.service;
 import com.example.localens.member.domain.Member;
 import com.example.localens.member.dto.MemberResponseDto;
 import com.example.localens.member.dto.MemberRequestDto;
+import com.example.localens.member.exception.AlreadyRegisteredException;
 import com.example.localens.member.repository.MemberRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +25,7 @@ public class MemberService {
     @Transactional
     public MemberResponseDto signup(MemberRequestDto memberRequestDto) {
         if (memberRepository.existsByEmail(memberRequestDto.getEmail())) {
-            throw new RuntimeException("이미 가입되어 있는 유저입니다");
+            throw new AlreadyRegisteredException("이미 가입되어 있는 유저입니다");
         }
 
         Member member = memberRequestDto.toMember(passwordEncoder);

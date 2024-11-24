@@ -25,7 +25,7 @@ public class Member {
 
     @NotNull
     @Length(min = 2, max = 15)
-    @Column(length = 15, nullable = false, unique = true)
+    @Column(length = 15, nullable = false)
     private String name;
 
     @NotNull

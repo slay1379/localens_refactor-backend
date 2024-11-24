@@ -2,7 +2,6 @@ package com.example.localens.member.controller;
 
 import com.example.localens.member.domain.Member;
 import com.example.localens.member.dto.*;
-import com.example.localens.member.jwt.TokenProvider;
 import com.example.localens.member.service.AuthService;
 import com.example.localens.member.service.MemberFinderService;
 import com.example.localens.member.service.MemberService;
@@ -38,31 +37,36 @@ public class MemberController {
         return ResponseEntity.ok(authService.reissue(tokenRequestDto));
     }
 
-    @GetMapping("/find-email")
-    public ResponseEntity<String> findEmailByName(@RequestParam String name) {
+    @GetMapping("/find-email/{name}")
+    public ResponseEntity<MemberResponseDto> findEmailByName(@PathVariable String name) {
         String email = memberFinderService.findEmailByName(name);
-        return ResponseEntity.ok(email);
+        MemberResponseDto responseDto = new MemberResponseDto(email);
+        return ResponseEntity.ok(responseDto);
     }
 
     // 이름과 이메일로 사용자를 검증
     @PostMapping("/validate-member")
-    public ResponseEntity<String> validateMember(@Valid @RequestBody ValidateRequestDto validateRequestDto) {
+    public ResponseEntity<?> validateMember(@Valid @RequestBody ValidateRequestDto validateRequestDto) {
         Optional<Member> memberOptional = memberService.validateMember(validateRequestDto.getName(), validateRequestDto.getEmail());
         if (memberOptional.isPresent()) {
             String resetToken = memberService.generateResetToken(memberOptional.get());
-            return ResponseEntity.ok(resetToken); // 클라이언트에 토큰 전달
+            ResetResonseDto responseDto = new ResetResonseDto(resetToken);
+            return ResponseEntity.ok(responseDto); // 클라이언트에 토큰 전달
         } else {
-            return ResponseEntity.badRequest().body("등록되지 않은 사용자입니다.");
+            MessageResponseDto errorResponse = new MessageResponseDto("등록되지 않은 사용자입니다.");
+            return ResponseEntity.badRequest().body(errorResponse);
+//            return ResponseEntity.badRequest().body("등록되지 않은 사용자입니다.");
         }
     }
 
     // 비밀번호 재설정 엔드포인트
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@Valid @RequestBody PasswordResetRequestDto passwordResetRequestDto) {
+    public ResponseEntity<MessageResponseDto> resetPassword(@Valid @RequestBody PasswordResetRequestDto passwordResetRequestDto) {
         memberService.resetPassword(passwordResetRequestDto.getResetToken(),
                 passwordResetRequestDto.getNewPassword(),
                 passwordResetRequestDto.getNewPasswordCheck());
-        return ResponseEntity.ok("비밀번호가 성공적으로 변경되었습니다.");
+        MessageResponseDto messageResponse = new MessageResponseDto("비밀번호가 성공적으로 변경되었습니다.");
+        return ResponseEntity.ok(messageResponse);
     }
 
 
