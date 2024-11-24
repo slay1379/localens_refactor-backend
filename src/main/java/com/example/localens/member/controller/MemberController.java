@@ -39,9 +39,10 @@ public class MemberController {
     }
 
     @GetMapping("/find-email")
-    public ResponseEntity<String> findEmailByName(@RequestParam String name) {
+    public ResponseEntity<MemberResponseDto> findEmailByName(@RequestParam String name) {
         String email = memberFinderService.findEmailByName(name);
-        return ResponseEntity.ok(email);
+        MemberResponseDto responseDto = new MemberResponseDto(email);
+        return ResponseEntity.ok(responseDto);
     }
 
     // 이름과 이메일로 사용자를 검증
