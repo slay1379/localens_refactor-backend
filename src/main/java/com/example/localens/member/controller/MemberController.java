@@ -37,8 +37,8 @@ public class MemberController {
         return ResponseEntity.ok(authService.reissue(tokenRequestDto));
     }
 
-    @GetMapping("/find-email")
-    public ResponseEntity<MemberResponseDto> findEmailByName(@RequestParam String name) {
+    @GetMapping("/find-email/{name}")
+    public ResponseEntity<MemberResponseDto> findEmailByName(@PathVariable String name) {
         String email = memberFinderService.findEmailByName(name);
         MemberResponseDto responseDto = new MemberResponseDto(email);
         return ResponseEntity.ok(responseDto);
