@@ -45,4 +45,24 @@ public class InfluxDBService {
             return Collections.emptyList();
         }
     }
+
+    public List<FluxRecord> getPlaceData(String placeName) {
+        try {
+            String fluxQuery = String.format(
+                    "from(bucket: \"%s\") |> range(start: -30d) |> filter(fn: (r) => r.place == \"%s\")",
+                    influxDBClientWrapper.getBucket(), placeName);
+
+            QueryApi queryApi = influxDBClientWrapper.getInfluxDBClient().getQueryApi();
+            List<FluxTable> tables = queryApi.query(fluxQuery, influxDBClientWrapper.getOrg());
+
+            List<FluxRecord> records = new ArrayList<>();
+            for (FluxTable table : tables) {
+                records.addAll(table.getRecords());
+            }
+            return records;
+        } catch (Exception e) {
+            System.err.println("InfluxDB에서 place 데이터를 가져오는 중 오류 발생: " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
 }
