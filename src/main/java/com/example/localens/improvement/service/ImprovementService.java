@@ -1,10 +1,13 @@
 package com.example.localens.improvement.service;
 
 import com.example.localens.improvement.domain.Event;
+import com.example.localens.improvement.domain.EventMetrics;
 import com.example.localens.improvement.repository.EventMetricsRepository;
 import com.example.localens.improvement.repository.EventRepository;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +26,20 @@ public class ImprovementService {
 
     public List<Event> recommendEvents(String districtUuid, String targetClusterUuid) {
         // 개선이 필요한 지표 식별 (구현)
+        List<String> metricsToImprove = identifyMetricsToImprove(districtUuid, targetClusterUuid);
 
+        List<EventMetrics> eventMetricsList = eventMetricsRepository.findByMetricsUuidIn(metricsToImprove);
+
+        Set<String> eventUuids = new HashSet<>();
+        for (EventMetrics em : eventMetricsList) {
+            eventUuids.add(em.getEventUuid());
+        }
+
+        List<Event> events = eventRepository.findAllById(eventUuids);
+
+        // 이벤트 정렬 및 추천
+
+        return events;
     }
 
     private List<String> identifyMetricsToImprove(String districtUuid, String targetClusterUuid) {
