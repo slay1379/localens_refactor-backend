@@ -1,9 +1,6 @@
-package com.example.localens.analysis;
+package com.example.localens.analysis.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -24,13 +21,14 @@ public class CommercialDistrict {
     @Column(name = "district_name")
     private String districtName;
 
-    @Column(name = "cluster_name")
-    private String clusterName;
-
     @Column(name = "latitude", precision = 9, scale = 6)
     private BigDecimal latitude;
 
     @Column(name = "longitude", precision = 9, scale = 6)
     private BigDecimal longitude;
+
+    @ManyToOne
+    @JoinColumn(name = "cluster_uuid", nullable = false)
+    private Cluster cluster;
 
 }
