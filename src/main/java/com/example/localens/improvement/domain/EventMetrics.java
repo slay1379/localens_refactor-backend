@@ -9,6 +9,8 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "event_metrics")
 @IdClass(EventMetricsId.class)
+@Getter
+@Setter
 public class EventMetrics {
 
     @Id
