@@ -44,3 +44,5 @@ src/main/resources/application.yml
 
 # Ignore LocalensApplication class
 src/main/java/com/example/localens/LocalensApplication.java
+
+src/main/java/com/example/localens/customfeature/
