@@ -1,10 +1,8 @@
 package com.example.localens.analysis.service;
 
-import com.example.localens.analysis.domain.CommercialDistrict;
 import com.example.localens.analysis.dto.TimeZonePopulationRatioResponse;
 import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.influx.InfluxDBClientWrapper;
-import com.example.localens.influx.InfluxDBService;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +25,12 @@ public class PopulationRatioService {
             throw new IllegalArgumentException("Invalid districtUuid: " + districtUuid);
         }
 
-        // InfluxDB 쿼리 작성 (_field 값이 "ratio"인 데이터만 가져옴)
+        // InfluxDB 쿼리 작성
         String fluxQuery = String.format(
                 "from(bucket: \"%s\") " +
                         "|> range(start: 2023-09-01T00:00:00Z, stop: 2024-08-31T23:59:59Z) " +
-                        "|> filter(fn: (r) => r._measurement == \"total_population_ratio\" and r.place == \"%s\") " +
-                        "|> keep(columns: [\"tmzn\", \"ratio\"])",
+                        "|> filter(fn: (r) => r._measurement == \"total_population_ratio\" and r.place == \"%s\" and exists r.tmzn and exists r._value) " +
+                        "|> keep(columns: [\"tmzn\", \"_value\"])",
                 influxDBClientWrapper.getResultBucket(), districtName
         );
 
@@ -72,4 +70,3 @@ public class PopulationRatioService {
         return new TimeZonePopulationRatioResponse(sortedTimeZoneRatios);
     }
 }
-
