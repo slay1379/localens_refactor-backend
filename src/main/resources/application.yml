@@ -25,8 +25,11 @@ spring:
             redirect-uri: "http://localhost:8080/login/oauth2/code/naver"
 
 influxdb:
-  url: http://3.106.193.43:8086
-  token: HieAKTvkj-RdQyxiHn4-Z2BdwrhVLe9XFB-bbQLY1rnBEXfGvNb9SJQ7RIDEqREm7bzHovw00Dv8pCZm6a6Xwg==
-  org: localens
-  bucket: hourly
+#  url: http://3.106.193.43:8086
+#  token: HieAKTvkj-RdQyxiHn4-Z2BdwrhVLe9XFB-bbQLY1rnBEXfGvNb9SJQ7RIDEqREm7bzHovw00Dv8pCZm6a6Xwg==
+  url: http://localhost:8086
+  token: LTjZTx3BsfI7BfKl7-AaYwR_DZwR3pUu_tlJ15499qXFJvuSwcq70WH3D2pVnk1YgrjK6GvUZ_3Bx6-cY9k6cQ==
+#  org: localens
+  org: dev
+  bucket: result_bucket
 

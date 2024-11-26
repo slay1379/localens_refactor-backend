@@ -49,7 +49,7 @@ public class InfluxDBService {
     public List<FluxRecord> getPlaceData(String placeName) {
         try {
             String fluxQuery = String.format(
-                    "from(bucket: \"%s\") |> range(start: -30d) |> filter(fn: (r) => r.place == \"%s\")",
+                    "from(bucket: \"%s\") |> range(start: 0) |> filter(fn: (r) => r.place == \"%s\")",
                     influxDBClientWrapper.getBucket(), placeName);
 
             QueryApi queryApi = influxDBClientWrapper.getInfluxDBClient().getQueryApi();
