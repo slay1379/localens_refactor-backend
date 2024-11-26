@@ -31,5 +31,7 @@ influxdb:
   token: LTjZTx3BsfI7BfKl7-AaYwR_DZwR3pUu_tlJ15499qXFJvuSwcq70WH3D2pVnk1YgrjK6GvUZ_3Bx6-cY9k6cQ==
 #  org: localens
   org: dev
-  bucket: result_bucket
+  buckets:
+    result: result_bucket               # 시간대별 유동인구 비율 저장소
+    stayVisit: result_stay_visit_bucket # 시간대별 체류/방문 비율 저장소
 

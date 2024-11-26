@@ -14,16 +14,19 @@ public class InfluxDBClientWrapper {
 
     private final InfluxDBClient influxDBClient;
     private final String org;
-    private final String bucket;
+    private final String resultBucket;
+    private final String stayVisitBucket;
 
     public InfluxDBClientWrapper(
             @Value("${influxdb.url}") String url,
             @Value("${influxdb.token}") String token,
             @Value("${influxdb.org}") String org,
-            @Value("${influxdb.bucket}") String bucket) {
-        this.influxDBClient = InfluxDBClientFactory.create(url, token.toCharArray(), org, bucket);
+            @Value("${influxdb.buckets.result}") String resultBucket,
+            @Value("${influxdb.buckets.stayVisit}") String stayVisitBucket) {
+        this.influxDBClient = InfluxDBClientFactory.create(url, token.toCharArray(), org);
         this.org = org;
-        this.bucket = bucket;
+        this.resultBucket = resultBucket;
+        this.stayVisitBucket = stayVisitBucket;
     }
 
     public InfluxDBClient getInfluxDBClient() {
@@ -34,8 +37,12 @@ public class InfluxDBClientWrapper {
         return org;
     }
 
-    public String getBucket() {
-        return bucket;
+    public String getResultBucket() {
+        return resultBucket;
+    }
+
+    public String getStayVisitBucket() {
+        return stayVisitBucket;
     }
 
     // Flux 쿼리를 실행하고 결과를 반환하는 메서드
