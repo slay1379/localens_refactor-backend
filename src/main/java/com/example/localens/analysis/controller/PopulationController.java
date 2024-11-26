@@ -1,6 +1,7 @@
 package com.example.localens.analysis.controller;
 
 import com.example.localens.analysis.dto.TimeZonePopulationRatioResponse;
+import com.example.localens.analysis.service.CongestionRateService;
 import com.example.localens.analysis.service.PopulationRatioService;
 import com.example.localens.analysis.service.StayVisitRatioService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ public class PopulationController {
 
     private final PopulationRatioService populationRatioService;
     private final StayVisitRatioService stayVisitRatioService;
+    private final CongestionRateService congestionRateService;
 
     @GetMapping("/ratio/{districtUuid}")
     public ResponseEntity<TimeZonePopulationRatioResponse> getPopulationRatioByDistrictUuid(
@@ -31,6 +33,13 @@ public class PopulationController {
     public ResponseEntity<TimeZonePopulationRatioResponse> getStayVisitRatioByDistrictUuid(
             @PathVariable Integer districtUuid) {
         TimeZonePopulationRatioResponse result = stayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/congestion-rate/{districtUuid}")
+    public ResponseEntity<TimeZonePopulationRatioResponse> getCongestionRateByDistrictUuid(
+            @PathVariable Integer districtUuid) {
+        TimeZonePopulationRatioResponse result = congestionRateService.getCongestionRateByDistrictUuid(districtUuid);
         return ResponseEntity.ok(result);
     }
 }
