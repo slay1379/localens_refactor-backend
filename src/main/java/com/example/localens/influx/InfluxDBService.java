@@ -6,7 +6,9 @@ import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -63,6 +65,35 @@ public class InfluxDBService {
         } catch (Exception e) {
             System.err.println("InfluxDB에서 place 데이터를 가져오는 중 오류 발생: " + e.getMessage());
             return Collections.emptyList();
+        }
+    }
+
+    public Map<String, Double> getLatestMetricsByDistrictUuid(String districtUuid) {
+        try {
+            String fluxQuery = String.format(
+                    "from(bucket:\"%s\")\n" +
+                            "|> range(start: -1d)\n" +
+                            "|> filter(fn: (r) => r[\"district_uuid\"] == \"%s\")\n" +
+                            "|> last()",
+                    influxDBClientWrapper.getBucket(), districtUuid);
+
+            QueryApi queryApi = influxDBClientWrapper.getInfluxDBClient().getQueryApi();
+            List<FluxTable> tables = queryApi.query(fluxQuery, influxDBClientWrapper.getOrg());
+
+            Map<String, Double> metrics = new HashMap<>();
+
+            for (FluxTable table : tables) {
+                for (FluxRecord record : table.getRecords()) {
+                    String field = (String) record.getValueByKey("_field");
+                    double value = ((Number) record.getValue()).doubleValue();
+                    metrics.put(field, value);
+                }
+            }
+
+            return metrics;
+        } catch (Exception e) {
+            System.err.println("InfluxDB에서 지표 데이터를 가져오는 중 오류 발생: " + e.getMessage());
+            return new HashMap<>();
         }
     }
 }
