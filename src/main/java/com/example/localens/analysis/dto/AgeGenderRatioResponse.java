@@ -8,5 +8,5 @@ import java.util.Map;
 @Data
 @AllArgsConstructor
 public class AgeGenderRatioResponse {
-    private Map<String, Map<String, Double>> ageGenderRatios;
+    private Map<String, Map<String, Double>> 연령대별_체류패턴;
 }
