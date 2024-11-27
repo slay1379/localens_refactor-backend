@@ -1,6 +1,6 @@
 package com.example.localens.analysis.service;
 
-import com.example.localens.analysis.dto.TimeZonePopulationRatioResponse;
+import com.example.localens.analysis.dto.PopulationRatioResponse;
 import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
@@ -18,7 +18,7 @@ public class PopulationRatioService {
     private final CommercialDistrictRepository districtRepository;
     private final InfluxDBClientWrapper influxDBClientWrapper;
 
-    public TimeZonePopulationRatioResponse getPopulationRatioByDistrictUuid(Integer districtUuid) {
+    public PopulationRatioResponse getPopulationRatioByDistrictUuid(Integer districtUuid) {
         // MySQL에서 상권 이름 조회
         String districtName = districtRepository.findDistrictNameByDistrictUuid(districtUuid);
         if (districtName == null) {
@@ -66,6 +66,6 @@ public class PopulationRatioService {
                         LinkedHashMap::new // 정렬된 순서 유지
                 ));
 
-        return new TimeZonePopulationRatioResponse(sortedTimeZoneRatios);
+        return new PopulationRatioResponse(sortedTimeZoneRatios);
     }
 }

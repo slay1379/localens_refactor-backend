@@ -1,9 +1,6 @@
 package com.example.localens.analysis.controller;
 
-import com.example.localens.analysis.dto.AgeGenderRatioResponse;
-import com.example.localens.analysis.dto.AvgStayTimeChangeRateResponse;
-import com.example.localens.analysis.dto.NationalityRatioResponse;
-import com.example.localens.analysis.dto.TimeZonePopulationRatioResponse;
+import com.example.localens.analysis.dto.*;
 import com.example.localens.analysis.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,10 +24,10 @@ public class PopulationController {
     private final AgeGenderRatioService ageGenderRatioService;
     private final NationalityRatioService nationalityRatioService;
 
-    @GetMapping("/ratio/{districtUuid}")
-    public ResponseEntity<TimeZonePopulationRatioResponse> getPopulationRatioByDistrictUuid(
+    @GetMapping("/population-ratio/{districtUuid}")
+    public ResponseEntity<PopulationRatioResponse> getPopulationRatioByDistrictUuid(
             @PathVariable Integer districtUuid) {
-        TimeZonePopulationRatioResponse result = populationRatioService.getPopulationRatioByDistrictUuid(districtUuid);
+        PopulationRatioResponse result = populationRatioService.getPopulationRatioByDistrictUuid(districtUuid);
         return ResponseEntity.ok(result);
     }
 
