@@ -27,11 +27,10 @@ public class PopulationRatioService {
 
         // InfluxDB 쿼리 작성
         String fluxQuery = String.format(
-                "from(bucket: \"%s\") " +
+                "from(bucket: \"result_bucket\") " +
                         "|> range(start: 2024-01-01T00:00:00Z, stop: now()) " +
                         "|> filter(fn: (r) => r._measurement == \"total_population_ratio\" and r[\"place\"] == \"%s\" and exists r.tmzn and exists r._value) " +
-                        "|> keep(columns: [\"tmzn\", \"_value\"])",
-                influxDBClientWrapper.getResultBucket(), districtName
+                        "|> keep(columns: [\"tmzn\", \"_value\"])", districtName
         );
 
         // InfluxDB에서 데이터 조회

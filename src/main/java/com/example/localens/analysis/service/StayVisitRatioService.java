@@ -30,11 +30,10 @@ public class StayVisitRatioService {
 
         // Step 2: InfluxDB 쿼리 작성
         String fluxQuery = String.format(
-                "from(bucket: \"%s\") " +
+                "from(bucket: \"result_stay_visit_bucket\") " +
                         "|> range(start: 2024-01-01T00:00:00Z, stop: now()) " +
                         "|> filter(fn: (r) => r._measurement == \"stay_visit_ratio\" and r[\"place\"] == \"%s\") " +
-                        "|> keep(columns: [\"tmzn\", \"_value\"])",
-                influxDBClientWrapper.getStayVisitBucket(), districtName
+                        "|> keep(columns: [\"tmzn\", \"_value\"])", districtName
         );
         System.out.println("Step 2: Generated Flux query: " + fluxQuery); // 로그 추가
 

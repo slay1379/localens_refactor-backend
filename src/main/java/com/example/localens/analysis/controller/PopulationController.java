@@ -1,10 +1,8 @@
 package com.example.localens.analysis.controller;
 
+import com.example.localens.analysis.dto.AvgStayTimeChangeRateResponse;
 import com.example.localens.analysis.dto.TimeZonePopulationRatioResponse;
-import com.example.localens.analysis.service.CongestionRateService;
-import com.example.localens.analysis.service.PopulationRatioService;
-import com.example.localens.analysis.service.StayPerVisitorService;
-import com.example.localens.analysis.service.StayVisitRatioService;
+import com.example.localens.analysis.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +21,7 @@ public class PopulationController {
     private final StayVisitRatioService stayVisitRatioService;
     private final CongestionRateService congestionRateService;
     private final StayPerVisitorService stayPerVisitorService;
+    private final StayDurationChangeService stayDurationChangeService;
 
     @GetMapping("/ratio/{districtUuid}")
     public ResponseEntity<TimeZonePopulationRatioResponse> getPopulationRatioByDistrictUuid(
@@ -49,6 +48,13 @@ public class PopulationController {
     public ResponseEntity<TimeZonePopulationRatioResponse> getStayPopulationRatioByDistrictUuid(
             @PathVariable Integer districtUuid) {
         TimeZonePopulationRatioResponse result = stayPerVisitorService.getStayPopulationRatioByDistrictUuid(districtUuid);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/stay-duration-rate/{districtUuid}")
+    public ResponseEntity<AvgStayTimeChangeRateResponse> getAvgStayTimeChangeRate(
+            @PathVariable Integer districtUuid) {
+        AvgStayTimeChangeRateResponse result = stayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid);
         return ResponseEntity.ok(result);
     }
 }
