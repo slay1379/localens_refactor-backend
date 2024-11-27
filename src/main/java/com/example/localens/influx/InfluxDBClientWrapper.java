@@ -17,6 +17,7 @@ public class InfluxDBClientWrapper {
     private final String resultBucket;
     private final String stayVisitBucket;
     private final String congestionRateBucket;
+    private final String stayPerVisitorBucket;
 
     public InfluxDBClientWrapper(
             @Value("${influxdb.url}") String url,
@@ -24,12 +25,14 @@ public class InfluxDBClientWrapper {
             @Value("${influxdb.org}") String org,
             @Value("${influxdb.buckets.result}") String resultBucket,
             @Value("${influxdb.buckets.stayVisit}") String stayVisitBucket,
-            @Value("${influxdb.buckets.congestionRate}") String congestionRateBucket) {
+            @Value("${influxdb.buckets.congestionRate}") String congestionRateBucket,
+            @Value("${influxdb.buckets.stayPerVisitor}") String stayPerVisitorBucket) {
         this.influxDBClient = InfluxDBClientFactory.create(url, token.toCharArray(), org);
         this.org = org;
         this.resultBucket = resultBucket;
         this.stayVisitBucket = stayVisitBucket;
         this.congestionRateBucket = congestionRateBucket;
+        this.stayPerVisitorBucket = stayPerVisitorBucket;
     }
 
     public InfluxDBClient getInfluxDBClient() {
@@ -52,6 +55,9 @@ public class InfluxDBClientWrapper {
         return congestionRateBucket;
     }
 
+    public String getStayPerVisitorBucket() {
+        return stayPerVisitorBucket;
+    }
 
     // Flux 쿼리를 실행하고 결과를 반환하는 메서드
     public List<FluxTable> query(String fluxQuery) {
