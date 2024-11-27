@@ -2,6 +2,7 @@ package com.example.localens.analysis.controller;
 
 import com.example.localens.analysis.dto.AgeGenderRatioResponse;
 import com.example.localens.analysis.dto.AvgStayTimeChangeRateResponse;
+import com.example.localens.analysis.dto.NationalityRatioResponse;
 import com.example.localens.analysis.dto.TimeZonePopulationRatioResponse;
 import com.example.localens.analysis.service.*;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class PopulationController {
     private final StayPerVisitorService stayPerVisitorService;
     private final StayDurationChangeService stayDurationChangeService;
     private final AgeGenderRatioService ageGenderRatioService;
+    private final NationalityRatioService nationalityRatioService;
 
     @GetMapping("/ratio/{districtUuid}")
     public ResponseEntity<TimeZonePopulationRatioResponse> getPopulationRatioByDistrictUuid(
@@ -64,6 +66,13 @@ public class PopulationController {
     public ResponseEntity<AgeGenderRatioResponse> getAgeGenderPopulationRatio(
             @PathVariable Integer districtUuid) {
         AgeGenderRatioResponse result = ageGenderRatioService.getAgeGenderPopulationRatio(districtUuid);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/nationality-ratio/{districtUuid}")
+    public ResponseEntity<NationalityRatioResponse> getNationalityRatioByDistrictUuid(
+            @PathVariable Integer districtUuid) {
+        NationalityRatioResponse result = nationalityRatioService.getNationalityPopulationRatio(districtUuid);
         return ResponseEntity.ok(result);
     }
 }
