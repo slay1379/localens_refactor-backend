@@ -1,5 +1,6 @@
 package com.example.localens.analysis.controller;
 
+import com.example.localens.analysis.dto.AgeGenderRatioResponse;
 import com.example.localens.analysis.dto.AvgStayTimeChangeRateResponse;
 import com.example.localens.analysis.dto.TimeZonePopulationRatioResponse;
 import com.example.localens.analysis.service.*;
@@ -22,6 +23,7 @@ public class PopulationController {
     private final CongestionRateService congestionRateService;
     private final StayPerVisitorService stayPerVisitorService;
     private final StayDurationChangeService stayDurationChangeService;
+    private final AgeGenderRatioService ageGenderRatioService;
 
     @GetMapping("/ratio/{districtUuid}")
     public ResponseEntity<TimeZonePopulationRatioResponse> getPopulationRatioByDistrictUuid(
@@ -55,6 +57,13 @@ public class PopulationController {
     public ResponseEntity<AvgStayTimeChangeRateResponse> getAvgStayTimeChangeRate(
             @PathVariable Integer districtUuid) {
         AvgStayTimeChangeRateResponse result = stayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/age-gender-ratio/{districtUuid}")
+    public ResponseEntity<AgeGenderRatioResponse> getAgeGenderPopulationRatio(
+            @PathVariable Integer districtUuid) {
+        AgeGenderRatioResponse result = ageGenderRatioService.getAgeGenderPopulationRatio(districtUuid);
         return ResponseEntity.ok(result);
     }
 }
