@@ -33,9 +33,8 @@ public class CongestionRateService {
         String fluxQuery = String.format(
                 "from(bucket: \"%s\") " +
                         "|> range(start: 2024-01-01T00:00:00Z, stop: now()) " +
-                        "|> filter(fn: (r) => r._measurement == \"total_population_summary\" and r[\"place\"] == \"%s\" and exists r.tmzn and exists r._value) " +
-                        "|> keep(columns: [\"tmzn\", \"_value\"]) " +
-                        "|> distinct(column: \"_value\")", // _value의 중복 제거
+                        "|> filter(fn: (r) => r[\"place\"] == \"%s\" " +
+                        "|> keep(columns: [\"tmzn\", \"_value\"]) ",
                 influxDBClientWrapper.getCongestionRateBucket(), districtName // congestion_rate_bucket 사용
         );
 
@@ -69,7 +68,7 @@ public class CongestionRateService {
                 Double currentValue = Double.valueOf(record.getValueByKey("_value").toString()); // 현재 값
 
                 // 각 시간대별로 _value를 합산
-                timeZoneData.put(timeZone, timeZoneData.getOrDefault(timeZone, 0.0) + currentValue);
+                timeZoneData.put(timeZone, currentValue);
             }
         }
 
@@ -78,7 +77,7 @@ public class CongestionRateService {
 
         // Step 4.2: 혼잡도 변화율 계산
         Map<String, Double> timeZoneRatios = new LinkedHashMap<>();
-        String[] timeZones = {"23", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22"};
+        String[] timeZones = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23""};
 
         // 첫 번째 시간대(23시와 0시)를 순환적으로 비교하면서 혼잡도 변화율 계산
         for (int i = 0; i < timeZones.length; i++) {
@@ -106,12 +105,3 @@ public class CongestionRateService {
 }
 
 
-
-//return timeZoneData.entrySet().stream()
-//                .sorted(Comparator.comparingInt(entry -> Integer.parseInt(entry.getKey().replace("시", "")))) // 숫자 기준 정렬
-//        .collect(Collectors.toMap(
-//        Map.Entry::getKey,
-//                 Map.Entry::getValue,
-//                        (oldValue, newValue) -> oldValue, // 충돌 처리: 이전 값 유지
-//LinkedHashMap::new // 정렬된 순서 유지
-//        ));
