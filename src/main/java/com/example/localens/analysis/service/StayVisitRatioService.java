@@ -1,6 +1,6 @@
 package com.example.localens.analysis.service;
 
-import com.example.localens.analysis.dto.TimeZonePopulationRatioResponse;
+import com.example.localens.analysis.dto.StayVisitRatioResponse;
 import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
@@ -19,7 +19,7 @@ public class StayVisitRatioService {
     private final CommercialDistrictRepository districtRepository; // MySQL 연결
     private final InfluxDBClientWrapper influxDBClientWrapper; // InfluxDB 연결
 
-    public TimeZonePopulationRatioResponse getStayVisitRatioByDistrictUuid(Integer districtUuid) {
+    public StayVisitRatioResponse getStayVisitRatioByDistrictUuid(Integer districtUuid) {
         // Step 1: MySQL에서 상권 이름 조회
         String districtName = districtRepository.findDistrictNameByDistrictUuid(districtUuid);
         System.out.println("Step 1: Fetched districtName from MySQL: " + districtName); // 로그 추가
@@ -45,7 +45,7 @@ public class StayVisitRatioService {
         Map<String, Double> timeZoneRatios = processAndAggregateTimeZoneRatios(queryResult);
         System.out.println("Step 4: Processed timeZoneRatios: " + timeZoneRatios); // 로그 추가
 
-        return new TimeZonePopulationRatioResponse(timeZoneRatios);
+        return new StayVisitRatioResponse(timeZoneRatios);
     }
 
     // 시간대별 데이터 처리
