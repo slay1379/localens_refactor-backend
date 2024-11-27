@@ -8,5 +8,5 @@ import java.util.Map;
 @Data
 @AllArgsConstructor
 public class NationalityRatioResponse {
-    private Map<String, Double> nationalityRatios; // 내외국인 비율
+    private Map<String, Double> 국적별_체류패턴;
 }
