@@ -7,6 +7,6 @@ import java.util.Map;
 
 @Data
 @AllArgsConstructor
-public class TimeZonePopulationRatioResponse {
-    private Map<String, Double> timeZoneRatios; // 시간대별 유동인구 비율
+public class StayDurationChangeResponse {
+    private Map<String, Double> 시간대별_평균_체류시간_변화율;
 }

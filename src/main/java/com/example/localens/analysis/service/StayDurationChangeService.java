@@ -1,7 +1,6 @@
 package com.example.localens.analysis.service;
 
-import com.example.localens.analysis.dto.AvgStayTimeChangeRateResponse;
-import com.example.localens.analysis.dto.TimeZonePopulationRatioResponse;
+import com.example.localens.analysis.dto.StayDurationChangeResponse;
 import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
@@ -18,7 +17,7 @@ public class StayDurationChangeService {
     private final CommercialDistrictRepository districtRepository; // MySQL 연결
     private final InfluxDBClientWrapper influxDBClientWrapper; // InfluxDB 연결
 
-    public AvgStayTimeChangeRateResponse calculateAvgStayTimeChangeRate(Integer districtUuid) {
+    public StayDurationChangeResponse calculateAvgStayTimeChangeRate(Integer districtUuid) {
         // Step 1: MySQL에서 상권 이름 조회
         String districtName = districtRepository.findDistrictNameByDistrictUuid(districtUuid);
         if (districtName == null) {
@@ -42,7 +41,7 @@ public class StayDurationChangeService {
         Map<String, Double> changeRates = calculateCongestionRate(queryResult);
 
         System.out.println("Calculated congestion rate: " + changeRates);
-        return new AvgStayTimeChangeRateResponse(changeRates);
+        return new StayDurationChangeResponse(changeRates);
     }
 
     // 혼잡도 변화율 계산

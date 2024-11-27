@@ -9,8 +9,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api/population")
 @RequiredArgsConstructor
@@ -53,9 +51,9 @@ public class PopulationController {
     }
 
     @GetMapping("/stay-duration-rate/{districtUuid}")
-    public ResponseEntity<AvgStayTimeChangeRateResponse> getAvgStayTimeChangeRate(
+    public ResponseEntity<StayDurationChangeResponse> getAvgStayTimeChangeRate(
             @PathVariable Integer districtUuid) {
-        AvgStayTimeChangeRateResponse result = stayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid);
+        StayDurationChangeResponse result = stayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid);
         return ResponseEntity.ok(result);
     }
 
