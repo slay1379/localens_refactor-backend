@@ -32,7 +32,16 @@ public class ImprovementService {
     }
 
     public List<Event> recommendEvents(String districtUuidNow, String districtUuidTarget) {
-        influxDBService.getLatestMetricByDistrictUud(districtUuidNow);
+        Map<String, Double> metricsA = influxDBService.getLatestMetricsByDistrictUuid(districtUuidNow);
+        Map<String, Double> metricsB = influxDBService.getLatestMetricsByDistrictUuid(districtUuidTarget);
+
+        Map<String, Double> metricDifferences = calculateMetricDifferences(metricsA, metricsB);
+
+        List<String> topTwoMetrics = getTopTwoMetrics(metricDifferences);
+
+        List<Event> recommendedEvents = findEventByMetrics(topTwoMetrics);
+
+        return recommendedEvents;
     }
 
     private Map<String, Double> calculateMetricDifferences(Map<String, Double> metricsA, Map<String, Double> metricsB) {
