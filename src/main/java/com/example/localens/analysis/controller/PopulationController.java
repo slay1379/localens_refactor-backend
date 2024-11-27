@@ -39,9 +39,9 @@ public class PopulationController {
     }
 
     @GetMapping("/congestion-rate/{districtUuid}")
-    public ResponseEntity<TimeZonePopulationRatioResponse> getCongestionRateByDistrictUuid(
+    public ResponseEntity<CongestionRateResponse> getCongestionRateByDistrictUuid(
             @PathVariable Integer districtUuid) {
-        TimeZonePopulationRatioResponse result = congestionRateService.getCongestionRateByDistrictUuid(districtUuid);
+        CongestionRateResponse result = congestionRateService.getCongestionRateByDistrictUuid(districtUuid);
         return ResponseEntity.ok(result);
     }
 

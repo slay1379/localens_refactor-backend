@@ -1,6 +1,6 @@
 package com.example.localens.analysis.service;
 
-import com.example.localens.analysis.dto.TimeZonePopulationRatioResponse;
+import com.example.localens.analysis.dto.CongestionRateResponse;
 import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -19,7 +18,7 @@ public class CongestionRateService {
     private final InfluxDBClientWrapper influxDBClientWrapper; // InfluxDB 연결
 
     // 혼잡도 변화율 API
-    public TimeZonePopulationRatioResponse getCongestionRateByDistrictUuid(Integer districtUuid) {
+    public CongestionRateResponse getCongestionRateByDistrictUuid(Integer districtUuid) {
         // Step 1: MySQL에서 상권 이름 조회
         String districtName = districtRepository.findDistrictNameByDistrictUuid(districtUuid);
         if (districtName == null) {
@@ -52,7 +51,7 @@ public class CongestionRateService {
         // Debug: print the final results
         System.out.println("Calculated congestion rate: " + timeZoneRatios);
 
-        return new TimeZonePopulationRatioResponse(timeZoneRatios);
+        return new CongestionRateResponse(timeZoneRatios);
     }
 
     // 혼잡도 변화율 계산
