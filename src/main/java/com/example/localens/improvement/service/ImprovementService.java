@@ -60,4 +60,14 @@ public class ImprovementService {
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }
+
+    private List<Event> findEventByMetrics(List<String> metricsUuids) {
+        List<EventMetrics> eventMetricsList = eventMetricsRepository.findByMetricsUuidIn(metricsUuids);
+
+        Set<String> eventUuids = eventMetricsList.stream()
+                .map(EventMetrics::getEventUuid)
+                .collect(Collectors.toSet());
+
+        return eventRepository.findAllById(eventUuids);
+    }
 }
