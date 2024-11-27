@@ -1,6 +1,6 @@
 package com.example.localens.analysis.service;
 
-import com.example.localens.analysis.dto.TimeZonePopulationRatioResponse;
+import com.example.localens.analysis.dto.StayPerVisitorResponse;
 import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
@@ -19,7 +19,7 @@ public class StayPerVisitorService {
     private final InfluxDBClientWrapper influxDBClientWrapper; // InfluxDB 연결
 
     // 시간대별 체류시간 대비 방문자수 비율을 구하는 메서드
-    public TimeZonePopulationRatioResponse getStayPopulationRatioByDistrictUuid(Integer districtUuid) {
+    public StayPerVisitorResponse getStayPopulationRatioByDistrictUuid(Integer districtUuid) {
         // Step 1: MySQL에서 상권 이름 조회
         String districtName = districtRepository.findDistrictNameByDistrictUuid(districtUuid);
         if (districtName == null) {
@@ -51,7 +51,7 @@ public class StayPerVisitorService {
                 ));
 
         // 결과 반환
-        return new TimeZonePopulationRatioResponse(sortedTimeZoneRatios);
+        return new StayPerVisitorResponse(sortedTimeZoneRatios);
     }
 
     // 체류시간 대비 방문자수 비율을 계산하는 메서드

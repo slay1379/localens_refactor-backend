@@ -46,9 +46,9 @@ public class PopulationController {
     }
 
     @GetMapping("/stay-population-ratio/{districtUuid}")
-    public ResponseEntity<TimeZonePopulationRatioResponse> getStayPopulationRatioByDistrictUuid(
+    public ResponseEntity<StayPerVisitorResponse> getStayPopulationRatioByDistrictUuid(
             @PathVariable Integer districtUuid) {
-        TimeZonePopulationRatioResponse result = stayPerVisitorService.getStayPopulationRatioByDistrictUuid(districtUuid);
+        StayPerVisitorResponse result = stayPerVisitorService.getStayPopulationRatioByDistrictUuid(districtUuid);
         return ResponseEntity.ok(result);
     }
 
