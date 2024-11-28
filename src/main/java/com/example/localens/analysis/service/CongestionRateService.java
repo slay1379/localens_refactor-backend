@@ -32,7 +32,7 @@ public class CongestionRateService {
         String fluxQuery = String.format(
                 "from(bucket: \"congestion_rate_bucket\") " +
                         "|> range(start: 2024-01-01T00:00:00Z, stop: now()) " +
-                        "|> filter(fn: (r) => r[\"place\"] == \"%s\" " +
+                        "|> filter(fn: (r) => r[\"place\"] == \"%s\" )" +
                         "|> keep(columns: [\"tmzn\", \"_value\"]) ", districtName
         );
 
