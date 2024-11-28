@@ -66,10 +66,24 @@ public class CustomFeatureController {
     @PostMapping
     public ResponseEntity<?> createCustomFeature(@RequestHeader("Authorization") String authorizationHeader,
                                                  @RequestBody CustomFeature customFeature) {
-        String token = extractToken(authorizationHeader);
+        String token = toekextractToken(authorizationHeader);
         if (token == null || !tokenProvider.validateToken(token)) {
-
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
         }
+
+        String userUuid = tokenProvider.getCurrentUuid(token);
+        if (userUuid == null) {
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
+
+        customFeature.setUserUuId(userUuid);
+
+        if (!isValidFormula(customFeature.getFormula())) {
+            return new ResponseEntity<>("Invalid formula", HttpStatus.BAD_REQUEST);
+        }
+
+        CustomFeature savedCustomFeature = customFeatureService.saveCustomFeature(customFeature);
+        return new ResponseEntity<>(savedCustomFeature, HttpStatus.CREATED);
     }
 
     //피처 삭제
