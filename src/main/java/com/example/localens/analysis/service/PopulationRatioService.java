@@ -29,35 +29,47 @@ public class PopulationRatioService {
         String fluxQuery = String.format(
                 "from(bucket: \"result_bucket\") " +
                         "|> range(start: 2024-01-01T00:00:00Z, stop: now()) " +
-                        "|> filter(fn: (r) => r._measurement == \"total_population_ratio\" and r[\"place\"] == \"%s\" and exists r.tmzn and exists r._value) " +
+                        "|> filter(fn: (r) => r[\"place\"] == \"%s\") " +
                         "|> keep(columns: [\"tmzn\", \"_value\"])", districtName
         );
 
         // InfluxDB에서 데이터 조회
         List<FluxTable> queryResult = influxDBClientWrapper.query(fluxQuery);
 
-        // 데이터 매핑
+        // 시간대별 데이터 매핑
         Map<String, Double> timeZoneRatios = new LinkedHashMap<>();
+        double[] totalPopulation = {0.0};
+
         for (FluxTable table : queryResult) {
             for (FluxRecord record : table.getRecords()) {
                 Object timeZoneObj = record.getValueByKey("tmzn");
                 Object valueObj = record.getValueByKey("_value");
 
-                // Null 값 처리
                 if (timeZoneObj == null || valueObj == null) {
-                    System.out.println("Null value found for record: " + record);
-                    continue;
+                    continue; // Null 값은 무시
                 }
 
-                // 시간대와 비율 데이터 추가
                 String timeZone = timeZoneObj.toString() + "시";
-                double ratio = Math.round(Double.parseDouble(valueObj.toString()) * 10.0) / 10.0; // 소수점 첫째 자리 반올림
-                timeZoneRatios.put(timeZone, ratio);
+                double value = Double.parseDouble(valueObj.toString());
+                timeZoneRatios.put(timeZone, value);
+                totalPopulation[0] += value; // 총 유동인구 계산
             }
         }
 
+        // 비율 계산
+        Map<String, Double> timeZoneRatiosWithPercentage = timeZoneRatios.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> totalPopulation[0] != 0
+                                ? Math.round((entry.getValue() / totalPopulation[0] * 100) * 10.0) / 10.0
+                                : 0.0,
+                        (oldValue, newValue) -> oldValue,
+                        LinkedHashMap::new
+                ));
+
+
         // 시간대 정렬
-        Map<String, Double> sortedTimeZoneRatios = timeZoneRatios.entrySet().stream()
+        Map<String, Double> sortedTimeZoneRatios = timeZoneRatiosWithPercentage.entrySet().stream()
                 .sorted(Comparator.comparingInt(entry -> Integer.parseInt(entry.getKey().replace("시", "")))) // 숫자 기준 정렬
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
