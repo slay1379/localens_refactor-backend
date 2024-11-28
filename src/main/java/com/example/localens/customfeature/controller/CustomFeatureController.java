@@ -45,34 +45,38 @@ public class CustomFeatureController {
         this.tokenProvider = tokenProvider;
     }
 
-    /*
-    //현재 사용자 커스텀피처 조회 메소드
+    //현재 사용자 커스텀 피처 조회
     @GetMapping
     public ResponseEntity<List<CustomFeature>> listCustomFeatures(@RequestHeader("Authorization") String authorizationHeader) {
+        String token = tokenProvider.extractToken(authorizationHeader);
+        if (token == null || !tokenProvider.validateToken(token)) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
 
+        String userUuid = tokenProvider.getCurrentUuid(token);
+        if (userUuid == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
 
-        List<CustomFeature> customFeatures = customFeatureService.getCustomFeaturesByUserId(userId);
+        List<CustomFeature> customFeatures = customFeatureService.getCustomFeaturesByUserUuid(userUuid);
         return new ResponseEntity<>(customFeatures, HttpStatus.OK);
-    }
-    */
-
-    // 피처 생성 폼
-    @GetMapping("/new")
-    public String showCustomFeatureForm(Model model) {
-        model.addAttribute("custom_feature", new CustomFeature());
-        model.addAttribute("dataColumns", influxDBService.getFieldKeys(measurement));
-        return "custom_feature_form";
     }
 
     // 피처 생성 처리
-    /*@PostMapping
-    public ResponseEntity<?> createCustomFeature(@RequestBody CustomFeature customFeature) {
-        Long userId = memberService.getCurrentUserId();
-        if (userId == null) {
+    @PostMapping
+    public ResponseEntity<?> createCustomFeature(@RequestHeader("Authorization") String authorizationHeader,
+                                                 @RequestBody CustomFeature customFeature) {
+        String token = tokenProvider.extractToken(authorizationHeader);
+        if (token == null || !tokenProvider.validateToken(token)) {
             return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
         }
 
-        customFeature.setUserId(userId);
+        String userUuid = tokenProvider.getCurrentUuid(token);
+        if (userUuid == null) {
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
+
+        customFeature.setUserUuId(userUuid);
 
         if (!isValidFormula(customFeature.getFormula())) {
             return new ResponseEntity<>("Invalid formula", HttpStatus.BAD_REQUEST);
@@ -80,14 +84,29 @@ public class CustomFeatureController {
 
         CustomFeature savedCustomFeature = customFeatureService.saveCustomFeature(customFeature);
         return new ResponseEntity<>(savedCustomFeature, HttpStatus.CREATED);
-    }*/
+    }
 
     //피처 삭제
-    @PostMapping("/delete/{customFeatureId}")
-    public String deleteCustomFeature(@PathVariable Long customFeatureId, RedirectAttributes redirectAttributes) {
+    @PostMapping("/{customFeatureId}")
+    public ResponseEntity<?> deleteCustomFeature(@RequestHeader("Authorization") String authorizationHeader,
+                                                 @PathVariable Long customFeatureId) {
+        String token = tokenProvider.extractToken(authorizationHeader);
+        if (token == null || !tokenProvider.validateToken(token)) {
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
+
+        String userUuid = tokenProvider.getCurrentUuid(token);
+        if (userUuid == null) {
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
+
+        CustomFeature customFeature = customFeatureService.getCustomFeatureById(customFeatureId);
+        if (customFeature == null || !customFeature.getUserUuId().equals(userUuid)) {
+            return new ResponseEntity<>("Not Found or Unauthorized", HttpStatus.NOT_FOUND);
+        }
+
         customFeatureService.deleteFeature(customFeatureId);
-        redirectAttributes.addFlashAttribute("message", "피처가 성공적으로 삭제되었습니다.");
-        return "redirect:/customFeatures";
+        return new ResponseEntity<>("Feature deleted successfully", HttpStatus.OK);
     }
 
     // 수식 검증 메서드

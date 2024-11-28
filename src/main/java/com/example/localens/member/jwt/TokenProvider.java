@@ -21,7 +21,7 @@ import java.util.Date;
 @Slf4j
 @Component
 public class TokenProvider {
-    private static final String BEARER_TYPE = "Bearer";
+    private static final String BEARER_TYPE = "Bearer ";
     private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 30;            // 30분
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7;  // 7일
 
@@ -85,9 +85,15 @@ public class TokenProvider {
     }
 
     public String getCurrentUuid(String accessToken) {
-        accessToken = accessToken.substring(7);
         Claims claims = parseClaims(accessToken);
         return claims.getSubject();  // 토큰에서 subject (UUID) 추출
+    }
+
+    public String extractToken(String authorizationHeader) {
+        if (authorizationHeader != null && authorizationHeader.startsWith(BEARER_TYPE)) {
+            return authorizationHeader.substring(7);
+        }
+        return null;
     }
 
     private Claims parseClaims(String accessToken) {

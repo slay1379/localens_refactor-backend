@@ -18,10 +18,21 @@ public class Event {
     @Column(name = "event_uuid")
     private String eventUuid;
 
+    @Column(name = "event_name")
     private String eventName;
+
+    @Column(name = "event_img")
     private String eventImg;
+
+    @Column(name = "event_place")
     private String eventPlace;
+
+    @Column(name = "event_start")
     private LocalDateTime eventStart;
+
+    @Column(name = "event_end")
     private LocalDateTime eventEnd;
+
+    @Column(name = "info")
     private String info;
 }
