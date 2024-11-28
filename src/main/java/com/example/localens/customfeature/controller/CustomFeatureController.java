@@ -50,7 +50,7 @@ public class CustomFeatureController {
     public ResponseEntity<List<CustomFeature>> listCustomFeatures(@RequestHeader("Authorization") String authorizationHeader) {
         String token = tokenProvider.extractToken(authorizationHeader);
         if (token == null || !tokenProvider.validateToken(token)) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED)
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
         String userUuid = tokenProvider.getCurrentUuid(token);
@@ -66,7 +66,7 @@ public class CustomFeatureController {
     @PostMapping
     public ResponseEntity<?> createCustomFeature(@RequestHeader("Authorization") String authorizationHeader,
                                                  @RequestBody CustomFeature customFeature) {
-        String token = toekextractToken(authorizationHeader);
+        String token = tokenProvider.extractToken(authorizationHeader);
         if (token == null || !tokenProvider.validateToken(token)) {
             return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
         }
