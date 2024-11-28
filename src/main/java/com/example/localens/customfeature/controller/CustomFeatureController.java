@@ -87,11 +87,26 @@ public class CustomFeatureController {
     }
 
     //피처 삭제
-    @PostMapping("/delete/{customFeatureId}")
-    public String deleteCustomFeature(@PathVariable Long customFeatureId, RedirectAttributes redirectAttributes) {
+    @PostMapping("/{customFeatureId}")
+    public ResponseEntity<?> deleteCustomFeature(@RequestHeader("Authorization") String authorizationHeader,
+                                                 @PathVariable Long customFeatureId) {
+        String token = tokenProvider.extractToken(authorizationHeader);
+        if (token == null || !tokenProvider.validateToken(token)) {
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
+
+        String userUuid = tokenProvider.getCurrentUuid(token);
+        if (userUuid == null) {
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
+
+        CustomFeature customFeature = customFeatureService.getCustomFeatureById(customFeatureId);
+        if (customFeature == null || !customFeature.getUserUuId().equals(userUuid)) {
+            return new ResponseEntity<>("Not Found or Unauthorized", HttpStatus.NOT_FOUND);
+        }
+
         customFeatureService.deleteFeature(customFeatureId);
-        redirectAttributes.addFlashAttribute("message", "피처가 성공적으로 삭제되었습니다.");
-        return "redirect:/customFeatures";
+        return new ResponseEntity<>("Feature deleted successfully", HttpStatus.OK);
     }
 
     // 수식 검증 메서드
