@@ -20,7 +20,7 @@ public class CustomFeature {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long featureId;
 
-    private Long userId;
+    private String userUuId;
     private String featureName;
 
     @Column(length = 1000)
