@@ -25,7 +25,7 @@ public class CustomFeatureService {
         return customFeatureRepository.save(customFeature);
     }
 
-    public List<CustomFeature> getCustomFeatureByUserUuid(String userUuid) {
+    public List<CustomFeature> getCustomFeaturesByUserUuid(String userUuid) {
         Member member = memberRepository.findById(userUuid).orElse(null);
         if (member == null) {
             return List.of();
