@@ -45,42 +45,32 @@ public class CustomFeatureController {
         this.tokenProvider = tokenProvider;
     }
 
-    /*
-    //현재 사용자 커스텀피처 조회 메소드
+    //현재 사용자 커스텀 피처 조회
     @GetMapping
     public ResponseEntity<List<CustomFeature>> listCustomFeatures(@RequestHeader("Authorization") String authorizationHeader) {
+        String token = tokenProvider.extractToken(authorizationHeader);
+        if (token == null || !tokenProvider.validateToken(token)) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED)
+        }
 
+        String userUuid = tokenProvider.getCurrentUuid(token);
+        if (userUuid == null) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
 
-        List<CustomFeature> customFeatures = customFeatureService.getCustomFeaturesByUserId(userId);
+        List<CustomFeature> customFeatures = customFeatureService.getCustomFeaturesByUserUuid(userUuid);
         return new ResponseEntity<>(customFeatures, HttpStatus.OK);
-    }
-    */
-
-    // 피처 생성 폼
-    @GetMapping("/new")
-    public String showCustomFeatureForm(Model model) {
-        model.addAttribute("custom_feature", new CustomFeature());
-        model.addAttribute("dataColumns", influxDBService.getFieldKeys(measurement));
-        return "custom_feature_form";
     }
 
     // 피처 생성 처리
-    /*@PostMapping
-    public ResponseEntity<?> createCustomFeature(@RequestBody CustomFeature customFeature) {
-        Long userId = memberService.getCurrentUserId();
-        if (userId == null) {
-            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+    @PostMapping
+    public ResponseEntity<?> createCustomFeature(@RequestHeader("Authorization") String authorizationHeader,
+                                                 @RequestBody CustomFeature customFeature) {
+        String token = extractToken(authorizationHeader);
+        if (token == null || !tokenProvider.validateToken(token)) {
+
         }
-
-        customFeature.setUserId(userId);
-
-        if (!isValidFormula(customFeature.getFormula())) {
-            return new ResponseEntity<>("Invalid formula", HttpStatus.BAD_REQUEST);
-        }
-
-        CustomFeature savedCustomFeature = customFeatureService.saveCustomFeature(customFeature);
-        return new ResponseEntity<>(savedCustomFeature, HttpStatus.CREATED);
-    }*/
+    }
 
     //피처 삭제
     @PostMapping("/delete/{customFeatureId}")
