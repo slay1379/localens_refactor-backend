@@ -1,12 +1,16 @@
 package com.example.localens.customfeature.controller;
 
 import com.example.localens.customfeature.domain.CustomFeature;
+import com.example.localens.customfeature.domain.CustomFeatureCalculationRequest;
 import com.example.localens.customfeature.service.CustomFeatureService;
 import com.example.localens.influx.InfluxDBService;
 import com.example.localens.member.jwt.TokenProvider;
 import com.example.localens.member.service.MemberService;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
@@ -44,7 +48,30 @@ public class CustomFeatureController {
     }
 
     @PostMapping("/calculate")
-    public ResponseEntity<?> calculateCustomFeature(@RequestBody)
+    public ResponseEntity<?> calculateCustomFeature(@RequestBody CustomFeatureCalculationRequest request) {
+        String formula = request.getFormula();
+        Map<String, Double> variables = request.getVariables();
+
+        if (!isValidFormula(formula)) {
+            return new ResponseEntity<>("Invalid formula", HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            Expression e = new ExpressionBuilder(formula)
+                    .variables(variables.keySet())
+                    .build();
+
+            for (Map.Entry<String, Double> entry : variables.entrySet()) {
+                e.setVariable(entry.getKey(), entry.getValue());
+            }
+
+            double result = e.evaluate();
+
+            return new ResponseEntity<>(Collections.singletonMap("result", result), HttpStatus.OK);
+        } catch (Exception exception) {
+            return new ResponseEntity<>("Error calculating formula", HttpStatus.BAD_REQUEST);
+        }
+    }
 
     @Autowired
     public CustomFeatureController(CustomFeatureService customFeatureService, InfluxDBService influxDBService,
