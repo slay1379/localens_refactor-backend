@@ -6,6 +6,6 @@ import java.awt.Taskbar.Feature;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface CustomFeatureRepository extends JpaRepository<CustomFeature, Long> {
+public interface CustomFeatureRepository extends JpaRepository<CustomFeature, String> {
     List<CustomFeature> findByMember(Member member);
 }

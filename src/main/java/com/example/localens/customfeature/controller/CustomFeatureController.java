@@ -1,12 +1,16 @@
 package com.example.localens.customfeature.controller;
 
 import com.example.localens.customfeature.domain.CustomFeature;
+import com.example.localens.customfeature.domain.CustomFeatureCalculationRequest;
 import com.example.localens.customfeature.service.CustomFeatureService;
 import com.example.localens.influx.InfluxDBService;
 import com.example.localens.member.jwt.TokenProvider;
 import com.example.localens.member.service.MemberService;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
@@ -15,7 +19,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.Mapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,11 +44,44 @@ public class CustomFeatureController {
     private String measurement;
 
     @Autowired
-    public CustomFeatureController(CustomFeatureService customFeatureService, InfluxDBService influxDBService,MemberService memberService, TokenProvider tokenProvider) {
+    public CustomFeatureController(CustomFeatureService customFeatureService, InfluxDBService influxDBService,
+                                   MemberService memberService, TokenProvider tokenProvider) {
         this.customFeatureService = customFeatureService;
         this.influxDBService = influxDBService;
         this.memberService = memberService;
         this.tokenProvider = tokenProvider;
+    }
+
+    @GetMapping("/metrics")
+    public ResponseEntity<List<String>> getAvailableMetrics() {
+        List<String> metrics = influxDBService.getFieldKeys(measurement);
+        return new ResponseEntity<>(metrics, HttpStatus.OK);
+    }
+
+    @PostMapping("/calculate")
+    public ResponseEntity<?> calculateCustomFeature(@RequestBody CustomFeatureCalculationRequest request) {
+        String formula = request.getFormula();
+        Map<String, Double> variables = request.getVariables();
+
+        if (!isValidFormula(formula)) {
+            return new ResponseEntity<>("Invalid formula", HttpStatus.BAD_REQUEST);
+        }
+
+        try {
+            Expression e = new ExpressionBuilder(formula)
+                    .variables(variables.keySet())
+                    .build();
+
+            for (Map.Entry<String, Double> entry : variables.entrySet()) {
+                e.setVariable(entry.getKey(), entry.getValue());
+            }
+
+            double result = e.evaluate();
+
+            return new ResponseEntity<>(Collections.singletonMap("result", result), HttpStatus.OK);
+        } catch (Exception exception) {
+            return new ResponseEntity<>("Error calculating formula", HttpStatus.BAD_REQUEST);
+        }
     }
 
     //현재 사용자 커스텀 피처 조회
@@ -76,20 +115,18 @@ public class CustomFeatureController {
             return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
         }
 
-        customFeature.setUserUuId(userUuid);
-
         if (!isValidFormula(customFeature.getFormula())) {
             return new ResponseEntity<>("Invalid formula", HttpStatus.BAD_REQUEST);
         }
 
-        CustomFeature savedCustomFeature = customFeatureService.saveCustomFeature(customFeature);
+        CustomFeature savedCustomFeature = customFeatureService.saveCustomFeature(customFeature, userUuid);
         return new ResponseEntity<>(savedCustomFeature, HttpStatus.CREATED);
     }
 
     //피처 삭제
-    @PostMapping("/{customFeatureId}")
+    @DeleteMapping("/{customFeatureId}")
     public ResponseEntity<?> deleteCustomFeature(@RequestHeader("Authorization") String authorizationHeader,
-                                                 @PathVariable Long customFeatureId) {
+                                                 @PathVariable String customFeatureId) {
         String token = tokenProvider.extractToken(authorizationHeader);
         if (token == null || !tokenProvider.validateToken(token)) {
             return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
@@ -101,7 +138,7 @@ public class CustomFeatureController {
         }
 
         CustomFeature customFeature = customFeatureService.getCustomFeatureById(customFeatureId);
-        if (customFeature == null || !customFeature.getUserUuId().equals(userUuid)) {
+        if (customFeature == null || !customFeature.getMember().getMemberUuid().equals(userUuid)) {
             return new ResponseEntity<>("Not Found or Unauthorized", HttpStatus.NOT_FOUND);
         }
 
