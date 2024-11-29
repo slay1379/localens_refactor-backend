@@ -21,7 +21,12 @@ public class CustomFeatureService {
         this.memberRepository = memberRepository;
     }
 
-    public CustomFeature saveCustomFeature(CustomFeature customFeature) {
+    public CustomFeature saveCustomFeature(CustomFeature customFeature, String userUuid) {
+        Member member = memberRepository.findById(userUuid).orElse(null);
+        if (member == null) {
+            throw new IllegalArgumentException("Invalid user UUID");
+        }
+        customFeature.setMember(member);
         return customFeatureRepository.save(customFeature);
     }
 
@@ -33,11 +38,11 @@ public class CustomFeatureService {
         return customFeatureRepository.findByMember(member);
     }
 
-    public CustomFeature getCustomFeatureById(Long customFeatureId) {
+    public CustomFeature getCustomFeatureById(String customFeatureId) {
         return customFeatureRepository.findById(customFeatureId).orElse(null);
     }
 
-    public void deleteFeature(Long customFeatureId) {
+    public void deleteFeature(String customFeatureId) {
         customFeatureRepository.deleteById(customFeatureId);
     }
 }
