@@ -72,7 +72,7 @@ public class InfluxDBService {
         try {
             String fluxQuery = String.format(
                     "from(bucket:\"%s\")\n" +
-                            "|> range(start: -1d)\n" +
+                            "|> range(start: 0)\n" +
                             "|> filter(fn: (r) => r[\"district_uuid\"] == \"%s\")\n" +
                             "|> last()",
                     influxDBClientWrapper.getBucket(), districtUuid);
