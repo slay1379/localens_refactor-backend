@@ -37,8 +37,18 @@ public class CustomFeatureController {
     @Value("${influxdb.measurement}")
     private String measurement;
 
+    @GetMapping("/metrics")
+    public ResponseEntity<List<String>> getAvailableMetrics() {
+        List<String> metrics = influxDBService.getFieldKeys(measurement);
+        return new ResponseEntity<>(metrics, HttpStatus.OK);
+    }
+
+    @PostMapping("/calculate")
+    public ResponseEntity<?> calculateCustomFeature(@RequestBody)
+
     @Autowired
-    public CustomFeatureController(CustomFeatureService customFeatureService, InfluxDBService influxDBService,MemberService memberService, TokenProvider tokenProvider) {
+    public CustomFeatureController(CustomFeatureService customFeatureService, InfluxDBService influxDBService,
+                                   MemberService memberService, TokenProvider tokenProvider) {
         this.customFeatureService = customFeatureService;
         this.influxDBService = influxDBService;
         this.memberService = memberService;
