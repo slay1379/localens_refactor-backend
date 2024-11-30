@@ -1,6 +1,6 @@
 package com.example.localens.analysis.service;
 
-import com.example.localens.analysis.dto.FloatingPopulationResponse;
+import com.example.localens.analysis.dto.RadarFloatingPopulationResponse;
 import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
@@ -17,7 +17,7 @@ public class RadarFloatingPopulationService {
     private final CommercialDistrictRepository districtRepository;
     private final InfluxDBClientWrapper influxDBClientWrapper;
 
-    public FloatingPopulationResponse getNormalizedFloatingPopulation(Integer districtUuid) {
+    public RadarFloatingPopulationResponse getNormalizedFloatingPopulation(Integer districtUuid) {
         // MySQL에서 상권 이름 조회
         String districtName = districtRepository.findDistrictNameByDistrictUuid(districtUuid);
         if (districtName == null) {
@@ -45,7 +45,7 @@ public class RadarFloatingPopulationService {
         double formattedValue = Math.round(normalizedValue * 100.0) / 100.0;
 
         // Return the response
-        return new FloatingPopulationResponse(formattedValue);
+        return new RadarFloatingPopulationResponse(formattedValue);
     }
 
     private double extractValueFromQueryResult(List<FluxTable> queryResult) {

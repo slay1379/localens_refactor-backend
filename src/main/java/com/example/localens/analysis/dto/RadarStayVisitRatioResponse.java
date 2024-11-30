@@ -5,6 +5,6 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class FloatingPopulationResponse {
-    private double 유동인구_수;
+public class RadarStayVisitRatioResponse {
+    private double 체류_방문_비율;
 }

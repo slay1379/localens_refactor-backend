@@ -32,7 +32,7 @@ public class StayVisitRatioService {
         String fluxQuery = String.format(
                 "from(bucket: \"result_stay_visit_bucket\") " +
                         "|> range(start: 2024-01-01T00:00:00Z, stop: now()) " +
-                        "|> filter(fn: (r) => r._measurement == \"stay_visit_ratio\" and r[\"place\"] == \"%s\") " +
+                        "|> filter(fn: (r) => r[\"place\"] == \"%s\") " +
                         "|> keep(columns: [\"tmzn\", \"_value\"])", districtName
         );
         System.out.println("Step 2: Generated Flux query: " + fluxQuery);
