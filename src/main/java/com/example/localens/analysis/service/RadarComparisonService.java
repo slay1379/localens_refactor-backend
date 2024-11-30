@@ -7,7 +7,7 @@ import java.util.*;
 @Service
 public class RadarComparisonService {
 
-    public Map<String, String> findTopDifferences(Map<String, Double> district1Overall, Map<String, Double> district2Overall) {
+    public Map<String, String> findTopDifferences(Map<String, Integer> district1Overall, Map<String, Integer> district2Overall) {
         // 차이를 계산
         Map<String, Double> differences = new HashMap<>();
         for (String key : district1Overall.keySet()) {
@@ -40,12 +40,12 @@ public class RadarComparisonService {
         var commercialDistrict = infoService.getCommercialDistrictByUuid(districtUuid);
 
         // 각 서비스 호출 결과를 변수에 저장
-        Map<String, Double> overallData = new LinkedHashMap<>();
-        overallData.put("유동인구_수", floatingPopulationService.getNormalizedFloatingPopulation(districtUuid).get유동인구_수());
-        overallData.put("체류_방문_비율", stayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid).get체류_방문_비율());
-        overallData.put("혼잡도_변화율", congestionRateService.getCongestionRateByDistrictUuid(districtUuid).get혼잡도_변화율());
-        overallData.put("체류시간_대비_방문자_수", stayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid).get체류시간_대비_방문자_수());
-        overallData.put("평균_체류시간_변화율", stayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid).get평균_체류시간_변화율());
+        Map<String, Integer> overallData = new LinkedHashMap<>();
+        overallData.put("유동인구_수", (int)(floatingPopulationService.getNormalizedFloatingPopulation(districtUuid).get유동인구_수() * 100));
+        overallData.put("체류_방문_비율", (int)(stayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid).get체류_방문_비율() * 100));
+        overallData.put("혼잡도_변화율", (int)(congestionRateService.getCongestionRateByDistrictUuid(districtUuid).get혼잡도_변화율() * 100));
+        overallData.put("체류시간_대비_방문자_수", (int)(stayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid).get체류시간_대비_방문자_수() * 100));
+        overallData.put("평균_체류시간_변화율", (int)(stayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid).get평균_체류시간_변화율() * 100));
 
         // 상권 및 클러스터 정보 추가
         Map<String, Object> districtInfo = new LinkedHashMap<>();

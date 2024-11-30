@@ -39,11 +39,11 @@ public class RadarController {
 
         // 결과 데이터를 Map에 추가
         Map<String, Object> overallData = new LinkedHashMap<>();
-        overallData.put("유동인구_수", floatingPopulation.get유동인구_수());
-        overallData.put("체류_방문_비율", stayVisitRatio.get체류_방문_비율());
-        overallData.put("혼잡도_변화율", congestionRate.get혼잡도_변화율());
-        overallData.put("체류시간_대비_방문자_수", stayPerVisitor.get체류시간_대비_방문자_수());
-        overallData.put("평균_체류시간_변화율", stayDurationChange.get평균_체류시간_변화율());
+        overallData.put("유동인구_수", (int)(floatingPopulation.get유동인구_수() * 100));
+        overallData.put("체류_방문_비율", (int)(stayVisitRatio.get체류_방문_비율() * 100));
+        overallData.put("혼잡도_변화율", (int)(congestionRate.get혼잡도_변화율() * 100));
+        overallData.put("체류시간_대비_방문자_수", (int)(stayPerVisitor.get체류시간_대비_방문자_수() * 100));
+        overallData.put("평균_체류시간_변화율", (int)(stayDurationChange.get평균_체류시간_변화율() * 100));
 
         // 상위 두 항목 찾기
         String[] topTwoArray = RadarUtils.findTopTwo(List.of(floatingPopulation, stayVisitRatio, congestionRate, stayPerVisitor, stayDurationChange));
@@ -95,8 +95,8 @@ public class RadarController {
         );
 
         // 두 상권의 overallData 추출
-        Map<String, Double> district1Overall = (Map<String, Double>) district1Data.get("overallData");
-        Map<String, Double> district2Overall = (Map<String, Double>) district2Data.get("overallData");
+        Map<String, Integer> district1Overall = (Map<String, Integer>) district1Data.get("overallData");
+        Map<String, Integer> district2Overall = (Map<String, Integer>) district2Data.get("overallData");
 
         // RadarComparisonService를 사용하여 차이가 큰 두 항목 찾기
         Map<String, String> topDifferences = radarComparisonService.findTopDifferences(district1Overall, district2Overall);
