@@ -37,7 +37,6 @@ public class StayDurationChangeService {
         // Debug: print the number of results
         System.out.println("InfluxDB query result size: " + queryResult.size());
 
-        // 혼잡도 변화율 계산
         Map<String, Double> changeRates = calculateCongestionRate(queryResult);
 
         System.out.println("Calculated congestion rate: " + changeRates);
@@ -63,7 +62,7 @@ public class StayDurationChangeService {
         // Debug: print timeZoneData after summing values
         System.out.println("Summed timeZoneData: " + timeZoneData);
 
-        // Step 4.2: 혼잡도 변화율 계산
+        // Step 4.2: 체류시간 변화율 계산
         Map<String, Double> timeZoneRatios = new LinkedHashMap<>();
         String[] timeZones = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"};
 
@@ -79,8 +78,8 @@ public class StayDurationChangeService {
 
             // 혼잡도 변화율 계산 (변화율 = (current - previous) / previous * 100)
             if (previousValue != 0) {
-                double congestionRate = ((currentValue - previousValue) / previousValue) * 100;
-                timeZoneRatios.put(currentTimeZone + "시", Math.round(congestionRate * 10.0) / 10.0); // 소수점 첫째자리로 반올림
+                double congestionRate = ((currentValue - previousValue) / previousValue);
+                timeZoneRatios.put(currentTimeZone + "시", Math.round(congestionRate * 100.0) / 100.0); // 소수점 첫째자리로 반올림
             } else {
                 timeZoneRatios.put(currentTimeZone + "시", 0.0); // 이전 값이 없을 경우 변화율 0으로 설정
             }
