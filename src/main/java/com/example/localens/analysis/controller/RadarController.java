@@ -23,6 +23,7 @@ public class RadarController {
     private final RadarStayPerVisitorService radarStayPerVisitorService;
     private final RadarStayDurationChangeService radarStayDurationChangeService;
     private final RadarInfoService radarInfoService;
+    private final RadarComparisonService radarComparisonService;
 
     @GetMapping("/{districtUuid}")
     public ResponseEntity<Map<String, Object>> getOverallData(@PathVariable Integer districtUuid) {
@@ -64,6 +65,49 @@ public class RadarController {
         response.put("topTwo", topTwo);
 
         return ResponseEntity.ok(response);
+    }
+
+
+    @GetMapping("/compare/{districtUuid1}/{districtUuid2}")
+    public ResponseEntity<Map<String, Object>> compareDistricts(
+            @PathVariable Integer districtUuid1,
+            @PathVariable Integer districtUuid2
+    ) {
+        // 두 상권의 데이터를 각각 가져옴
+        Map<String, Object> district1Data = radarComparisonService.constructDistrictData(
+                districtUuid1,
+                radarFloatingPopulationService,
+                radarStayVisitRatioService,
+                radarCongestionRateService,
+                radarStayPerVisitorService,
+                radarStayDurationChangeService,
+                radarInfoService
+        );
+
+        Map<String, Object> district2Data = radarComparisonService.constructDistrictData(
+                districtUuid2,
+                radarFloatingPopulationService,
+                radarStayVisitRatioService,
+                radarCongestionRateService,
+                radarStayPerVisitorService,
+                radarStayDurationChangeService,
+                radarInfoService
+        );
+
+        // 두 상권의 overallData 추출
+        Map<String, Double> district1Overall = (Map<String, Double>) district1Data.get("overallData");
+        Map<String, Double> district2Overall = (Map<String, Double>) district2Data.get("overallData");
+
+        // RadarComparisonService를 사용하여 차이가 큰 두 항목 찾기
+        Map<String, String> topDifferences = radarComparisonService.findTopDifferences(district1Overall, district2Overall);
+
+        // 결과 반환
+        Map<String, Object> comparisonResult = new LinkedHashMap<>();
+        comparisonResult.put("district1", district1Data);
+        comparisonResult.put("district2", district2Data);
+        comparisonResult.put("largestDifferences", topDifferences);
+
+        return ResponseEntity.ok(comparisonResult);
     }
 
 //    @GetMapping("/{districtUuid}")
