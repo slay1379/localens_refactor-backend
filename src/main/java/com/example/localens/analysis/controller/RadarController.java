@@ -1,13 +1,7 @@
 package com.example.localens.analysis.controller;
 
-import com.example.localens.analysis.dto.RadarCongestionRateResponse;
-import com.example.localens.analysis.dto.RadarFloatingPopulationResponse;
-import com.example.localens.analysis.dto.RadarStayPerVisitorResponse;
-import com.example.localens.analysis.dto.RadarStayVisitRatioResponse;
-import com.example.localens.analysis.service.RadarCongestionRateService;
-import com.example.localens.analysis.service.RadarFloatingPopulationService;
-import com.example.localens.analysis.service.RadarStayPerVisitorService;
-import com.example.localens.analysis.service.RadarStayVisitRatioService;
+import com.example.localens.analysis.dto.*;
+import com.example.localens.analysis.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,6 +17,7 @@ public class RadarController {
     private final RadarStayVisitRatioService radarStayVisitRatioService;
     private final RadarCongestionRateService radarCongestionRateService;
     private final RadarStayPerVisitorService radarStayPerVisitorService;
+    private final RadarStayDurationChangeService radarStayDurationChangeService;
 
     @GetMapping("/floating-population/{districtUuid}")
     public RadarFloatingPopulationResponse getFloatingPopulation(@PathVariable Integer districtUuid) {
@@ -42,5 +37,10 @@ public class RadarController {
     @GetMapping("/stay-per-visitor/{districtUuid}")
     public RadarStayPerVisitorResponse getStayPerVisitor(@PathVariable Integer districtUuid) {
         return radarStayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid);
+    }
+
+    @GetMapping("/stay-duration-change/{districtUuid}")
+    public RadarStayDurationChangeResponse getAvgStayDurationChange(@PathVariable Integer districtUuid) {
+        return radarStayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid);
     }
 }
