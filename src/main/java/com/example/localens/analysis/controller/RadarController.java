@@ -10,10 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/main")
@@ -25,9 +22,13 @@ public class RadarController {
     private final RadarCongestionRateService radarCongestionRateService;
     private final RadarStayPerVisitorService radarStayPerVisitorService;
     private final RadarStayDurationChangeService radarStayDurationChangeService;
+    private final RadarInfoService radarInfoService;
 
     @GetMapping("/{districtUuid}")
-    public ResponseEntity<RadarTopTwoResponse> getOverallData(@PathVariable Integer districtUuid) {
+    public ResponseEntity<Map<String, Object>> getOverallData(@PathVariable Integer districtUuid) {
+        // 서비스에서 상권 정보 조회
+        var commercialDistrict = radarInfoService.getCommercialDistrictByUuid(districtUuid);
+
         // 각 서비스 호출 결과를 변수에 저장
         RadarFloatingPopulationResponse floatingPopulation = radarFloatingPopulationService.getNormalizedFloatingPopulation(districtUuid);
         RadarStayVisitRatioResponse stayVisitRatio = radarStayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid);
@@ -36,21 +37,31 @@ public class RadarController {
         RadarStayDurationChangeResponse stayDurationChange = radarStayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid);
 
         // 결과 데이터를 Map에 추가
-        Map<String, Object> overallData = new HashMap<>();
+        Map<String, Object> overallData = new LinkedHashMap<>();
         overallData.put("유동인구_수", floatingPopulation.get유동인구_수());
         overallData.put("체류_방문_비율", stayVisitRatio.get체류_방문_비율());
         overallData.put("혼잡도_변화율", congestionRate.get혼잡도_변화율());
         overallData.put("체류시간_대비_방문자_수", stayPerVisitor.get체류시간_대비_방문자_수());
         overallData.put("평균_체류시간_변화율", stayDurationChange.get평균_체류시간_변화율());
 
-        // 상위 두 항목을 Map에 추가
+        // 상위 두 항목 찾기
         String[] topTwoArray = RadarUtils.findTopTwo(List.of(floatingPopulation, stayVisitRatio, congestionRate, stayPerVisitor, stayDurationChange));
-        Map<String, Object> topTwo = new HashMap<>();
+        Map<String, Object> topTwo = new LinkedHashMap<>();
         topTwo.put("first", topTwoArray[0]);
         topTwo.put("second", topTwoArray[1]);
 
-        // 결과를 DTO로 반환
-        RadarTopTwoResponse response = new RadarTopTwoResponse(overallData, topTwo);
+        // 상권 및 클러스터 정보 추가
+        Map<String, Object> districtInfo = new LinkedHashMap<>();
+        districtInfo.put("districtName", commercialDistrict.getDistrictName());
+        districtInfo.put("clusterName", commercialDistrict.getCluster().getClusterName());
+        districtInfo.put("latitude", commercialDistrict.getLatitude());
+        districtInfo.put("longitude", commercialDistrict.getLongitude());
+
+        // 최종 반환 데이터
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("districtInfo", districtInfo);
+        response.put("overallData", overallData);
+        response.put("topTwo", topTwo);
 
         return ResponseEntity.ok(response);
     }
