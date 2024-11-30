@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api/main")
+@RequestMapping("/api/radar")
 @RequiredArgsConstructor
 public class RadarController {
 
@@ -25,7 +25,7 @@ public class RadarController {
     private final RadarInfoService radarInfoService;
     private final RadarComparisonService radarComparisonService;
 
-    @GetMapping("/{districtUuid}")
+    @GetMapping("/main/{districtUuid}")
     public ResponseEntity<Map<String, Object>> getOverallData(@PathVariable Integer districtUuid) {
         // 서비스에서 상권 정보 조회
         var commercialDistrict = radarInfoService.getCommercialDistrictByUuid(districtUuid);
