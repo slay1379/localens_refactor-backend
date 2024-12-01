@@ -2,12 +2,14 @@ package com.example.localens.member.controller;
 
 import com.example.localens.member.domain.Member;
 import com.example.localens.member.dto.*;
+import com.example.localens.member.jwt.TokenProvider;
 import com.example.localens.member.service.AuthService;
 import com.example.localens.member.service.MemberFinderService;
 import com.example.localens.member.service.MemberService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,7 +22,7 @@ public class MemberController {
     private final MemberService memberService;
     private final AuthService authService;
     private final MemberFinderService memberFinderService;
-//    private final TokenProvider tokenProvider;
+    private final TokenProvider tokenProvider;
 
 
     @PostMapping("/signup")
@@ -36,6 +38,15 @@ public class MemberController {
     @PostMapping("/reissue")
     public ResponseEntity<TokenDto> reissue(@Valid @RequestBody TokenRequestDto tokenRequestDto) {
         return ResponseEntity.ok(authService.reissue(tokenRequestDto));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<MessageResponseDto> logout(@RequestHeader("Authorization") String token) {
+        // "Bearer " 부분 제거
+        String accessToken = token.substring(7);
+        authService.logout(accessToken);
+        MessageResponseDto responseDto = new MessageResponseDto("로그아웃 성공");
+        return ResponseEntity.ok(responseDto);
     }
 
     @GetMapping("/find-email/{name}")

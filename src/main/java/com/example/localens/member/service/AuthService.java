@@ -5,14 +5,17 @@ import com.example.localens.member.dto.*;
 import com.example.localens.member.jwt.TokenProvider;
 import com.example.localens.member.repository.RefreshTokenRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final TokenProvider tokenProvider;
@@ -75,4 +78,17 @@ public class AuthService {
         // 토큰 발급
         return tokenDto;
     }
+
+    @Transactional
+    public void logout(String accessToken) {
+        // Access Token에서 사용자 정보 추출
+        Authentication authentication = tokenProvider.getAuthentication(accessToken);
+
+        // 사용자 ID로 Refresh Token 삭제
+        refreshTokenRepository.findByKey(authentication.getName())
+                .ifPresent(refreshTokenRepository::delete);
+
+        log.info("사용자 {} 로그아웃 성공", authentication.getName());
+    }
+
 }
