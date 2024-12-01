@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/population")
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class PopulationController {
 
@@ -28,7 +28,7 @@ public class PopulationController {
     private final NationalityRatioService nationalityRatioService;
 
 
-    @GetMapping("/all-ratios/{districtUuid}")
+    @GetMapping("/details/{districtUuid}")
     public ResponseEntity<Map<String, Object>> getAllRatiosByDistrictUuid(@PathVariable Integer districtUuid) {
 
         Map<String, Object> results = new LinkedHashMap<>();
