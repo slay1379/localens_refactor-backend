@@ -58,9 +58,7 @@ public class MemberSecurityConfig {
                                 "/api-docs/**",
                                 "/swagger-resources/**",
                                 "/webjars/**",
-                                "/api/member/signup",
-                                "/api/member/login",
-                                "/api/member/reissue"
+                                "/api/member/**"
                         ).permitAll() // 인증 없이 접근을 허용하는 엔드포인트
                         .anyRequest().authenticated() // 나머지 요청은 인증 필요
         );
