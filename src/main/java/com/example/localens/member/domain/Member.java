@@ -21,7 +21,7 @@ public class Member {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "member_uuid")
+    @Column(name = "user_uuid")
     private String memberUuid;
 
     @NotNull

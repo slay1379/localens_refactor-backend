@@ -32,7 +32,7 @@ public class CustomFeature {
     private LocalDateTime createdAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_uuid", referencedColumnName = "member_uuid")
+    @JoinColumn(name = "user_uuid", referencedColumnName = "user_uuid")
     private Member member;
 
     public CustomFeature() {
