@@ -24,6 +24,7 @@ public class RadarController {
     private final RadarStayDurationChangeService radarStayDurationChangeService;
     private final RadarInfoService radarInfoService;
     private final RadarComparisonService radarComparisonService;
+    private final RadarVisitConcentrationService radarVisitConcentrationService;
 
     @GetMapping("/main/{districtUuid}")
     public ResponseEntity<Map<String, Object>> getOverallData(@PathVariable Integer districtUuid) {
@@ -35,6 +36,7 @@ public class RadarController {
         RadarStayVisitRatioResponse stayVisitRatio = radarStayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid);
         RadarCongestionRateResponse congestionRate = radarCongestionRateService.getCongestionRateByDistrictUuid(districtUuid);
         RadarStayPerVisitorResponse stayPerVisitor = radarStayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid);
+        RadarVisitConcentrationResponse visitConcentration = radarVisitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid);
         RadarStayDurationChangeResponse stayDurationChange = radarStayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid);
 
         // 결과 데이터를 Map에 추가
@@ -43,6 +45,7 @@ public class RadarController {
         overallData.put("체류_방문_비율", (int)(stayVisitRatio.get체류_방문_비율() * 100));
         overallData.put("혼잡도_변화율", (int)(congestionRate.get혼잡도_변화율() * 100));
         overallData.put("체류시간_대비_방문자_수", (int)(stayPerVisitor.get체류시간_대비_방문자_수() * 100));
+        overallData.put("방문_혼잡도", (int)(visitConcentration.get방문_집중도() * 100));
         overallData.put("평균_체류시간_변화율", (int)(stayDurationChange.get평균_체류시간_변화율() * 100));
 
         // 상위 두 항목 찾기
@@ -80,6 +83,7 @@ public class RadarController {
                 radarStayVisitRatioService,
                 radarCongestionRateService,
                 radarStayPerVisitorService,
+                radarVisitConcentrationService,
                 radarStayDurationChangeService,
                 radarInfoService
         );
@@ -90,6 +94,7 @@ public class RadarController {
                 radarStayVisitRatioService,
                 radarCongestionRateService,
                 radarStayPerVisitorService,
+                radarVisitConcentrationService,
                 radarStayDurationChangeService,
                 radarInfoService
         );

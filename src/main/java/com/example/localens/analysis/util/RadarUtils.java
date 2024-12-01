@@ -24,7 +24,10 @@ public class RadarUtils {
             } else if (obj instanceof RadarStayPerVisitorResponse) {
                 RadarStayPerVisitorResponse dto = (RadarStayPerVisitorResponse) obj;
                 valueList.add(new Pair<>("체류시간 대비 방문자 수", dto.get체류시간_대비_방문자_수()));
-            } else if (obj instanceof RadarStayDurationChangeResponse) {
+            } else if (obj instanceof RadarVisitConcentrationResponse) {
+                RadarVisitConcentrationResponse dto = (RadarVisitConcentrationResponse) obj;
+                valueList.add(new Pair<>("방문 집중도", dto.get방문_집중도()));
+            }else if (obj instanceof RadarStayDurationChangeResponse) {
                 RadarStayDurationChangeResponse dto = (RadarStayDurationChangeResponse) obj;
                 valueList.add(new Pair<>("평균 체류시간 변화율", dto.get평균_체류시간_변화율()));
             }

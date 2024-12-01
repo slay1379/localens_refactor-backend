@@ -33,6 +33,7 @@ public class RadarComparisonService {
             RadarStayVisitRatioService stayVisitRatioService,
             RadarCongestionRateService congestionRateService,
             RadarStayPerVisitorService stayPerVisitorService,
+            RadarVisitConcentrationService visitConcentrationService,
             RadarStayDurationChangeService stayDurationChangeService,
             RadarInfoService infoService
     ) {
@@ -45,6 +46,7 @@ public class RadarComparisonService {
         overallData.put("체류_방문_비율", (int)(stayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid).get체류_방문_비율() * 100));
         overallData.put("혼잡도_변화율", (int)(congestionRateService.getCongestionRateByDistrictUuid(districtUuid).get혼잡도_변화율() * 100));
         overallData.put("체류시간_대비_방문자_수", (int)(stayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid).get체류시간_대비_방문자_수() * 100));
+        overallData.put("방문_집중도", (int)(visitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid).get방문_집중도() * 100));
         overallData.put("평균_체류시간_변화율", (int)(stayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid).get평균_체류시간_변화율() * 100));
 
         // 상권 및 클러스터 정보 추가
