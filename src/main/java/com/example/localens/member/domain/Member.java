@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import java.util.UUID;
 import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
@@ -17,36 +18,39 @@ import java.time.LocalDate;
 @Builder
 @Getter
 @Setter
+@Table(name = "member")
 public class Member {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "user_uuid")
-    private String memberUuid;
+    private UUID memberUuid;
 
     @NotNull
     @Length(min = 2, max = 15)
-    @Column(length = 15, nullable = false)
+    @Column(name = "username", length = 15, nullable = false)
     private String name;
 
     @NotNull
     @Pattern(regexp = "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")
-    @Column(length = 100, nullable = false)
+    @Column(length = 100, nullable = false, unique = true)
     private String email;
 
     @NotNull
     @Column(nullable = false)
     private String password;
 
+    @Column(name = "reset_token")
     private String resetToken; // 비밀번호 재설정 토큰
 
-    @NotNull
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @Column(nullable = true, updatable = false)
+    private LocalDate createdAt;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @Column(nullable = true)
     private LocalDate updatedAt;
 
-    @NotNull
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private LocalDate createdAt;
 
 
 
