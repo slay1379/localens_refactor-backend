@@ -5,6 +5,7 @@ import com.example.localens.member.dto.*;
 import com.example.localens.member.service.AuthService;
 import com.example.localens.member.service.MemberFinderService;
 import com.example.localens.member.service.MemberService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
