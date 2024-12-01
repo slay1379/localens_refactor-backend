@@ -25,8 +25,32 @@ spring:
             redirect-uri: "http://localhost:8080/login/oauth2/code/naver"
 
 influxdb:
-  url: http://3.106.193.43:8086
-  token: HieAKTvkj-RdQyxiHn4-Z2BdwrhVLe9XFB-bbQLY1rnBEXfGvNb9SJQ7RIDEqREm7bzHovw00Dv8pCZm6a6Xwg==
-  org: localens
+  url: http://3.34.131.242:8086
+  token: 75XnM_QleVAocbDl0vpX-IYdaTiJiwkBZ42CjC0kzQCYaPOKDIdoVTOj-boTrYRZJz_6mtO64P5LT6VJM6TPXg==
+  org: dev
   bucket: hourly
+  measurement: visitor_data
 
+logging:
+  level:
+    org.springframework.security: DEBUG
+
+server:
+  port: 8080
+
+springdoc:
+  api-docs:
+    path: /api-docs
+    groups:
+      enabled: true
+  swagger-ui:
+    path: /swagger-ui-custom.html
+    enabled: true
+    groups-order: ASC
+    tags-sorter: alpha
+    operations-sorter: alpha
+    display-request-duration: true
+    doc-expansion: none
+  cache:
+    disabled: true
+  model-and-view-allowed: true
