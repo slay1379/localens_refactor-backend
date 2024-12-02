@@ -63,9 +63,9 @@ public class PopulationRatioService {
                 Map.entry("18", "eighteen"),
                 Map.entry("19", "nineteen"),
                 Map.entry("20", "twenty"),
-                Map.entry("21", "twenty-one"),
-                Map.entry("22", "twenty-two"),
-                Map.entry("23", "twenty-three")
+                Map.entry("21", "twentyOne"),
+                Map.entry("22", "twentyTwo"),
+                Map.entry("23", "twentyThree")
         );
 
         for (FluxTable table : queryResult) {
