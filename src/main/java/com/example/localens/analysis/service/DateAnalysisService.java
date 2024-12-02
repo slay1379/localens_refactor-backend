@@ -28,12 +28,12 @@ public class DateAnalysisService {
         int stayDurationRateValue = dateStayDurationRateService.getNormalizedStayDurationRate(districtUuid, date);
 
         Map<String, Integer> values = new LinkedHashMap<>();
-        values.put("유동인구 수", normalizedPopulationValue);
-        values.put("체류/방문 비율", stayVisitRatioValue);
-        values.put("방문 집중도", visitConcentrationValue);
-        values.put("혼잡도 변화율", congestionRateValue);
-        values.put("체류시간 대비 방문자수", stayPerVisitorValue);
-        values.put("체류시간 변화율", stayDurationRateValue);
+        values.put("population", normalizedPopulationValue);
+        values.put("stayVisit", stayVisitRatioValue);
+        values.put("visitConcentration", visitConcentrationValue);
+        values.put("congestion", congestionRateValue);
+        values.put("stayPerVisitor", stayPerVisitorValue);
+        values.put("stayTimeChange", stayDurationRateValue);
 
         // 가장 큰 값과 두 번째로 큰 값 찾기
         List<Map.Entry<String, Integer>> sortedEntries = values.entrySet()
