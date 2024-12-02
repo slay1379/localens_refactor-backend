@@ -32,10 +32,10 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t your-dockerhub-username/your-application:latest .
+        run: docker build -t slay1379/localens:latest .
 
       - name: Push Docker image
-        run: docker push your-dockerhub-username/your-application:latest
+        run: docker push slay1379/localens:latest
 
   deploy:
     runs-on: ubuntu-latest
@@ -49,7 +49,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.AWS_SSH_KEY }}
           script: |
-            docker pull your-dockerhub-username/your-application:latest
-            docker stop your-application || true
-            docker rm your-application || true
-            docker run -d -p 8080:8080 --name your-application your-dockerhub-username/your-application:latest
+            docker pull slay1379/localens:latest
+            docker stop localens || true
+            docker rm localens || true
+            docker run -d -p 8080:8080 --name localens slay1379/localens:latest
