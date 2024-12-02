@@ -55,7 +55,7 @@ public class StayPerVisitorService {
                 Double value = Double.valueOf(record.getValueByKey("_value").toString()); // 비율 값
 
                 // 시간대에 '시' 추가 및 소수점 넷째자리까지 반올림
-                timeZoneRatios.put(timeZone + "시", Math.round(value * 100.0) / 100.0);
+                timeZoneRatios.put(timeZone, Math.round(value * 100.0) / 100.0);
             }
         }
 

@@ -79,9 +79,9 @@ public class StayDurationChangeService {
             // 혼잡도 변화율 계산 (변화율 = (current - previous) / previous * 100)
             if (previousValue != 0) {
                 double congestionRate = ((currentValue - previousValue) / previousValue);
-                timeZoneRatios.put(currentTimeZone + "시", Math.round(congestionRate * 100.0) / 100.0); // 소수점 첫째자리로 반올림
+                timeZoneRatios.put(currentTimeZone, Math.round(congestionRate * 100.0) / 100.0); // 소수점 첫째자리로 반올림
             } else {
-                timeZoneRatios.put(currentTimeZone + "시", 0.0); // 이전 값이 없을 경우 변화율 0으로 설정
+                timeZoneRatios.put(currentTimeZone, 0.0); // 이전 값이 없을 경우 변화율 0으로 설정
             }
         }
 

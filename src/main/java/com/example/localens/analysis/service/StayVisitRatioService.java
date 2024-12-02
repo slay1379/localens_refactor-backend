@@ -59,7 +59,7 @@ public class StayVisitRatioService {
                 Double value = Double.valueOf(record.getValueByKey("_value").toString()); // 비율 값
 
                 // 시간대에 '시' 추가
-                timeZoneRatios.put(timeZone + "시", Math.round(value * 10.0) / 10.0);
+                timeZoneRatios.put(timeZone, Math.round(value * 10.0) / 10.0);
             }
         }
 

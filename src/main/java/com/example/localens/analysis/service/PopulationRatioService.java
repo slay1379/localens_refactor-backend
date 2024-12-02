@@ -49,7 +49,7 @@ public class PopulationRatioService {
                     continue; // Null 값은 무시
                 }
 
-                String timeZone = timeZoneObj.toString() + "시";
+                String timeZone = timeZoneObj.toString();
                 double value = Double.parseDouble(valueObj.toString());
                 timeZoneRatios.put(timeZone, value);
                 totalPopulation[0] += value; // 총 유동인구 계산
