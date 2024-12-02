@@ -1,4 +1,4 @@
-FROM openjdk:17-jkd-slim
+FROM openjdk:17-jdk-slim
 
 COPY build/libs/*.jar /app/localens-0.0.1-SNAPSHOT.jar
 
