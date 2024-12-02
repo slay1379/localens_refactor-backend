@@ -1,5 +1,6 @@
 package com.example.localens.analysis.controller;
 
+import com.example.localens.analysis.domain.Pair;
 import com.example.localens.analysis.dto.*;
 import com.example.localens.analysis.service.*;
 import com.example.localens.analysis.util.RadarUtils;
@@ -39,32 +40,38 @@ public class RadarController {
         RadarVisitConcentrationResponse visitConcentration = radarVisitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid);
         RadarStayDurationChangeResponse stayDurationChange = radarStayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid);
 
-        // 결과 데이터를 Map에 추가
-        Map<String, Object> overallData = new LinkedHashMap<>();
-        overallData.put("유동인구_수", (int)(floatingPopulation.get유동인구_수() * 100));
-        overallData.put("체류_방문_비율", (int)(stayVisitRatio.get체류_방문_비율() * 100));
-        overallData.put("혼잡도_변화율", (int)(congestionRate.get혼잡도_변화율() * 100));
-        overallData.put("체류시간_대비_방문자_수", (int)(stayPerVisitor.get체류시간_대비_방문자_수() * 100));
-        overallData.put("방문_혼잡도", (int)(visitConcentration.get방문_집중도() * 100));
-        overallData.put("평균_체류시간_변화율", (int)(stayDurationChange.get평균_체류시간_변화율() * 100));
 
-        // 상위 두 항목 찾기
-        String[] topTwoArray = RadarUtils.findTopTwo(List.of(floatingPopulation, stayVisitRatio, congestionRate, stayPerVisitor, stayDurationChange));
+        // 데이터 리스트 생성
+        List<Object> overallData = List.of(floatingPopulation, stayVisitRatio, congestionRate, stayPerVisitor, visitConcentration, stayDurationChange);
+
+        // 가장 큰 두 값을 찾기
+        List<Pair<String, Double>> topTwoPairs = RadarUtils.findTopTwo(overallData);
+
+        // 결과 데이터 준비
+        Map<String, Object> overallDataMap = new LinkedHashMap<>();
+        overallDataMap.put("population", (int)(floatingPopulation.get유동인구_수() * 100));
+        overallDataMap.put("stayVisit", (int)(stayVisitRatio.get체류_방문_비율() * 100));
+        overallDataMap.put("congestion", (int)(congestionRate.get혼잡도_변화율() * 100));
+        overallDataMap.put("stayPerVisitor", (int)(stayPerVisitor.get체류시간_대비_방문자_수() * 100));
+        overallDataMap.put("visitConcentration", (int)(visitConcentration.get방문_집중도() * 100));
+        overallDataMap.put("stayTimeChange", (int)(stayDurationChange.get평균_체류시간_변화율() * 100));
+
+        // Top 2 데이터 준비
         Map<String, Object> topTwo = new LinkedHashMap<>();
-        topTwo.put("first", topTwoArray[0]);
-        topTwo.put("second", topTwoArray[1]);
+        topTwo.put("first", Map.of("name", topTwoPairs.get(0).getKey(), "value", (int) (topTwoPairs.get(0).getValue() * 100)));
+        topTwo.put("second", Map.of("name", topTwoPairs.get(1).getKey(), "value", (int) (topTwoPairs.get(1).getValue() * 100)));
 
-        // 상권 및 클러스터 정보 추가
+        // 상권 정보 준비
         Map<String, Object> districtInfo = new LinkedHashMap<>();
         districtInfo.put("districtName", commercialDistrict.getDistrictName());
         districtInfo.put("clusterName", commercialDistrict.getCluster().getClusterName());
         districtInfo.put("latitude", commercialDistrict.getLatitude());
         districtInfo.put("longitude", commercialDistrict.getLongitude());
 
-        // 최종 반환 데이터
+        // 최종 응답 데이터
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("districtInfo", districtInfo);
-        response.put("overallData", overallData);
+        response.put("overallData", overallDataMap);
         response.put("topTwo", topTwo);
 
         return ResponseEntity.ok(response);
