@@ -1,45 +1,83 @@
+//package com.example.localens.analysis.controller;
+//
+//import com.example.localens.analysis.service.*;
+//import lombok.RequiredArgsConstructor;
+//import org.springframework.http.ResponseEntity;
+//import org.springframework.web.bind.annotation.*;
+//
+//import java.util.LinkedHashMap;
+//import java.util.Map;
+//
+//@RestController
+//@RequestMapping("/api/datecompare")
+//@RequiredArgsConstructor
+//public class DateController {
+//
+//    private final DateAnalysisService dateAnalysisService;
+//
+//    @GetMapping("/{districtUuid}")
+//    public ResponseEntity<Map<String, Object>> getPopulationResponse(
+//            @PathVariable Integer districtUuid,
+//            @RequestParam String date1,
+//            @RequestParam String date2
+//    ) {
+//        Map<String, Object> date1Result = dateAnalysisService.calculateDateData(districtUuid, date1);
+//        Map<String, Object> date2Result = dateAnalysisService.calculateDateData(districtUuid, date2);
+//
+//        Map<String, Object> response = new LinkedHashMap<>();
+//        response.put("date1", date1Result);
+//        response.put("date2", date2Result);
+//
+//        return ResponseEntity.ok(response);
+//    }
+//}
+
 package com.example.localens.analysis.controller;
 
 import com.example.localens.analysis.service.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/datecompare")
 @RequiredArgsConstructor
 public class DateController {
 
-    private final DatePopulationService datePopulationService;
-    private final DateVisitConcentrationService dateVisitConcentrationService;
-    private final DateStayVisitService dateStayVisitService;
-    private final DateCongestionRateService dateCongestionRateService;
-    private final DateStayPerVisitorService dateStayPerVisitorService;
-    private final DateStayDurationRateService dateStayDurationRateService;
+    private final DateAnalysisService dateAnalysisService;
 
-    @GetMapping("/population/{districtUuid}")
-    public ResponseEntity<Map<String, Integer>> getPopulationResponse(
+    @GetMapping("/{districtUuid}")
+    public ResponseEntity<Map<String, Object>> getPopulationResponse(
             @PathVariable Integer districtUuid,
-            @RequestParam String date
+            @RequestParam String date1,
+            @RequestParam String date2
     ) {
-        int normalizedPopulationValue = datePopulationService.getNormalizedPopulationValue(districtUuid, date);
-        int visitConcentrationValue = dateVisitConcentrationService.getNormalizedPopulationValue(districtUuid, date);
-        int stayVisitRatioValue = dateStayVisitService.getNormalizedStayVisitRatio(districtUuid, date);
-        int congestionRateValue = dateCongestionRateService.getNormalizedCongestionRate(districtUuid, date);
-        int stayPerVisitorValue = dateStayPerVisitorService.getNormalizedStayPerVisitorValue(districtUuid, date);
-        int stayDurationRateValue = dateStayDurationRateService.getNormalizedStayDurationRate(districtUuid, date);
+        log.info("Received request for districtUuid: {}, date1: {}, date2: {}", districtUuid, date1, date2);
 
-        Map<String, Integer> response = new LinkedHashMap<>();
-        response.put("유동인구 수", normalizedPopulationValue);
-        response.put("체류/방문 비율", stayVisitRatioValue);
-        response.put("방문 집중도", normalizedPopulationValue);
-        response.put("혼잡도 변화율", congestionRateValue);
-        response.put("체류시간 대비 방문자수", stayPerVisitorValue);
-        response.put("체류시간_변화율", stayDurationRateValue);
+        Map<String, Object> response = new LinkedHashMap<>();
+        try {
+            log.info("Calculating data for date1: {}", date1);
+            Map<String, Object> date1Result = dateAnalysisService.calculateDateData(districtUuid, date1);
+            log.info("Data for date1 calculated successfully: {}", date1Result);
 
-        return ResponseEntity.ok(response);
+            log.info("Calculating data for date2: {}", date2);
+            Map<String, Object> date2Result = dateAnalysisService.calculateDateData(districtUuid, date2);
+            log.info("Data for date2 calculated successfully: {}", date2Result);
+
+            response.put("date1", date1Result);
+            response.put("date2", date2Result);
+
+            log.info("Response prepared successfully: {}", response);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error occurred while processing request for districtUuid: {}, date1: {}, date2: {}", districtUuid, date1, date2, e);
+            throw e; // Re-throw the exception to let Spring handle it.
+        }
     }
 }
+
