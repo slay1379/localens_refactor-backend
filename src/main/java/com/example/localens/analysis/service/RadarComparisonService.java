@@ -7,6 +7,16 @@ import java.util.*;
 @Service
 public class RadarComparisonService {
 
+    // 영어 key를 한글로 매핑하는 Map
+    private static final Map<String, String> keyToKoreanMap = Map.of(
+            "population", "유동인구 수",
+            "stayVisit", "체류/방문 비율",
+            "congestion", "혼잡도 변화율",
+            "stayPerVisitor", "체류시간 대비 방문자 수",
+            "visitConcentration", "방문 집중도",
+            "stayTimeChange", "체류시간 변화율"
+    );
+
     public Map<String, String> findTopDifferences(Map<String, Integer> district1Overall, Map<String, Integer> district2Overall) {
         // 차이를 계산
         Map<String, Double> differences = new HashMap<>();
@@ -19,10 +29,10 @@ public class RadarComparisonService {
         List<Map.Entry<String, Double>> sortedDifferences = new ArrayList<>(differences.entrySet());
         sortedDifferences.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
 
-        // 가장 큰 차이와 두 번째로 큰 차이 반환
+        // 가장 큰 차이와 두 번째로 큰 차이를 한글로 변환하여 반환
         Map<String, String> result = new LinkedHashMap<>();
-        result.put("first", sortedDifferences.get(0).getKey());
-        result.put("second", sortedDifferences.get(1).getKey());
+        result.put("first", keyToKoreanMap.getOrDefault(sortedDifferences.get(0).getKey(), sortedDifferences.get(0).getKey()));
+        result.put("second", keyToKoreanMap.getOrDefault(sortedDifferences.get(1).getKey(), sortedDifferences.get(1).getKey()));
 
         return result;
     }
