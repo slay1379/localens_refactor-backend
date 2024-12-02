@@ -46,3 +46,13 @@ springdoc:
   cache:
     disabled: true
   model-and-view-allowed: true
+
+cloud:
+  aws:
+    credentials:
+      access-key: localens
+      secret-key: localens0629!
+    region:
+      static: ap-northeast-2
+    s3:
+      bucket: localens-image
