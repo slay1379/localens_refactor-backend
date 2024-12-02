@@ -43,6 +43,7 @@ public class Member {
     @Column(name = "reset_token")
     private String resetToken; // 비밀번호 재설정 토큰
 
+
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     @Column(nullable = true, updatable = false)
     private LocalDate createdAt;
@@ -50,7 +51,6 @@ public class Member {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     @Column(nullable = true)
     private LocalDate updatedAt;
-
 
 
 
@@ -62,16 +62,16 @@ public class Member {
     }
 
 
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDate.now(); // 현재 날짜로 갱신
-    }
-
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDate.now(); // 현재 날짜로 설정
-        this.updatedAt = LocalDate.now(); // 엔티티 생성 시에도 updatedAt을 현재 날짜로 설정
-    }
+//    @PreUpdate
+//    protected void onUpdate() {
+//        this.updatedAt = LocalDate.now(); // 현재 날짜로 갱신
+//    }
+//
+//    @PrePersist
+//    protected void onCreate() {
+//        this.createdAt = LocalDate.now(); // 현재 날짜로 설정
+//        this.updatedAt = LocalDate.now(); // 엔티티 생성 시에도 updatedAt을 현재 날짜로 설정
+//    }
 
     public void updatePassword(String newPassword) {
         this.password = newPassword;
