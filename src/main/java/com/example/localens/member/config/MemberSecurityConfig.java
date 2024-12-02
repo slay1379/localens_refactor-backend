@@ -58,7 +58,7 @@ public class MemberSecurityConfig {
                                 "/api-docs/**",
                                 "/swagger-resources/**",
                                 "/webjars/**",
-                                "/api/member/**"
+                                "/api/member/**",
                                 "/api/datecompare/**",
                                 "/api/details/**",
                                 "/api/main/**",
