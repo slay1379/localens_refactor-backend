@@ -44,14 +44,14 @@ public class AgeGenderRatioService {
 
     private Map<String, Map<String, Double>> processAgeGenderRatios(List<FluxTable> queryResult) {
         Map<String, String> ageGroupMapping = Map.of(
-                "10대", "10",
+                "10대", "Teenagers",
                 "10대 미만", "Under 10",
-                "20대", "20",
-                "30대", "30",
-                "40대", "40",
-                "50대", "50",
-                "60대", "60",
-                "70대 이상", "Over 70"
+                "20대", "Twenties",
+                "30대", "Thirties",
+                "40대", "Forties",
+                "50대", "Fifties",
+                "60대", "Sixties",
+                "70대 이상", "Over Seventies"
         );
 
         // 임시로 성별 데이터를 저장
