@@ -99,6 +99,14 @@ public class RadarController {
                 radarInfoService
         );
 
+        Map<String, Object> district1Info = (Map<String, Object>) district1Data.get("districtInfo");
+        district1Info.remove("latitude");
+        district1Info.remove("longitude");
+
+        Map<String, Object> district2Info = (Map<String, Object>) district2Data.get("districtInfo");
+        district2Info.remove("latitude");
+        district2Info.remove("longitude");
+
         // 두 상권의 overallData 추출
         Map<String, Integer> district1Overall = (Map<String, Integer>) district1Data.get("overallData");
         Map<String, Integer> district2Overall = (Map<String, Integer>) district2Data.get("overallData");
