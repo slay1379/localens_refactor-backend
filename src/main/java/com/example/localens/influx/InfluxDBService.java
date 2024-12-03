@@ -4,6 +4,8 @@ import com.influxdb.client.InfluxDBClient;
 import com.influxdb.client.QueryApi;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -94,6 +96,43 @@ public class InfluxDBService {
         } catch (Exception e) {
             System.err.println("InfluxDB에서 지표 데이터를 가져오는 중 오류 발생: " + e.getMessage());
             return new HashMap<>();
+        }
+    }
+
+    public List<Map<String, Double>> getMetricsByDistrictUuidAndTimeRange(String districtUuid, LocalDateTime start,
+                                                                          LocalDateTime end) {
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'");
+            String startString = start.format(formatter);
+            String endString = end.format(formatter);
+
+            String fluxQuery = String.format(
+                    "from(bucket:\"%s\")\n" +
+                            "|> range(start: %s, stop: %s)\n" +
+                            "|> filter(fn: (r) -> r[\"district_uuid\"] == \"%s\")",
+                    influxDBClientWrapper.getBucket(), startString, endString, districtUuid);
+
+            QueryApi queryApi = influxDBClientWrapper.getInfluxDBClient().getQueryApi();
+            List<FluxTable> tables = queryApi.query(fluxQuery, influxDBClientWrapper.getOrg());
+
+            List<Map<String, Double>> metricsList = new ArrayList<>();
+
+            for (FluxTable table : tables) {
+                for (FluxRecord record : table.getRecords()) {
+                    String field = (String) record.getValueByKey("_field");
+                    double value = ((Number) record.getValue()).doubleValue();
+
+                    Map<String, Double> metric = new HashMap<>();
+                    metric.put(field, value);
+
+                    metricsList.add(metric);
+                }
+            }
+
+            return metricsList;
+        } catch (Exception e) {
+            System.err.println("InfluxDB에서 특정 기간 동안 상권 데이터를 가져오는 중 오류 발생: " + e.getMessage());
+            return Collections.emptyList();
         }
     }
 }
