@@ -31,17 +31,29 @@ public class ImprovementService {
         this.influxDBService = influxDBService;
     }
 
-    public List<Event> recommendEvents(String districtUuidNow, String districtUuidTarget) {
+    public Map<String, Object> recommendEventsWithDistrictMetrics(String districtUuidNow, String districtUuidTarget) {
         Map<String, Double> metricsA = influxDBService.getLatestMetricsByDistrictUuid(districtUuidNow);
         Map<String, Double> metricsB = influxDBService.getLatestMetricsByDistrictUuid(districtUuidTarget);
 
         Map<String, Double> metricDifferences = calculateMetricDifferences(metricsA, metricsB);
-
         List<String> topTwoMetrics = getTopTwoMetrics(metricDifferences);
-
         List<Event> recommendedEvents = findEventByMetrics(topTwoMetrics);
 
-        return recommendedEvents;
+        Map<String, List<Map<String, Double>>> eventMetricsData = new HashMap<>();
+        for (Event event : recommendedEvents) {
+            List<Map<String, Double>> metricsDuringEvent = influxDBService.getMetricsByDistrictUuidAndTimeRange(
+                    districtUuidNow,
+                    event.getEventStart(),
+                    event.getEventEnd()
+            );
+            eventMetricsData.put(event.getEventUuid(), metricsDuringEvent);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("recommendedEvents", recommendedEvents);
+        result.put("eventMetricsData", eventMetricsData);
+
+        return result;
     }
 
     private Map<String, Double> calculateMetricDifferences(Map<String, Double> metricsA, Map<String, Double> metricsB) {
