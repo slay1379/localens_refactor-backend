@@ -56,7 +56,7 @@ public class DateVisitConcentrationService {
     private double queryValue(String place, String yearMonth, String dayOfWeek) {
         String fluxQuery = String.format(
                 "from(bucket: \"date_compare_population\") " +
-                        "|> range(start: 2024-01-30T00:00:00Z, stop: now()) " +
+                        "|> range(start: 2023-07-30T00:00:00Z, stop: now()) " +
                         "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"p_yyyymm\"] == \"%s\" and r[\"day_of_week\"] == \"%s\") " +
                         "|> group() " +
                         "|> group(columns: [\"place\", \"p_yyyymm\", \"day_of_week\"]) " +
@@ -70,7 +70,7 @@ public class DateVisitConcentrationService {
     private double queryMaxValue(String place) {
         String fluxQuery = String.format(
                 "from(bucket: \"date_compare_population\") " +
-                        "|> range(start: 2024-01-30T00:00:00Z, stop: now()) " +
+                        "|> range(start: 2023-07-30T00:00:00Z, stop: now()) " +
                         "|> filter(fn: (r) => r[\"place\"] == \"%s\") " +
                         "|> group() " +
                         "|> group(columns: [\"place\", \"p_yyyymm\", \"day_of_week\"]) " +
@@ -86,7 +86,7 @@ public class DateVisitConcentrationService {
     private double queryMinValue(String place) {
         String fluxQuery = String.format(
                 "from(bucket: \"date_compare_population\") " +
-                        "|> range(start: 2024-01-30T00:00:00Z, stop: now()) " +
+                        "|> range(start: 2023-07-30T00:00:00Z, stop: now()) " +
                         "|> filter(fn: (r) => r[\"place\"] == \"%s\") " +
                         "|> group() " +
                         "|> group(columns: [\"place\", \"p_yyyymm\", \"day_of_week\"]) " +
