@@ -7,15 +7,14 @@ import java.util.*;
 @Service
 public class RadarComparisonService {
 
-    // 영어 key를 한글로 매핑하는 Map
-    private static final Map<String, String> keyToKoreanMap = Map.of(
-            "population", "유동인구 수",
-            "stayVisit", "체류/방문 비율",
-            "congestion", "혼잡도 변화율",
-            "stayPerVisitor", "체류시간 대비 방문자 수",
-            "visitConcentration", "방문 집중도",
-            "stayTimeChange", "체류시간 변화율"
-    );
+    private static final LinkedHashMap<String, String> keyToKoreanMap = new LinkedHashMap<>() {{
+        put("population", "유동인구 수");
+        put("stayVisit", "체류/방문 비율");
+        put("congestion", "혼잡도 변화율");
+        put("stayPerVisitor", "체류시간 대비 방문자 수");
+        put("visitConcentration", "방문 집중도");
+        put("stayTimeChange", "체류시간 변화율");
+    }};
 
     public Map<String, String> findTopDifferences(Map<String, Integer> district1Overall, Map<String, Integer> district2Overall) {
         // 차이를 계산
@@ -25,17 +24,27 @@ public class RadarComparisonService {
             differences.put(key, diff);
         }
 
-        // 차이를 기준으로 내림차순 정렬
+        // 차이를 기준으로 내림차순 정렬, 값이 같으면 keyToKoreanMap의 순서를 기준으로 정렬
         List<Map.Entry<String, Double>> sortedDifferences = new ArrayList<>(differences.entrySet());
-        sortedDifferences.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+        sortedDifferences.sort((a, b) -> {
+            int compareDiff = Double.compare(b.getValue(), a.getValue());
+            if (compareDiff != 0) {
+                return compareDiff; // 차이가 다르면 내림차순 정렬
+            }
+            // 차이가 같으면 keyToKoreanMap의 순서에 따라 정렬
+            List<String> keyOrder = new ArrayList<>(keyToKoreanMap.keySet());
+            return Integer.compare(keyOrder.indexOf(a.getKey()), keyOrder.indexOf(b.getKey()));
+        });
 
-        // 가장 큰 차이와 두 번째로 큰 차이를 한글로 변환하여 반환
+        // 상위 3개의 차이를 keyToKoreanMap에서 한글로 변환하여 반환
         Map<String, String> result = new LinkedHashMap<>();
         result.put("first", keyToKoreanMap.getOrDefault(sortedDifferences.get(0).getKey(), sortedDifferences.get(0).getKey()));
         result.put("second", keyToKoreanMap.getOrDefault(sortedDifferences.get(1).getKey(), sortedDifferences.get(1).getKey()));
+        result.put("third", keyToKoreanMap.getOrDefault(sortedDifferences.get(2).getKey(), sortedDifferences.get(2).getKey()));
 
         return result;
     }
+
 
     public Map<String, Object> constructDistrictData(
             Integer districtUuid,
