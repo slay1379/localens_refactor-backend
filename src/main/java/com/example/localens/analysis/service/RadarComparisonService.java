@@ -73,4 +73,30 @@ public class RadarComparisonService {
 
         return response;
     }
+
+    public Map<String, Map<String, Integer>> calculateArrangedData(Map<String, Integer> district1Overall, Map<String, Integer> district2Overall) {
+        // 각 키별로 차이를 계산하여 정렬
+        List<String> sortedKeys = district1Overall.keySet().stream()
+                .sorted((key1, key2) -> {
+                    int diff1 = district1Overall.get(key1) - district2Overall.get(key1);
+                    int diff2 = district1Overall.get(key2) - district2Overall.get(key2);
+                    return Integer.compare(diff2, diff1); // 차이값 기준으로 내림차순 정렬
+                })
+                .toList();
+
+        // 정렬된 데이터를 사용해 arrangedData 생성
+        Map<String, Integer> district1ArrangedData = new LinkedHashMap<>();
+        Map<String, Integer> district2ArrangedData = new LinkedHashMap<>();
+        for (String key : sortedKeys) {
+            district1ArrangedData.put(key, district1Overall.get(key));
+            district2ArrangedData.put(key, district2Overall.get(key));
+        }
+
+        // 두 상권의 arrangedData를 반환
+        Map<String, Map<String, Integer>> arrangedData = new HashMap<>();
+        arrangedData.put("district1", district1ArrangedData);
+        arrangedData.put("district2", district2ArrangedData);
+
+        return arrangedData;
+    }
 }

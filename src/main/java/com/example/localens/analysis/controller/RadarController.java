@@ -106,6 +106,7 @@ public class RadarController {
                 radarInfoService
         );
 
+        // 두 상권의 districtInfo에서 불필요한 정보 제거
         Map<String, Object> district1Info = (Map<String, Object>) district1Data.get("districtInfo");
         district1Info.remove("latitude");
         district1Info.remove("longitude");
@@ -118,10 +119,17 @@ public class RadarController {
         Map<String, Integer> district1Overall = (Map<String, Integer>) district1Data.get("overallData");
         Map<String, Integer> district2Overall = (Map<String, Integer>) district2Data.get("overallData");
 
-        // RadarComparisonService를 사용하여 차이가 큰 두 항목 찾기
+        // arrangedData 계산
+        Map<String, Map<String, Integer>> arrangedData = radarComparisonService.calculateArrangedData(district1Overall, district2Overall);
+
+        // arrangedData 추가
+        district1Data.put("arrangedData", arrangedData.get("district1"));
+        district2Data.put("arrangedData", arrangedData.get("district2"));
+
+        // 가장 큰 두 항목의 차이를 찾기
         Map<String, String> topDifferences = radarComparisonService.findTopDifferences(district1Overall, district2Overall);
 
-        // 결과 반환
+        // 최종 결과 반환
         Map<String, Object> comparisonResult = new LinkedHashMap<>();
         comparisonResult.put("district1", district1Data);
         comparisonResult.put("district2", district2Data);
@@ -129,6 +137,7 @@ public class RadarController {
 
         return ResponseEntity.ok(comparisonResult);
     }
+
 
 //    @GetMapping("/{districtUuid}")
 //    public ResponseEntity<RadarTopTwoResponse> getOverallData(@PathVariable Integer districtUuid) {
