@@ -5,6 +5,7 @@ import com.example.localens.improvement.domain.EventMetrics;
 import com.example.localens.improvement.repository.EventMetricsRepository;
 import com.example.localens.improvement.repository.EventRepository;
 import com.example.localens.influx.InfluxDBService;
+import com.example.localens.s3.service.S3Service;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,14 +22,17 @@ public class ImprovementService {
     private final EventRepository eventRepository;
     private final EventMetricsRepository eventMetricsRepository;
     private final InfluxDBService influxDBService;
+    private final S3Service s3Service;
 
     @Autowired
     public ImprovementService(EventRepository eventRepository,
                               EventMetricsRepository eventMetricsRepository,
-                              InfluxDBService influxDBService) {
+                              InfluxDBService influxDBService,
+                              S3Service s3Service) {
         this.eventRepository = eventRepository;
         this.eventMetricsRepository = eventMetricsRepository;
         this.influxDBService = influxDBService;
+        this.s3Service = s3Service;
     }
 
     public Map<String, Object> recommendEventsWithDistrictMetrics(String districtUuidNow, String districtUuidTarget) {
@@ -38,6 +42,11 @@ public class ImprovementService {
         Map<String, Double> metricDifferences = calculateMetricDifferences(metricsA, metricsB);
         List<String> topTwoMetrics = getTopTwoMetrics(metricDifferences);
         List<Event> recommendedEvents = findEventByMetrics(topTwoMetrics);
+
+        recommendedEvents.forEach(event -> {
+            String imageUrl = s3Service.generatePresignedUrl("localens-image", event.getEventImg());
+            event.setEventImg(imageUrl);
+        });
 
         Map<String, List<Map<String, Double>>> eventMetricsData = new HashMap<>();
         for (Event event : recommendedEvents) {
