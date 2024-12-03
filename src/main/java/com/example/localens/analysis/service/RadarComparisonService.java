@@ -75,12 +75,34 @@ public class RadarComparisonService {
         districtInfo.put("latitude", commercialDistrict.getLatitude());
         districtInfo.put("longitude", commercialDistrict.getLongitude());
 
+        Map<String, Object> topTwo = findTopTwo(overallData);
+
         // 최종 반환 데이터
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("districtInfo", districtInfo);
         response.put("overallData", overallData);
+        response.put("topTwo", topTwo);
 
         return response;
+    }
+
+    public Map<String, Object> findTopTwo(Map<String, Integer> overallData) {
+        // 데이터를 차이값 기준으로 정렬
+        List<Map.Entry<String, Integer>> sortedEntries = new ArrayList<>(overallData.entrySet());
+        sortedEntries.sort((a, b) -> Integer.compare(b.getValue(), a.getValue()));
+
+        // 상위 2개의 데이터를 keyToKoreanMap으로 변환
+        Map<String, Object> topTwo = new LinkedHashMap<>();
+        topTwo.put("first", Map.of(
+                "name", keyToKoreanMap.getOrDefault(sortedEntries.get(0).getKey(), sortedEntries.get(0).getKey()),
+                "value", sortedEntries.get(0).getValue()
+        ));
+        topTwo.put("second", Map.of(
+                "name", keyToKoreanMap.getOrDefault(sortedEntries.get(1).getKey(), sortedEntries.get(1).getKey()),
+                "value", sortedEntries.get(1).getValue()
+        ));
+
+        return topTwo;
     }
 
     public Map<String, Map<String, Integer>> calculateArrangedData(Map<String, Integer> district1Overall, Map<String, Integer> district2Overall) {
