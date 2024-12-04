@@ -316,8 +316,23 @@ public class CustomFeatureController {
 
         List<CustomFeature> customFeatures = customFeatureService.getCustomFeaturesByUserUuid(userUuid);
 
+        Map<String, String> reverseFieldMapping = Map.of(
+                "population", "유동인구 수",
+                "stayVisit", "체류 방문 비율",
+                "congestion", "혼잡도 변화율",
+                "stayPerVisitor", "체류시간 대비 방문자 수",
+                "visitConcentration", "방문 집중도",
+                "stayTimeChange", "평균 체류시간 변화율"
+        );
+
         List<CustomFeatureDto> customFeatureDtos = customFeatures.stream()
-                .map(feature -> new CustomFeatureDto(feature.getFeatureName(), feature.getFormula()))
+                .map(feature -> {
+                    String formula = feature.getFormula();
+                    for (Map.Entry<String, String> entry : reverseFieldMapping.entrySet()) {
+                        formula = formula.replace(entry.getKey(), entry.getValue());
+                    }
+                    return new CustomFeatureDto(feature.getFeatureUuid(), feature.getFeatureName(), formula);
+                })
                 .collect(Collectors.toList());
 
         return new ResponseEntity<>(customFeatureDtos, HttpStatus.OK);
