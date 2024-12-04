@@ -1,5 +1,11 @@
 package com.example.localens.customfeature.controller;
 
+import com.example.localens.analysis.dto.RadarCongestionRateResponse;
+import com.example.localens.analysis.dto.RadarFloatingPopulationResponse;
+import com.example.localens.analysis.dto.RadarStayDurationChangeResponse;
+import com.example.localens.analysis.dto.RadarStayPerVisitorResponse;
+import com.example.localens.analysis.dto.RadarStayVisitRatioResponse;
+import com.example.localens.analysis.dto.RadarVisitConcentrationResponse;
 import com.example.localens.analysis.service.RadarComparisonService;
 import com.example.localens.analysis.service.RadarCongestionRateService;
 import com.example.localens.analysis.service.RadarFloatingPopulationService;
@@ -110,8 +116,8 @@ public class CustomFeatureController {
     public ResponseEntity<?> calculateCustomFeature(
             @RequestHeader("Authorization") String authorizationHeader,
             @RequestBody CustomFeatureCalculationRequest request,
-            @PathVariable String districtUuid1,
-            @PathVariable String districtUuid2) {
+            @PathVariable Integer districtUuid1,
+            @PathVariable Integer districtUuid2) {
 
         String token = tokenProvider.extractToken(authorizationHeader);
         if (token == null || !tokenProvider.validateToken(token)) {
@@ -129,28 +135,55 @@ public class CustomFeatureController {
         }
 
         try {
-            Map<String, Double> metrics1 = influxDBService.getLatestMetricsByDistrictUuid(districtUuid1);
-            Map<String, Double> metrics2 = influxDBService.getLatestMetricsByDistrictUuid(districtUuid2);
+            RadarFloatingPopulationResponse floatingPopulation1 = radarFloatingPopulationService.getNormalizedFloatingPopulation(districtUuid1);
+            RadarStayVisitRatioResponse stayVisitRatio1 = radarStayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid1);
+            RadarCongestionRateResponse congestionRate1 = radarCongestionRateService.getCongestionRateByDistrictUuid(districtUuid1);
+            RadarStayPerVisitorResponse stayPerVisitor1 = radarStayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid1);
+            RadarVisitConcentrationResponse visitConcentration1 = radarVisitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid1);
+            RadarStayDurationChangeResponse stayDurationChange1 = radarStayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid1);
+
+            RadarFloatingPopulationResponse floatingPopulation2 = radarFloatingPopulationService.getNormalizedFloatingPopulation(districtUuid2);
+            RadarStayVisitRatioResponse stayVisitRatio2 = radarStayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid2);
+            RadarCongestionRateResponse congestionRate2 = radarCongestionRateService.getCongestionRateByDistrictUuid(districtUuid2);
+            RadarStayPerVisitorResponse stayPerVisitor2 = radarStayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid2);
+            RadarVisitConcentrationResponse visitConcentration2 = radarVisitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid2);
+            RadarStayDurationChangeResponse stayDurationChange2 = radarStayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid2);
+
+            Map<String, Object> overallDataMap1 = new LinkedHashMap<>();
+            overallDataMap1.put("population", (int)(floatingPopulation1.get유동인구_수() * 100));
+            overallDataMap1.put("stayVisit", (int)(stayVisitRatio1.get체류_방문_비율() * 100));
+            overallDataMap1.put("congestion", (int)(congestionRate1.get혼잡도_변화율() * 100));
+            overallDataMap1.put("stayPerVisitor", (int)(stayPerVisitor1.get체류시간_대비_방문자_수() * 100));
+            overallDataMap1.put("visitConcentration", (int)(visitConcentration1.get방문_집중도() * 100));
+            overallDataMap1.put("stayTimeChange", (int)(stayDurationChange1.get평균_체류시간_변화율() * 100));
+
+            Map<String, Object> overallDataMap2 = new LinkedHashMap<>();
+            overallDataMap2.put("population", (int)(floatingPopulation2.get유동인구_수() * 100));
+            overallDataMap2.put("stayVisit", (int)(stayVisitRatio2.get체류_방문_비율() * 100));
+            overallDataMap2.put("congestion", (int)(congestionRate2.get혼잡도_변화율() * 100));
+            overallDataMap2.put("stayPerVisitor", (int)(stayPerVisitor2.get체류시간_대비_방문자_수() * 100));
+            overallDataMap2.put("visitConcentration", (int)(visitConcentration2.get방문_집중도() * 100));
+            overallDataMap2.put("stayTimeChange", (int)(stayDurationChange2.get평균_체류시간_변화율() * 100));
 
             Expression e1 = new ExpressionBuilder(formula)
-                    .variables(metrics1.keySet())
+                    .variables(overallDataMap1.keySet())
                     .build();
 
-            for (Map.Entry<String, Double> entry : metrics1.entrySet()) {
-                e1.setVariable(entry.getKey(), entry.getValue());
+            for (Map.Entry<String, Object> entry : overallDataMap1.entrySet()) {
+                e1.setVariable(entry.getKey(), ((Number) entry.getValue()).doubleValue());
             }
 
             double result1 = e1.evaluate();
 
             Expression e2 = new ExpressionBuilder(formula)
-                    .variables(metrics2.keySet())
+                    .variables(overallDataMap2.keySet())
                     .build();
 
-            for (Map.Entry<String, Double> entry : metrics2.entrySet()) {
-                e2.setVariable(entry.getKey(), entry.getValue());
+            for (Map.Entry<String, Object> entry : overallDataMap2.entrySet()) {
+                e2.setVariable(entry.getKey(), ((Number) entry.getValue()).doubleValue());
             }
 
-            double result2 = e1.evaluate();
+            double result2 = e2.evaluate();
 
             Optional<Member> memberOptional = memberRepository.findById(userUuid);
             if (memberOptional.isEmpty()) {
