@@ -132,18 +132,25 @@ public class CustomFeatureController {
             Map<String, Double> metrics1 = influxDBService.getLatestMetricsByDistrictUuid(districtUuid1);
             Map<String, Double> metrics2 = influxDBService.getLatestMetricsByDistrictUuid(districtUuid2);
 
-            Map<String, Double> variableValues = new HashMap<>(metrics1);
-            metrics2.forEach((key, value) -> variableValues.put("district2_" + key, value));
-
-            Expression e = new ExpressionBuilder(formula)
-                    .variables(variableValues.keySet())
+            Expression e1 = new ExpressionBuilder(formula)
+                    .variables(metrics1.keySet())
                     .build();
 
-            for (Map.Entry<String, Double> entry : variableValues.entrySet()) {
-                e.setVariable(entry.getKey(), entry.getValue());
+            for (Map.Entry<String, Double> entry : metrics1.entrySet()) {
+                e1.setVariable(entry.getKey(), entry.getValue());
             }
 
-            double result = e.evaluate();
+            double result1 = e1.evaluate();
+
+            Expression e2 = new ExpressionBuilder(formula)
+                    .variables(metrics2.keySet())
+                    .build();
+
+            for (Map.Entry<String, Double> entry : metrics2.entrySet()) {
+                e2.setVariable(entry.getKey(), entry.getValue());
+            }
+
+            double result2 = e1.evaluate();
 
             Optional<Member> memberOptional = memberRepository.findById(userUuid);
             if (memberOptional.isEmpty()) {
@@ -158,7 +165,11 @@ public class CustomFeatureController {
 
             customFeatureService.saveCustomFeature(customFeature, userUuid);
 
-            return new ResponseEntity<>(Collections.singletonMap("result", result), HttpStatus.OK);
+            Map<String, Object> response = new HashMap<>();
+            response.put("district1_result", result1);
+            response.put("district2_result", result2);
+
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception exception) {
             return new ResponseEntity<>("Error calculating formula", HttpStatus.BAD_REQUEST);
         }
