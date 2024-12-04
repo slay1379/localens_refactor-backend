@@ -12,8 +12,11 @@ import com.example.localens.customfeature.domain.CustomFeature;
 import com.example.localens.customfeature.domain.CustomFeatureCalculationRequest;
 import com.example.localens.customfeature.service.CustomFeatureService;
 import com.example.localens.influx.InfluxDBService;
+import com.example.localens.member.domain.Member;
 import com.example.localens.member.jwt.TokenProvider;
+import com.example.localens.member.repository.MemberRepository;
 import com.example.localens.member.service.MemberService;
+import com.influxdb.exceptions.UnauthorizedException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import net.objecthunter.exp4j.Expression;
@@ -51,6 +55,7 @@ public class CustomFeatureController {
     private final InfluxDBService influxDBService;
     private final MemberService memberService;
     private final TokenProvider tokenProvider;
+    private final MemberRepository memberRepository;
 
     private final RadarComparisonService radarComparisonService;
     private final RadarFloatingPopulationService radarFloatingPopulationService;
@@ -69,6 +74,7 @@ public class CustomFeatureController {
                                    InfluxDBService influxDBService,
                                    MemberService memberService,
                                    TokenProvider tokenProvider,
+                                   MemberRepository memberRepository,
                                    RadarComparisonService radarComparisonService,
                                    RadarFloatingPopulationService radarFloatingPopulationService,
                                    RadarStayVisitRatioService radarStayVisitRatioService,
@@ -81,6 +87,7 @@ public class CustomFeatureController {
         this.influxDBService = influxDBService;
         this.memberService = memberService;
         this.tokenProvider = tokenProvider;
+        this.memberRepository = memberRepository;
         this.radarComparisonService = radarComparisonService;
         this.radarFloatingPopulationService = radarFloatingPopulationService;
         this.radarStayVisitRatioService = radarStayVisitRatioService;
@@ -99,13 +106,24 @@ public class CustomFeatureController {
     //}
 
     // 커스텀 수식 계산
-    @PostMapping("/calculate/{districtUuid1}/{districtUuid2}")
-    public ResponseEntity<?> calculateCustomFeature(@RequestBody CustomFeatureCalculationRequest request,
-                                                    @PathVariable String districtUuid1,
-                                                    @PathVariable String districtUuid2) {
-        String formula = request.getFormula();
-        Map<String, Double> variables = request.getVariables();
+    @PostMapping("/calculateAndCreate/{districtUuid1}/{districtUuid2}")
+    public ResponseEntity<?> calculateCustomFeature(
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestBody CustomFeatureCalculationRequest request,
+            @PathVariable String districtUuid1,
+            @PathVariable String districtUuid2) {
 
+        String token = tokenProvider.extractToken(authorizationHeader);
+        if (token == null || !tokenProvider.validateToken(token)) {
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
+
+        UUID userUuid = tokenProvider.getCurrentUuid(token);
+        if (userUuid == null) {
+            return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
+        }
+
+        String formula = request.getFormula();
         if (!isValidFormula(formula)) {
             return new ResponseEntity<>("유효하지 않은 식", HttpStatus.BAD_REQUEST);
         }
@@ -126,6 +144,19 @@ public class CustomFeatureController {
             }
 
             double result = e.evaluate();
+
+            Optional<Member> memberOptional = memberRepository.findById(userUuid);
+            if (memberOptional.isEmpty()) {
+                return new ResponseEntity<>("해당 사용자를 찾을 수 없습니다", HttpStatus.BAD_REQUEST);
+            }
+            Member member = memberOptional.get();
+
+            CustomFeature customFeature = new CustomFeature();
+            customFeature.setFormula(formula);
+            customFeature.setMember(member);
+            customFeature.setFeatureName(request.getFeatureName());
+
+            customFeatureService.saveCustomFeature(customFeature, userUuid);
 
             return new ResponseEntity<>(Collections.singletonMap("result", result), HttpStatus.OK);
         } catch (Exception exception) {
@@ -229,7 +260,7 @@ public class CustomFeatureController {
     }
 
     // 피처 생성 처리
-    @PostMapping("/create")
+    /*@PostMapping("/create")
     public ResponseEntity<?> createCustomFeature(@RequestHeader("Authorization") String authorizationHeader,
                                                  @RequestBody CustomFeature customFeature) {
         String token = tokenProvider.extractToken(authorizationHeader);
@@ -248,7 +279,7 @@ public class CustomFeatureController {
 
         CustomFeature savedCustomFeature = customFeatureService.saveCustomFeature(customFeature, userUuid);
         return new ResponseEntity<>(savedCustomFeature, HttpStatus.CREATED);
-    }
+    }*/
 
     //피처 삭제
     @DeleteMapping("/{customFeatureId}")
