@@ -15,6 +15,7 @@ import com.example.localens.influx.InfluxDBService;
 import com.example.localens.member.jwt.TokenProvider;
 import com.example.localens.member.service.MemberService;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,6 +25,7 @@ import java.util.Set;
 import java.util.UUID;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
+import org.aspectj.weaver.ast.Expr;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -90,28 +92,36 @@ public class CustomFeatureController {
     }
 
     // 현재 지표 가져오기
-    @GetMapping("/metrics")
-    public ResponseEntity<List<String>> getAvailableMetrics() {
-        List<String> metrics = influxDBService.getFieldKeys(measurement);
-        return new ResponseEntity<>(metrics, HttpStatus.OK);
-    }
+    //@GetMapping("/metrics")
+    //public ResponseEntity<List<String>> getAvailableMetrics() {
+    //    List<String> metrics = influxDBService.getLatestMetricsByDistrictUuid();
+    //    return new ResponseEntity<>(metrics, HttpStatus.OK);
+    //}
 
     // 커스텀 수식 계산
-    @PostMapping("/calculate")
-    public ResponseEntity<?> calculateCustomFeature(@RequestBody CustomFeatureCalculationRequest request) {
+    @PostMapping("/calculate/{districtUuid1}/{districtUuid2}")
+    public ResponseEntity<?> calculateCustomFeature(@RequestBody CustomFeatureCalculationRequest request,
+                                                    @PathVariable String districtUuid1,
+                                                    @PathVariable String districtUuid2) {
         String formula = request.getFormula();
         Map<String, Double> variables = request.getVariables();
 
         if (!isValidFormula(formula)) {
-            return new ResponseEntity<>("Invalid formula", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("유효하지 않은 식", HttpStatus.BAD_REQUEST);
         }
 
         try {
+            Map<String, Double> metrics1 = influxDBService.getLatestMetricsByDistrictUuid(districtUuid1);
+            Map<String, Double> metrics2 = influxDBService.getLatestMetricsByDistrictUuid(districtUuid2);
+
+            Map<String, Double> variableValues = new HashMap<>(metrics1);
+            metrics2.forEach((key, value) -> variableValues.put("district2_" + key, value));
+
             Expression e = new ExpressionBuilder(formula)
-                    .variables(variables.keySet())
+                    .variables(variableValues.keySet())
                     .build();
 
-            for (Map.Entry<String, Double> entry : variables.entrySet()) {
+            for (Map.Entry<String, Double> entry : variableValues.entrySet()) {
                 e.setVariable(entry.getKey(), entry.getValue());
             }
 
