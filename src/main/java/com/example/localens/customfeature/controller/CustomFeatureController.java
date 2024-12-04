@@ -14,6 +14,7 @@ import com.example.localens.analysis.service.RadarStayDurationChangeService;
 import com.example.localens.analysis.service.RadarStayPerVisitorService;
 import com.example.localens.analysis.service.RadarStayVisitRatioService;
 import com.example.localens.analysis.service.RadarVisitConcentrationService;
+import com.example.localens.customfeature.DTO.CustomFeatureDto;
 import com.example.localens.customfeature.domain.CustomFeature;
 import com.example.localens.customfeature.domain.CustomFeatureCalculationRequest;
 import com.example.localens.customfeature.service.CustomFeatureService;
@@ -33,6 +34,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 import org.aspectj.weaver.ast.Expr;
@@ -301,7 +303,7 @@ public class CustomFeatureController {
 
     //현재 사용자 커스텀 피처 조회
     @GetMapping("/list")
-    public ResponseEntity<List<CustomFeature>> listCustomFeatures(@RequestHeader("Authorization") String authorizationHeader) {
+    public ResponseEntity<List<CustomFeatureDto>> listCustomFeatures(@RequestHeader("Authorization") String authorizationHeader) {
         String token = tokenProvider.extractToken(authorizationHeader);
         if (token == null || !tokenProvider.validateToken(token)) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
@@ -313,7 +315,12 @@ public class CustomFeatureController {
         }
 
         List<CustomFeature> customFeatures = customFeatureService.getCustomFeaturesByUserUuid(userUuid);
-        return new ResponseEntity<>(customFeatures, HttpStatus.OK);
+
+        List<CustomFeatureDto> customFeatureDtos = customFeatures.stream()
+                .map(feature -> new CustomFeatureDto(feature.getFeatureName(), feature.getFormula()))
+                .collect(Collectors.toList());
+
+        return new ResponseEntity<>(customFeatureDtos, HttpStatus.OK);
     }
 
     // 피처 생성 처리
