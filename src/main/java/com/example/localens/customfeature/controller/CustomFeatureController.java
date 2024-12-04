@@ -42,6 +42,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.parameters.P;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -223,11 +224,12 @@ public class CustomFeatureController {
         }
     }
 
-    @GetMapping("/compare/{districtUuid1}/{districtUuid2}")
+    @GetMapping("/compare/{districtUuid1}/{districtUuid2}/{customFeatureUuid}")
     public ResponseEntity<Map<String,Object>> compareDistricts(
             @RequestHeader("Authorization") String authorizationHeader,
             @PathVariable Integer districtUuid1,
-            @PathVariable Integer districtUuid2
+            @PathVariable Integer districtUuid2,
+            @PathVariable String customFeatureUuid
     ) {
         String token = tokenProvider.extractToken(authorizationHeader);
         if (token == null || !tokenProvider.validateToken(token)) {
@@ -275,28 +277,67 @@ public class CustomFeatureController {
         Map<String, Integer> district1Overall = (Map<String, Integer>) district1Data.get("overallData");
         Map<String, Integer> district2Overall = (Map<String, Integer>) district2Data.get("overallData");
 
+        CustomFeature customFeature = customFeatureService.getCustomFeatureById(customFeatureUuid);
+        String formula = customFeature.getFormula();
+
         // 사용자 커스텀 피처 조회 및 계산 후 기존 데이터에 추가
-        List<CustomFeature> customFeatures = customFeatureService.getCustomFeaturesByUserUuid(userUuid);
-        if (!customFeatures.isEmpty()) {
-            CustomFeature customFeature = customFeatures.get(0); // 첫 번째 커스텀 피처만 사용한다고 가정
+        RadarFloatingPopulationResponse floatingPopulation1 = radarFloatingPopulationService.getNormalizedFloatingPopulation(districtUuid1);
+        RadarStayVisitRatioResponse stayVisitRatio1 = radarStayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid1);
+        RadarCongestionRateResponse congestionRate1 = radarCongestionRateService.getCongestionRateByDistrictUuid(districtUuid1);
+        RadarStayPerVisitorResponse stayPerVisitor1 = radarStayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid1);
+        RadarVisitConcentrationResponse visitConcentration1 = radarVisitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid1);
+        RadarStayDurationChangeResponse stayDurationChange1 = radarStayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid1);
 
-            // 커스텀 피처 값 계산
-            double customFeatureValue1 = customFeatureService.calculateCustomFeatureValue(customFeature, districtUuid1);
-            double customFeatureValue2 = customFeatureService.calculateCustomFeatureValue(customFeature, districtUuid2);
+        RadarFloatingPopulationResponse floatingPopulation2 = radarFloatingPopulationService.getNormalizedFloatingPopulation(districtUuid2);
+        RadarStayVisitRatioResponse stayVisitRatio2 = radarStayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid2);
+        RadarCongestionRateResponse congestionRate2 = radarCongestionRateService.getCongestionRateByDistrictUuid(districtUuid2);
+        RadarStayPerVisitorResponse stayPerVisitor2 = radarStayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid2);
+        RadarVisitConcentrationResponse visitConcentration2 = radarVisitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid2);
+        RadarStayDurationChangeResponse stayDurationChange2 = radarStayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid2);
 
-            // 각 상권의 overallData에 커스텀 피처 추가
-            district1Overall.put(customFeature.getFeatureName(), (int) (customFeatureValue1 * 100));
-            district2Overall.put(customFeature.getFeatureName(), (int) (customFeatureValue2 * 100));
+        Map<String, Object> overallDataMap1 = new LinkedHashMap<>();
+        overallDataMap1.put("population", (int)(floatingPopulation1.get유동인구_수() * 100));
+        overallDataMap1.put("stayVisit", (int)(stayVisitRatio1.get체류_방문_비율() * 100));
+        overallDataMap1.put("congestion", (int)(congestionRate1.get혼잡도_변화율() * 100));
+        overallDataMap1.put("stayPerVisitor", (int)(stayPerVisitor1.get체류시간_대비_방문자_수() * 100));
+        overallDataMap1.put("visitConcentration", (int)(visitConcentration1.get방문_집중도() * 100));
+        overallDataMap1.put("stayTimeChange", (int)(stayDurationChange1.get평균_체류시간_변화율() * 100));
+
+        Map<String, Object> overallDataMap2 = new LinkedHashMap<>();
+        overallDataMap2.put("population", (int)(floatingPopulation2.get유동인구_수() * 100));
+        overallDataMap2.put("stayVisit", (int)(stayVisitRatio2.get체류_방문_비율() * 100));
+        overallDataMap2.put("congestion", (int)(congestionRate2.get혼잡도_변화율() * 100));
+        overallDataMap2.put("stayPerVisitor", (int)(stayPerVisitor2.get체류시간_대비_방문자_수() * 100));
+        overallDataMap2.put("visitConcentration", (int)(visitConcentration2.get방문_집중도() * 100));
+        overallDataMap2.put("stayTimeChange", (int)(stayDurationChange2.get평균_체류시간_변화율() * 100));
+
+        Expression e1 = new ExpressionBuilder(formula)
+                .variables(overallDataMap1.keySet())
+                .build();
+
+        for (Map.Entry<String, Object> entry : overallDataMap1.entrySet()) {
+            e1.setVariable(entry.getKey(), ((Number) entry.getValue()).doubleValue());
         }
 
-        // RadarComparisonService를 사용하여 차이가 큰 두 항목 찾기
-        Map<String, Map<String, Object>> topDifferences = radarComparisonService.findTopDifferences(district1Overall, district2Overall);
+        double result1 = e1.evaluate();
+
+        Expression e2 = new ExpressionBuilder(formula)
+                .variables(overallDataMap2.keySet())
+                .build();
+
+        for (Map.Entry<String, Object> entry : overallDataMap2.entrySet()) {
+            e2.setVariable(entry.getKey(), ((Number) entry.getValue()).doubleValue());
+        }
+
+        double result2 = e2.evaluate();
+
+        district1Info.put("customFeatureResult",result1);
+        district2Info.put("customFeatureResult",result2);
 
         // 결과 반환
         Map<String, Object> comparisonResult = new LinkedHashMap<>();
-        comparisonResult.put("district1", district1Data);
-        comparisonResult.put("district2", district2Data);
-        comparisonResult.put("largestDifferences", topDifferences);
+        comparisonResult.put("district1", district1Info);
+        comparisonResult.put("district2", district2Info);
 
         return ResponseEntity.ok(comparisonResult);
     }
