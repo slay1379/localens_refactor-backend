@@ -130,9 +130,9 @@ public class CustomFeatureController {
         }
 
         String formula = request.getFormula();
-        if (!isValidFormula(formula)) {
+        /*if (!isValidFormula(formula)) {
             return new ResponseEntity<>("유효하지 않은 식", HttpStatus.BAD_REQUEST);
-        }
+        }*/
 
         Map<String, String> fieldMapping = Map.of(
                 "유동인구 수", "population",
