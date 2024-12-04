@@ -134,6 +134,19 @@ public class CustomFeatureController {
             return new ResponseEntity<>("유효하지 않은 식", HttpStatus.BAD_REQUEST);
         }
 
+        Map<String, String> fieldMapping = Map.of(
+                "유동인구 수", "population",
+                "체류 방문 비율", "stayVisit",
+                "혼잡도 변화율", "congestion",
+                "체류시간 대비 방문자 수", "stayPerVisitor",
+                "방문 집중도", "visitConcentration",
+                "평균 체류시간 변화율", "stayTimeChange"
+        );
+
+        for (Map.Entry<String, String> entry : fieldMapping.entrySet()) {
+            formula = formula.replace(entry.getKey(), entry.getValue());
+        }
+
         try {
             RadarFloatingPopulationResponse floatingPopulation1 = radarFloatingPopulationService.getNormalizedFloatingPopulation(districtUuid1);
             RadarStayVisitRatioResponse stayVisitRatio1 = radarStayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid1);
