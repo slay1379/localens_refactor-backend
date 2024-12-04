@@ -218,7 +218,7 @@ public class CustomFeatureController {
     }
 
     // 피처 생성 처리
-    @PostMapping
+    @PostMapping("/create")
     public ResponseEntity<?> createCustomFeature(@RequestHeader("Authorization") String authorizationHeader,
                                                  @RequestBody CustomFeature customFeature) {
         String token = tokenProvider.extractToken(authorizationHeader);
