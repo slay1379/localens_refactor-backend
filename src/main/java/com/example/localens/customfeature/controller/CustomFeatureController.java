@@ -201,7 +201,7 @@ public class CustomFeatureController {
     }
 
     //현재 사용자 커스텀 피처 조회
-    @GetMapping
+    @GetMapping("/list")
     public ResponseEntity<List<CustomFeature>> listCustomFeatures(@RequestHeader("Authorization") String authorizationHeader) {
         String token = tokenProvider.extractToken(authorizationHeader);
         if (token == null || !tokenProvider.validateToken(token)) {
