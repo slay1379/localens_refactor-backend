@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -133,7 +134,7 @@ public class CustomFeatureController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
-        String userUuid = tokenProvider.getCurrentUuid(token);
+        UUID userUuid = tokenProvider.getCurrentUuid(token);
         if (userUuid == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -208,7 +209,7 @@ public class CustomFeatureController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
-        String userUuid = tokenProvider.getCurrentUuid(token);
+        UUID userUuid = tokenProvider.getCurrentUuid(token);
         if (userUuid == null) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
@@ -226,7 +227,7 @@ public class CustomFeatureController {
             return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
         }
 
-        String userUuid = tokenProvider.getCurrentUuid(token);
+        UUID userUuid = tokenProvider.getCurrentUuid(token);
         if (userUuid == null) {
             return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
         }
@@ -248,7 +249,7 @@ public class CustomFeatureController {
             return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
         }
 
-        String userUuid = tokenProvider.getCurrentUuid(token);
+        UUID userUuid = tokenProvider.getCurrentUuid(token);
         if (userUuid == null) {
             return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
         }

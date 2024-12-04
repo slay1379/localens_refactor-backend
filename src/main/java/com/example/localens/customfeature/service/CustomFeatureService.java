@@ -8,6 +8,7 @@ import com.example.localens.member.repository.MemberRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.UUID;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,7 +30,7 @@ public class CustomFeatureService {
         this.influxDBService = influxDBService;
     }
 
-    public CustomFeature saveCustomFeature(CustomFeature customFeature, String userUuid) {
+    public CustomFeature saveCustomFeature(CustomFeature customFeature, UUID userUuid) {
         Member member = memberRepository.findById(userUuid).orElse(null);
         if (member == null) {
             throw new IllegalArgumentException("Invalid user UUID");
@@ -38,7 +39,7 @@ public class CustomFeatureService {
         return customFeatureRepository.save(customFeature);
     }
 
-    public List<CustomFeature> getCustomFeaturesByUserUuid(String userUuid) {
+    public List<CustomFeature> getCustomFeaturesByUserUuid(UUID userUuid) {
         Member member = memberRepository.findById(userUuid).orElse(null);
         if (member == null) {
             return List.of();
