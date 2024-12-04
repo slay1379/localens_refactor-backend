@@ -126,8 +126,7 @@ public class RadarController {
         district1Data.put("arrangedData", arrangedData.get("district1"));
         district2Data.put("arrangedData", arrangedData.get("district2"));
 
-        // 가장 큰 두 항목의 차이를 찾기
-        Map<String, String> topDifferences = radarComparisonService.findTopDifferences(district1Overall, district2Overall);
+        Map<String, Map<String, Object>> topDifferences = radarComparisonService.findTopDifferences(district1Overall, district2Overall);
 
         // 최종 결과 반환
         Map<String, Object> comparisonResult = new LinkedHashMap<>();

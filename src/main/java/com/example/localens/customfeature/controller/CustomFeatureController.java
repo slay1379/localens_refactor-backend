@@ -189,7 +189,7 @@ public class CustomFeatureController {
         }
 
         // RadarComparisonService를 사용하여 차이가 큰 두 항목 찾기
-        Map<String, String> topDifferences = radarComparisonService.findTopDifferences(district1Overall, district2Overall);
+        Map<String, Map<String, Object>> topDifferences = radarComparisonService.findTopDifferences(district1Overall, district2Overall);
 
         // 결과 반환
         Map<String, Object> comparisonResult = new LinkedHashMap<>();

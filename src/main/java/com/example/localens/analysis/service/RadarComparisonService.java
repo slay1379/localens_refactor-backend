@@ -16,7 +16,7 @@ public class RadarComparisonService {
         put("stayTimeChange", "체류시간 변화율");
     }};
 
-    public Map<String, String> findTopDifferences(Map<String, Integer> district1Overall, Map<String, Integer> district2Overall) {
+    public Map<String, Map<String, Object>> findTopDifferences(Map<String, Integer> district1Overall, Map<String, Integer> district2Overall) {
         // 차이를 계산
         Map<String, Double> differences = new HashMap<>();
         for (String key : district1Overall.keySet()) {
@@ -36,11 +36,24 @@ public class RadarComparisonService {
             return Integer.compare(keyOrder.indexOf(a.getKey()), keyOrder.indexOf(b.getKey()));
         });
 
-        // 상위 3개의 차이를 keyToKoreanMap에서 한글로 변환하여 반환
-        Map<String, String> result = new LinkedHashMap<>();
-        result.put("first", keyToKoreanMap.getOrDefault(sortedDifferences.get(0).getKey(), sortedDifferences.get(0).getKey()));
-        result.put("second", keyToKoreanMap.getOrDefault(sortedDifferences.get(1).getKey(), sortedDifferences.get(1).getKey()));
-        result.put("third", keyToKoreanMap.getOrDefault(sortedDifferences.get(2).getKey(), sortedDifferences.get(2).getKey()));
+        Map<String, Map<String, Object>> result = new LinkedHashMap<>();
+        for (int i = 0; i < 3 && i < sortedDifferences.size(); i++) {
+            Map.Entry<String, Double> entry = sortedDifferences.get(i);
+            String key = entry.getKey();
+
+            Map<String, Object> differenceMap = new LinkedHashMap<>();
+            differenceMap.put("name", keyToKoreanMap.getOrDefault(key, key));
+            differenceMap.put("value1", district1Overall.get(key));
+            differenceMap.put("value2", district2Overall.get(key));
+
+            result.put("key" + (i + 1), differenceMap);
+        }
+
+//        // 상위 3개의 차이를 keyToKoreanMap에서 한글로 변환하여 반환
+//        Map<String, String> result = new LinkedHashMap<>();
+//        result.put("first", keyToKoreanMap.getOrDefault(sortedDifferences.get(0).getKey(), sortedDifferences.get(0).getKey()));
+//        result.put("second", keyToKoreanMap.getOrDefault(sortedDifferences.get(1).getKey(), sortedDifferences.get(1).getKey()));
+//        result.put("third", keyToKoreanMap.getOrDefault(sortedDifferences.get(2).getKey(), sortedDifferences.get(2).getKey()));
 
         return result;
     }
