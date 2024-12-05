@@ -192,11 +192,12 @@ public class ImprovementController {
                 after.put("overallData", district2Overall);
                 after.put("date", Collections.singletonList(parsedDate2.toString()));  // 날짜만 추가
 
+                String biggestDifferenceMetric = differences.get(0).getKey();
+                int biggestDifferenceValue = Math.abs(district2Overall.get(biggestDifferenceMetric) - district1Overall.get(biggestDifferenceMetric));
+
                 Map<String, Object> changedFeature = new LinkedHashMap<>();
-                changedFeature.put("name", topTwoDifferences);
-                changedFeature.put("value", topTwoDifferences.stream()
-                        .map(district1Overall::get) // 차이가 큰 지표의 값을 가져옴
-                        .collect(Collectors.toList()));
+                changedFeature.put("name", biggestDifferenceMetric);
+                changedFeature.put("value", biggestDifferenceValue);
 
                 Map<String, Object> beforeAndAfter = new LinkedHashMap<>();
                 beforeAndAfter.put("before", before);
