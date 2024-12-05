@@ -33,7 +33,7 @@ public class Event {
     @Column(name = "event_end")
     private LocalDateTime eventEnd;
 
-    @Column(name = "info", length = 255)
+    @Column(name = "info", length = 1000)
     private String info;
 
     @Column(name = "event_place_int")
