@@ -193,7 +193,7 @@ public class ImprovementController {
                 after.put("date", Collections.singletonList(parsedDate2.toString()));  // 날짜만 추가
 
                 String biggestDifferenceMetric = differences.get(0).getKey();
-                int biggestDifferenceValue = Math.abs(district2Overall.get(biggestDifferenceMetric) - district1Overall.get(biggestDifferenceMetric));
+                int biggestDifferenceValue = district2Overall.get(biggestDifferenceMetric) - district1Overall.get(biggestDifferenceMetric);
 
                 Map<String, Object> changedFeature = new LinkedHashMap<>();
                 changedFeature.put("name", biggestDifferenceMetric);
