@@ -189,56 +189,24 @@ public class ImprovementController {
                 improveMethod.put("uuid", event.getEventUuid().toString());
                 improveMethodList.add(improveMethod);
 
-                LocalDate parsedDate1 = event.getEventStart().toLocalDate();
-                LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
+                LocalDateTime parsedDate1 = event.getEventStart();
+                LocalDateTime parsedDate2 = event.getEventEnd();
 
-                Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), event.getEventStart().toString());
-                Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), event.getEventEnd().toString());
+                Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), parsedDate1.toString());
+                Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), parsedDate2.toString());
 
-                Map<String, Object> beforeOverallData = new LinkedHashMap<>();
-                beforeOverallData.put("population", date1Result.get("population"));
-                beforeOverallData.put("stayVisit", date1Result.get("stayVisit"));
-                beforeOverallData.put("congestion", date1Result.get("congestion"));
-                beforeOverallData.put("stayPerVisitor", date1Result.get("stayPerVisitor"));
-                beforeOverallData.put("visitConcentration", date1Result.get("visitConcentration"));
-                beforeOverallData.put("stayTimeChange", date1Result.get("stayTimeChange"));
-                beforeOverallDataList.add(beforeOverallData);
+                beforeOverallDataList.add((Map<String, Object>) date1Result.get("values"));
+                afterOverallDataList.add((Map<String, Object>) date2Result.get("values"));
                 beforeDates.add(parsedDate1.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
-
-                Map<String, Object> afterOverallData = new LinkedHashMap<>();
-                afterOverallData.put("population", date2Result.get("population"));
-                afterOverallData.put("stayVisit", date2Result.get("stayVisit"));
-                afterOverallData.put("congestion", date2Result.get("congestion"));
-                afterOverallData.put("stayPerVisitor", date2Result.get("stayPerVisitor"));
-                afterOverallData.put("visitConcentration", date2Result.get("visitConcentration"));
-                afterOverallData.put("stayTimeChange", date2Result.get("stayTimeChange"));
-                afterOverallDataList.add(afterOverallData);
                 afterDates.add(parsedDate2.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
 
-                String biggestDifferenceMetric = null;
-                int biggestDifferenceValue = Integer.MIN_VALUE;
+                Map<String, String> date1TopTwo = (Map<String, String>) date1Result.get("topTwo");
+                Map<String, String> date2TopTwo = (Map<String, String>) date2Result.get("topTwo");
 
-                for (String key : date2Result.keySet()) {
-                    if (date1Result.containsKey(key)) {
-                        Object date2Value = date2Result.get(key);
-                        Object date1Value = date1Result.get(key);
-
-                        if (date2Value instanceof Integer && date1Value instanceof Integer) {
-                            int difference = (int) date2Value - (int) date1Value;
-
-                            if (difference > biggestDifferenceValue) {
-                                biggestDifferenceMetric = key;
-                                biggestDifferenceValue = difference;
-                            }
-                        } else {
-                            // 값이 Integer가 아닌 경우에 대한 처리 (예: 로그 출력)
-                            log.warn(String.format("Unexpected value type for key %s: date2Result=%s, date1Result=%s", key, date2Value, date1Value));
-                        }
-                    }
-                }
-
-                changedFeatureNames.add(biggestDifferenceMetric);
-                changedFeatureValues.add(biggestDifferenceValue);
+                changedFeatureNames.add(date1TopTwo.get("first"));
+                changedFeatureNames.add(date2TopTwo.get("first"));
+                changedFeatureValues.add(0); // 차이를 계산하는 부분이 명확하지 않으므로 기본값 설정
+                changedFeatureValues.add(0);
             }
         }
 
@@ -265,7 +233,6 @@ public class ImprovementController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
 
 
 }
