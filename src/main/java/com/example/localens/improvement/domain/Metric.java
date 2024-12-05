@@ -15,9 +15,9 @@ import lombok.Setter;
 public class Metric {
 
     @Id
-    @Column(name = "metrics_uuid")
+    @Column(name = "metrics_uuid", columnDefinition = "BINARY(16)")
     private UUID metricsUuid;
 
-    @Column(name = "metrics_name")
+    @Column(name = "metrics_name", length = 100, nullable = false)
     private String metricsName;
 }
