@@ -170,8 +170,10 @@ public class ImprovementController {
 
         // 이벤트 정보를 improveMethod 리스트에 추가
         List<Map<String, Object>> improveMethodList = new ArrayList<>();
-        List<Map<String, Object>> beforeList = new ArrayList<>();
-        List<Map<String, Object>> afterList = new ArrayList<>();
+        List<Map<String, Object>> beforeOverallDataList = new ArrayList<>();
+        List<Map<String, Object>> afterOverallDataList = new ArrayList<>();
+        List<String> beforeDates = new ArrayList<>();
+        List<String> afterDates = new ArrayList<>();
         List<String> changedFeatureNames = new ArrayList<>();
         List<Integer> changedFeatureValues = new ArrayList<>();
 
@@ -190,15 +192,25 @@ public class ImprovementController {
                 LocalDate parsedDate1 = event.getEventStart().toLocalDate();
                 LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
 
-                Map<String, Object> before = new LinkedHashMap<>();
-                before.put("overallData", district1Overall);
-                before.put("date", parsedDate1.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
-                beforeList.add(before);
+                Map<String, Object> beforeOverallData = new LinkedHashMap<>();
+                beforeOverallData.put("population", district1Overall.get("population"));
+                beforeOverallData.put("stayVisit", district1Overall.get("stayVisit"));
+                beforeOverallData.put("congestion", district1Overall.get("congestion"));
+                beforeOverallData.put("stayPerVisitor", district1Overall.get("stayPerVisitor"));
+                beforeOverallData.put("visitConcentration", district1Overall.get("visitConcentration"));
+                beforeOverallData.put("stayTimeChange", district1Overall.get("stayTimeChange"));
+                beforeOverallDataList.add(beforeOverallData);
+                beforeDates.add(parsedDate1.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
 
-                Map<String, Object> after = new LinkedHashMap<>();
-                after.put("overallData", district2Overall);
-                after.put("date", parsedDate2.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
-                afterList.add(after);
+                Map<String, Object> afterOverallData = new LinkedHashMap<>();
+                afterOverallData.put("population", district2Overall.get("population"));
+                afterOverallData.put("stayVisit", district2Overall.get("stayVisit"));
+                afterOverallData.put("congestion", district2Overall.get("congestion"));
+                afterOverallData.put("stayPerVisitor", district2Overall.get("stayPerVisitor"));
+                afterOverallData.put("visitConcentration", district2Overall.get("visitConcentration"));
+                afterOverallData.put("stayTimeChange", district2Overall.get("stayTimeChange"));
+                afterOverallDataList.add(afterOverallData);
+                afterDates.add(parsedDate2.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
 
                 String biggestDifferenceMetric = null;
                 int biggestDifferenceValue = Integer.MIN_VALUE;
@@ -211,26 +223,32 @@ public class ImprovementController {
                         }
                     }
                 }
-
                 changedFeatureNames.add(biggestDifferenceMetric);
                 changedFeatureValues.add(biggestDifferenceValue);
             }
         }
 
+        Map<String, Object> before = new LinkedHashMap<>();
+        before.put("overallData", beforeOverallDataList);
+        before.put("date", beforeDates);
+
+        Map<String, Object> after = new LinkedHashMap<>();
+        after.put("overallData", afterOverallDataList);
+        after.put("date", afterDates);
+
         Map<String, Object> beforeAndAfter = new LinkedHashMap<>();
-        beforeAndAfter.put("before", beforeList);
-        beforeAndAfter.put("after", afterList);
-        beforeAndAfter.put("changedFeature", Map.of(
-                "name", changedFeatureNames,
-                "value", changedFeatureValues
-        ));
+        beforeAndAfter.put("before", before);
+        beforeAndAfter.put("after", after);
+
+        Map<String, Object> changedFeature = new LinkedHashMap<>();
+        changedFeature.put("name", changedFeatureNames);
+        changedFeature.put("value", changedFeatureValues);
 
         // 최종 응답 구성
         Map<String, Object> response = new HashMap<>();
-        response.put("eventsInfo", Map.of(
-                "ImproveMethod", improveMethodList,
-                "beforeAndAfter", beforeAndAfter
-        ));
+        response.put("ImproveMethod", improveMethodList);
+        response.put("beforeAndAfter", beforeAndAfter);
+        response.put("changedFeature", changedFeature);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
