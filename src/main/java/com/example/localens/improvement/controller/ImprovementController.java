@@ -168,52 +168,73 @@ public class ImprovementController {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일");
 
-        List<List<Object>> eventsInfo = new ArrayList<>();
+        // 이벤트 정보를 improveMethod 리스트에 추가
+        List<Map<String, Object>> improveMethodList = new ArrayList<>();
+        List<Map<String, Object>> beforeList = new ArrayList<>();
+        List<Map<String, Object>> afterList = new ArrayList<>();
+        List<String> changedFeatureNames = new ArrayList<>();
+        List<Integer> changedFeatureValues = new ArrayList<>();
+
         for (Event event : events) {
             if (event != null) {
+                Map<String, Object> improveMethod = new HashMap<>();
+                improveMethod.put("image", event.getEventImg());
+                improveMethod.put("name", event.getEventName());
+                improveMethod.put("date", event.getEventStart().format(formatter) + " ~ " + event.getEventEnd().format(formatter));
+                improveMethod.put("area", event.getEventPlace());
+                improveMethod.put("detail", event.getInfo());
+                improveMethod.put("uuid", event.getEventUuid().toString());
+                improveMethodList.add(improveMethod);
+
                 // beforeAndAfter 데이터 구성
                 LocalDate parsedDate1 = event.getEventStart().toLocalDate();
                 LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
 
-                List<Object> before = new ArrayList<>();
-                before.add(district1Overall);
-                before.add(parsedDate1.toString());  // 날짜 추가
+                Map<String, Object> before = new LinkedHashMap<>();
+                before.put("overallData", district1Overall);
+                before.put("date", parsedDate1.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
+                beforeList.add(before);
 
-                List<Object> after = new ArrayList<>();
-                after.add(district2Overall);
-                after.add(parsedDate2.toString());  // 날짜 추가
+                Map<String, Object> after = new LinkedHashMap<>();
+                after.put("overallData", district2Overall);
+                after.put("date", parsedDate2.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
+                afterList.add(after);
 
-                // 가장 큰 차이가 나는 지표와 그 값 계산
                 String biggestDifferenceMetric = null;
                 int biggestDifferenceValue = Integer.MIN_VALUE;
                 for (String key : district2Overall.keySet()) {
                     if (district1Overall.containsKey(key)) {
                         int difference = district2Overall.get(key) - district1Overall.get(key);
-                        if (Math.abs(difference) > Math.abs(biggestDifferenceValue)) {
+                        if (difference > biggestDifferenceValue) {
                             biggestDifferenceMetric = key;
                             biggestDifferenceValue = difference;
                         }
                     }
                 }
 
-                List<Object> changedFeature = new ArrayList<>();
-                changedFeature.add(biggestDifferenceMetric);
-                changedFeature.add(biggestDifferenceValue);
-
-                List<Object> beforeAndAfter = new ArrayList<>();
-                beforeAndAfter.add(before);
-                beforeAndAfter.add(after);
-                beforeAndAfter.add(changedFeature);
-
-                eventsInfo.add(beforeAndAfter);
+                changedFeatureNames.add(biggestDifferenceMetric);
+                changedFeatureValues.add(biggestDifferenceValue);
             }
         }
 
+        Map<String, Object> beforeAndAfter = new LinkedHashMap<>();
+        beforeAndAfter.put("before", beforeList);
+        beforeAndAfter.put("after", afterList);
+        beforeAndAfter.put("changedFeature", Map.of(
+                "name", changedFeatureNames,
+                "value", changedFeatureValues
+        ));
+
         // 최종 응답 구성
         Map<String, Object> response = new HashMap<>();
-        response.put("eventsInfo", eventsInfo);
+        response.put("eventsInfo", Map.of(
+                "ImproveMethod", improveMethodList,
+                "beforeAndAfter", beforeAndAfter
+        ));
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+
 
 }
