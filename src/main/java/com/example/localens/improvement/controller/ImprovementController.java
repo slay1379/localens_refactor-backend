@@ -187,8 +187,9 @@ public class ImprovementController {
                 improveMethod.put("uuid", event.getEventUuid().toString());
                 improveMethodList.add(improveMethod);
 
-                LocalDateTime parsedDate1 = dateController.parseKoreanDate(event.getEventStart().toString());
-                LocalDateTime parsedDate2 = dateController.parseKoreanDate(event.getEventStart().toString());
+                // beforeAndAfter 데이터 구성
+                LocalDate parsedDate1 = event.getEventStart().toLocalDate();
+                LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
 
                 Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), parsedDate1.toString());
                 Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), parsedDate2.toString());
@@ -216,7 +217,7 @@ public class ImprovementController {
                 String biggestDifferenceMetric = null;
                 int biggestDifferenceValue = Integer.MIN_VALUE;
                 for (String key : date2Result.keySet()) {
-                    if (district1Overall.containsKey(key)) {
+                    if (date1Result.containsKey(key)) {
                         int difference = (int) date2Result.get(key) - (int) date1Result.get(key);
                         if (difference > biggestDifferenceValue) {
                             biggestDifferenceMetric = key;
