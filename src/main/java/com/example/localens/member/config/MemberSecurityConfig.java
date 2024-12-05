@@ -64,7 +64,7 @@ public class MemberSecurityConfig {
                                 "/api/details/**",
                                 "/api/main/**",
                                 "/api/compare/**",
-                                "/api/improvements/**"
+                                "/api/improvements/recommendations/**"
                         ).permitAll() // 인증 없이 접근을 허용하는 엔드포인트
                         .anyRequest().authenticated() // 나머지 요청은 인증 필요
         );
