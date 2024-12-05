@@ -22,6 +22,7 @@ import com.example.localens.improvement.repository.EventMetricsRepository;
 import com.example.localens.improvement.repository.EventRepository;
 import com.example.localens.improvement.repository.MetricRepository;
 import com.example.localens.improvement.service.ImprovementService;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap;
@@ -168,28 +169,28 @@ public class ImprovementController {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일");
 
         // 이벤트 정보를 improveMethod 리스트에 추가
-        List<Map<String, Object>> improveMethod = new ArrayList<>();
+        List<Map<String, Object>> eventsInfo = new ArrayList<>();
         for (Event event : events) {
             if (event != null) {
-                Map<String, String> eventInfo = new HashMap<>();
-                eventInfo.put("eventUuid", event.getEventUuid().toString());
-                eventInfo.put("image", event.getEventImg());
-                eventInfo.put("name", event.getEventName());
-                eventInfo.put("date", event.getEventStart().format(formatter) + " ~ " + event.getEventEnd().format(formatter));
-                eventInfo.put("area", event.getEventPlace());
-                eventInfo.put("detail", event.getInfo());
+                Map<String, String> ImproveMethod = new HashMap<>();
+                ImproveMethod.put("eventUuid", event.getEventUuid().toString());
+                ImproveMethod.put("image", event.getEventImg());
+                ImproveMethod.put("name", event.getEventName());
+                ImproveMethod.put("date", event.getEventStart().format(formatter) + " ~ " + event.getEventEnd().format(formatter));
+                ImproveMethod.put("area", event.getEventPlace());
+                ImproveMethod.put("detail", event.getInfo());
 
                 // beforeAndAfter 데이터 구성
-                LocalDateTime parsedDate1 = dateController.parseKoreanDate(event.getEventStart().format(formatter));
-                LocalDateTime parsedDate2 = dateController.parseKoreanDate(event.getEventEnd().format(formatter));
+                LocalDate parsedDate1 = event.getEventStart().toLocalDate();
+                LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
 
                 Map<String, Object> before = new LinkedHashMap<>();
                 before.put("overallData", district1Overall);
-                before.put("date", Collections.singletonList(parsedDate1.toString()));
+                before.put("date", Collections.singletonList(parsedDate1.toString()));  // 날짜만 추가
 
                 Map<String, Object> after = new LinkedHashMap<>();
                 after.put("overallData", district2Overall);
-                after.put("date", Collections.singletonList(parsedDate2.toString()));
+                after.put("date", Collections.singletonList(parsedDate2.toString()));  // 날짜만 추가
 
                 Map<String, Object> changedFeature = new LinkedHashMap<>();
                 changedFeature.put("name", topTwoDifferences);
@@ -203,16 +204,16 @@ public class ImprovementController {
                 beforeAndAfter.put("changedFeature", changedFeature);
 
                 Map<String, Object> eventWithBeforeAfter = new HashMap<>();
-                eventWithBeforeAfter.put("eventInfo", eventInfo);
+                eventWithBeforeAfter.put("ImproveMethod", ImproveMethod);
                 eventWithBeforeAfter.put("beforeAndAfter", beforeAndAfter);
 
-                improveMethod.add(eventWithBeforeAfter);
+                eventsInfo.add(eventWithBeforeAfter);
             }
         }
 
         // 최종 응답 구성
         Map<String, Object> response = new HashMap<>();
-        response.put("improveMethod", improveMethod);
+        response.put("eventsInfo", eventsInfo);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
