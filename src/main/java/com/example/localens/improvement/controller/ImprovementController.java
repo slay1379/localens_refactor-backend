@@ -195,16 +195,19 @@ public class ImprovementController {
                 Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), event.getEventStart().toString());
                 Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), event.getEventEnd().toString());
 
-                beforeOverallDataList.add((Map<String, Object>) date1Result.get("values"));
-                afterOverallDataList.add((Map<String, Object>) date2Result.get("values"));
+                Map<String, Object> values1 = (Map<String, Object>) date1Result.get("values");
+                Map<String, Object> values2 = (Map<String, Object>) date2Result.get("values");
+
+                beforeOverallDataList.add(values1);
+                afterOverallDataList.add(values2);
                 beforeDates.add(parsedDate1.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
                 afterDates.add(parsedDate2.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
 
                 String biggestDifferenceMetric = null;
                 int biggestDifferenceValue = Integer.MIN_VALUE;
-                for (String key : date2Result.keySet()) {
-                    if (date1Result.containsKey(key)) {
-                        int difference = (int) date2Result.get(key) - (int) date1Result.get(key);
+                for (String key : values1.keySet()) {
+                    if (values2.containsKey(key)) {
+                        int difference = (int) values2.get(key) - (int) values1.get(key);
                         if (difference > biggestDifferenceValue) {
                             biggestDifferenceMetric = key;
                             biggestDifferenceValue = difference;
