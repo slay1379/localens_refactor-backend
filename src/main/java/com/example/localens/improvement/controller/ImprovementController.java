@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.aspectj.bridge.MessageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -63,6 +64,7 @@ public class ImprovementController {
     private final RadarStayDurationChangeService radarStayDurationChangeService;
     private final RadarInfoService radarInfoService;
     private final RadarVisitConcentrationService radarVisitConcentrationService;
+    private MessageUtil log;
 
     @Autowired
     public ImprovementController(ImprovementService improvementService,
@@ -215,15 +217,26 @@ public class ImprovementController {
 
                 String biggestDifferenceMetric = null;
                 int biggestDifferenceValue = Integer.MIN_VALUE;
+
                 for (String key : date2Result.keySet()) {
                     if (date1Result.containsKey(key)) {
-                        int difference = (int) date2Result.get(key) - (int) date1Result.get(key);
-                        if (difference > biggestDifferenceValue) {
-                            biggestDifferenceMetric = key;
-                            biggestDifferenceValue = difference;
+                        Object date2Value = date2Result.get(key);
+                        Object date1Value = date1Result.get(key);
+
+                        if (date2Value instanceof Integer && date1Value instanceof Integer) {
+                            int difference = (int) date2Value - (int) date1Value;
+
+                            if (difference > biggestDifferenceValue) {
+                                biggestDifferenceMetric = key;
+                                biggestDifferenceValue = difference;
+                            }
+                        } else {
+                            // 값이 Integer가 아닌 경우에 대한 처리 (예: 로그 출력)
+                            log.warn(String.format("Unexpected value type for key %s: date2Result=%s, date1Result=%s", key, date2Value, date1Value));
                         }
                     }
                 }
+
                 changedFeatureNames.add(biggestDifferenceMetric);
                 changedFeatureValues.add(biggestDifferenceValue);
             }
