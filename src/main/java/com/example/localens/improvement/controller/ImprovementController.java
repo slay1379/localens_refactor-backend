@@ -183,7 +183,8 @@ public class ImprovementController {
                 Map<String, Object> improveMethod = new HashMap<>();
                 improveMethod.put("image", event.getEventImg());
                 improveMethod.put("name", event.getEventName());
-                improveMethod.put("date", event.getEventStart().format(formatter) + " ~ " + event.getEventEnd().format(formatter));
+                improveMethod.put("date",
+                        event.getEventStart().format(formatter) + " ~ " + event.getEventEnd().format(formatter));
                 improveMethod.put("area", event.getEventPlace());
                 improveMethod.put("detail", event.getInfo());
                 improveMethod.put("uuid", event.getEventUuid().toString());
@@ -192,43 +193,65 @@ public class ImprovementController {
                 LocalDate parsedDate1 = event.getEventStart().toLocalDate();
                 LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
 
-                Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), event.getEventStart().toString());
-                Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), event.getEventEnd().toString());
+                Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(),
+                        event.getEventStart().toString());
+                Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(),
+                        event.getEventEnd().toString());
 
                 Object valuesObject1 = date1Result.get("values");
                 Object valuesObject2 = date2Result.get("values");
 
-                Map<String, Object> values1 = new HashMap<>();
-                Map<String, Object> values2 = new HashMap<>();
+                Map<String, Integer> values1 = new HashMap<>();
+                Map<String, Integer> values2 = new HashMap<>();
 
                 if (valuesObject1 instanceof Map) {
-                    values1 = (Map<String, Object>) valuesObject1;
+                    // Map<String, Object>로 안전하게 캐스팅하고 각 엔트리를 처리합니다.
+                    Map<?, ?> tempMap1 = (Map<?, ?>) valuesObject1;
+                    for (Map.Entry<?, ?> entry : tempMap1.entrySet()) {
+                        String key = entry.getKey().toString();
+                        Object value = entry.getValue();
+                        if (value instanceof Integer) {
+                            values1.put(key, (Integer) value);
+                        } else {
+                            log.error("date1Result에서 키 '" + key + "'의 값이 Integer가 아닙니다: " + value.getClass());
+                        }
+                    }
                 } else {
-                    log.error("Unexpected data type for 'values' in date1Result: " + (valuesObject1 != null ? valuesObject1.getClass() : "null"));
+                    log.error("date1Result의 'values'에 예상치 못한 데이터 타입이 있습니다: " + (valuesObject1 != null
+                            ? valuesObject1.getClass() : "null"));
                 }
 
                 if (valuesObject2 instanceof Map) {
-                    values2 = (Map<String, Object>) valuesObject2;
+                    Map<?, ?> tempMap2 = (Map<?, ?>) valuesObject2;
+                    for (Map.Entry<?, ?> entry : tempMap2.entrySet()) {
+                        String key = entry.getKey().toString();
+                        Object value = entry.getValue();
+                        if (value instanceof Integer) {
+                            values2.put(key, (Integer) value);
+                        } else {
+                            log.error("date2Result에서 키 '" + key + "'의 값이 Integer가 아닙니다: " + value.getClass());
+                        }
+                    }
                 } else {
-                    log.error("Unexpected data type for 'values' in date2Result: " + (valuesObject2 != null ? valuesObject2.getClass() : "null"));
+                    log.error("date2Result의 'values'에 예상치 못한 데이터 타입이 있습니다: " + (valuesObject2 != null
+                            ? valuesObject2.getClass() : "null"));
                 }
-
-                beforeOverallDataList.add(values1);
-                afterOverallDataList.add(values2);
-                beforeDates.add(parsedDate1.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
-                afterDates.add(parsedDate2.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
 
                 String biggestDifferenceMetric = null;
                 int biggestDifferenceValue = Integer.MIN_VALUE;
+
                 for (String key : values1.keySet()) {
                     if (values2.containsKey(key)) {
-                        int difference = (int) values2.get(key) - (int) values1.get(key);
+                        int value1 = values1.get(key);
+                        int value2 = values2.get(key);
+                        int difference = Math.abs(value2 - value1);
                         if (difference > biggestDifferenceValue) {
                             biggestDifferenceMetric = key;
                             biggestDifferenceValue = difference;
                         }
                     }
                 }
+
                 if (biggestDifferenceMetric != null) {
                     changedFeatureNames.add(biggestDifferenceMetric);
                     changedFeatureValues.add(biggestDifferenceValue);
