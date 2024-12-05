@@ -190,72 +190,45 @@ public class ImprovementController {
                 improveMethod.put("uuid", event.getEventUuid().toString());
                 improveMethodList.add(improveMethod);
 
-                LocalDate parsedDate1 = event.getEventStart().toLocalDate();
-                LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
-
                 Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(),
                         event.getEventStart().toString());
                 Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(),
                         event.getEventEnd().toString());
 
-                Object valuesObject1 = date1Result.get("values");
-                Object valuesObject2 = date2Result.get("values");
+                //미완성
+                Map<String, Integer> date1Values = (Map<String, Integer>) date1Result.get("values");
+                Map<String, Integer> date2Values = (Map<String, Integer>) date2Result.get("values");
 
-                Map<String, Integer> values1 = new HashMap<>();
-                Map<String, Integer> values2 = new HashMap<>();
-
-                if (valuesObject1 instanceof Map) {
-                    // Map<String, Object>로 안전하게 캐스팅하고 각 엔트리를 처리합니다.
-                    Map<?, ?> tempMap1 = (Map<?, ?>) valuesObject1;
-                    for (Map.Entry<?, ?> entry : tempMap1.entrySet()) {
-                        String key = entry.getKey().toString();
-                        Object value = entry.getValue();
-                        if (value instanceof Integer) {
-                            values1.put(key, (Integer) value);
-                        } else {
-                            log.error("date1Result에서 키 '" + key + "'의 값이 Integer가 아닙니다: " + value.getClass());
-                        }
-                    }
-                } else {
-                    log.error("date1Result의 'values'에 예상치 못한 데이터 타입이 있습니다: " + (valuesObject1 != null
-                            ? valuesObject1.getClass() : "null"));
-                }
-
-                if (valuesObject2 instanceof Map) {
-                    Map<?, ?> tempMap2 = (Map<?, ?>) valuesObject2;
-                    for (Map.Entry<?, ?> entry : tempMap2.entrySet()) {
-                        String key = entry.getKey().toString();
-                        Object value = entry.getValue();
-                        if (value instanceof Integer) {
-                            values2.put(key, (Integer) value);
-                        } else {
-                            log.error("date2Result에서 키 '" + key + "'의 값이 Integer가 아닙니다: " + value.getClass());
-                        }
-                    }
-                } else {
-                    log.error("date2Result의 'values'에 예상치 못한 데이터 타입이 있습니다: " + (valuesObject2 != null
-                            ? valuesObject2.getClass() : "null"));
-                }
-
-                String biggestDifferenceMetric = null;
-                int biggestDifferenceValue = Integer.MIN_VALUE;
-
-                for (String key : values1.keySet()) {
-                    if (values2.containsKey(key)) {
-                        int value1 = values1.get(key);
-                        int value2 = values2.get(key);
-                        int difference = Math.abs(value2 - value1);
-                        if (difference > biggestDifferenceValue) {
-                            biggestDifferenceMetric = key;
-                            biggestDifferenceValue = difference;
-                        }
+                // 두 날짜 간의 차이를 계산
+                Map<String, Integer> diffMap = new LinkedHashMap<>();
+                for (String key : date1Values.keySet()) {
+                    if (date2Values.containsKey(key)) {
+                        int v1 = date1Values.get(key);
+                        int v2 = date2Values.get(key);
+                        int diff = Math.abs(v2 - v1);
+                        diffMap.put(key, diff);
                     }
                 }
 
-                if (biggestDifferenceMetric != null) {
-                    changedFeatureNames.add(biggestDifferenceMetric);
-                    changedFeatureValues.add(biggestDifferenceValue);
+                // 차이가 가장 큰 지표 찾기
+                Map.Entry<String, Integer> maxEntry = diffMap.entrySet().stream()
+                        .max(Map.Entry.comparingByValue())
+                        .orElse(null);
+
+                if (maxEntry != null) {
+                    // 가장 큰 차이를 갖는 지표명, 값 추가
+                    changedFeatureNames.add(maxEntry.getKey());
+                    changedFeatureValues.add(maxEntry.getValue());
                 }
+
+                // 여기서 beforeOverallDataList, afterOverallDataList, beforeDates, afterDates에
+                // 필요한 값들을 추가하는 로직도 구현할 수 있음.
+                // 예: beforeOverallDataList.add(date1Values) 등
+
+                beforeOverallDataList.add(Map.of("values", date1Values));
+                afterOverallDataList.add(Map.of("values", date2Values));
+                beforeDates.add(event.getEventStart().format(formatter));
+                afterDates.add(event.getEventEnd().format(formatter));
             }
         }
 
