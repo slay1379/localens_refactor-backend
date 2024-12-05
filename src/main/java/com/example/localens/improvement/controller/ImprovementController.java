@@ -161,19 +161,16 @@ public class ImprovementController {
                 radarInfoService
         );
 
+        logger.debug("district1Data: {}", district1Data);
+        logger.debug("district2Data: {}", district2Data);
+
         // 두 상권의 overallData 추출
         Object district1OverallObj = district1Data.get("overallData");
         Object district2OverallObj = district2Data.get("overallData");
 
-        if (!(district1OverallObj instanceof Map) || !(district2OverallObj instanceof Map)) {
-            throw new ClassCastException("The overallData is not of expected type Map<String, Integer>");
-        }
-
-        @SuppressWarnings("unchecked")
-        Map<String, Integer> district1Overall = (Map<String, Integer>) district1OverallObj;
-
-        @SuppressWarnings("unchecked")
-        Map<String, Integer> district2Overall = (Map<String, Integer>) district2OverallObj;
+        // 안전하게 Map<String, Integer> 형태로 변환하는 헬퍼 메서드
+        Map<String, Integer> district1Overall = convertToIntegerMap(district1OverallObj);
+        Map<String, Integer> district2Overall = convertToIntegerMap(district2OverallObj);
 
         logger.debug("district1Overall: {}", district1Overall);
         logger.debug("district2Overall: {}", district2Overall);
@@ -240,10 +237,8 @@ public class ImprovementController {
                 improveMethod.put("uuid", event.getEventUuid().toString());
                 improveMethodList.add(improveMethod);
 
-
                 String startDateTimeStr = event.getEventStart().format(isoFormatter);
                 String endDateTimeStr = event.getEventEnd().format(isoFormatter);
-
 
                 int normalizedPopulationValue1 = datePopulationService.getNormalizedPopulationValue(event.getEventPlaceInt(), startDateTimeStr);
                 int visitConcentrationValue1 = dateVisitConcentrationService.getNormalizedPopulationValue(event.getEventPlaceInt(), startDateTimeStr);
@@ -275,7 +270,7 @@ public class ImprovementController {
                 values2.put("stayPerVisitor", stayPerVisitorValue2);
                 values2.put("stayTimeChange", stayDurationRateValue2);
 
-                //미완성
+                // 변화량 계산
                 Map<String, Integer> diffMap = new LinkedHashMap<>();
                 for (String key : values1.keySet()) {
                     if (values2.containsKey(key)) {
@@ -324,6 +319,29 @@ public class ImprovementController {
         response.put("beforeAndAfter", beforeAndAfter);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * overallData를 안전하게 Map<String, Integer> 형태로 변환하는 헬퍼 메서드.
+     * 해당 메서드는 전체 데이터 구조를 보장할 수 없으므로, 만약 값이 Integer가 아닌 경우 예외를 발생시킨다.
+     */
+    private Map<String, Integer> convertToIntegerMap(Object obj) {
+        if (!(obj instanceof Map)) {
+            throw new ClassCastException("The overallData is not of type Map");
+        }
+        Map<?, ?> rawMap = (Map<?, ?>) obj;
+        Map<String, Integer> intMap = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> entry : rawMap.entrySet()) {
+            if (!(entry.getKey() instanceof String)) {
+                throw new ClassCastException("Key is not a String: " + entry.getKey());
+            }
+            if (!(entry.getValue() instanceof Integer)) {
+                throw new ClassCastException("Value is not an Integer for key: " + entry.getKey()
+                        + ", found: " + entry.getValue().getClass().getName());
+            }
+            intMap.put((String) entry.getKey(), (Integer) entry.getValue());
+        }
+        return intMap;
     }
 
 }
