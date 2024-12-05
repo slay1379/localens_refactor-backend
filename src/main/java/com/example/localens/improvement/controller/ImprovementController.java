@@ -239,16 +239,15 @@ public class ImprovementController {
         Map<String, Object> beforeAndAfter = new LinkedHashMap<>();
         beforeAndAfter.put("before", before);
         beforeAndAfter.put("after", after);
-
-        Map<String, Object> changedFeature = new LinkedHashMap<>();
-        changedFeature.put("name", changedFeatureNames);
-        changedFeature.put("value", changedFeatureValues);
+        beforeAndAfter.put("changedFeature", Map.of(
+                "name", changedFeatureNames,
+                "value", changedFeatureValues
+        ));
 
         // 최종 응답 구성
         Map<String, Object> response = new HashMap<>();
         response.put("ImproveMethod", improveMethodList);
         response.put("beforeAndAfter", beforeAndAfter);
-        response.put("changedFeature", changedFeature);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
