@@ -187,12 +187,11 @@ public class ImprovementController {
                 improveMethod.put("uuid", event.getEventUuid().toString());
                 improveMethodList.add(improveMethod);
 
-                // beforeAndAfter 데이터 구성
                 LocalDate parsedDate1 = event.getEventStart().toLocalDate();
                 LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
 
-                Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), parsedDate1.toString());
-                Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), parsedDate2.toString());
+                Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), event.getEventStart().toString());
+                Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), event.getEventEnd().toString());
 
                 Map<String, Object> beforeOverallData = new LinkedHashMap<>();
                 beforeOverallData.put("population", date1Result.get("population"));
