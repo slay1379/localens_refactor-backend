@@ -164,7 +164,7 @@ public class ImprovementController {
         // 찾은 event_uuid를 통해 event 테이블에서 이벤트 정보 가져오기
         List<Event> events = eventRepository.findAllById(eventUuids);
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 HH:mm");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일");
 
         // 이벤트 정보를 improveMethod 리스트에 추가
         List<Map<String, Object>> improveMethod = new ArrayList<>();
