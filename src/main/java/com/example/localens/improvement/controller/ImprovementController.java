@@ -195,11 +195,11 @@ public class ImprovementController {
                 Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), event.getEventStart().toString());
                 Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), event.getEventEnd().toString());
 
-                Map<String, Object> values1 = (Map<String, Object>) date1Result.get("values");
-                Map<String, Object> values2 = (Map<String, Object>) date2Result.get("values");
+                Map<String, Integer> values1 = (Map<String, Integer>) date1Result.get("values");
+                Map<String, Integer> values2 = (Map<String, Integer>) date2Result.get("values");
 
-                beforeOverallDataList.add(values1);
-                afterOverallDataList.add(values2);
+                beforeOverallDataList.add((Map<String, Object>) date1Result.get("values"));
+                afterOverallDataList.add((Map<String, Object>) date2Result.get("values"));
                 beforeDates.add(parsedDate1.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
                 afterDates.add(parsedDate2.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
 
