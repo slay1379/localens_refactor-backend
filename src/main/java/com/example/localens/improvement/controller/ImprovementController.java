@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -171,6 +172,7 @@ public class ImprovementController {
         for (Event event : events) {
             if (event != null) {
                 Map<String, String> eventInfo = new HashMap<>();
+                eventInfo.put("eventUuid", event.getEventUuid().toString());
                 eventInfo.put("image", event.getEventImg());
                 eventInfo.put("name", event.getEventName());
                 eventInfo.put("date", event.getEventStart().format(formatter) + " ~ " + event.getEventEnd().format(formatter));
@@ -181,9 +183,24 @@ public class ImprovementController {
                 LocalDateTime parsedDate1 = dateController.parseKoreanDate(event.getEventStart().format(formatter));
                 LocalDateTime parsedDate2 = dateController.parseKoreanDate(event.getEventEnd().format(formatter));
 
+                Map<String, Object> before = new LinkedHashMap<>();
+                before.put("overallData", district1Overall);
+                before.put("date", Collections.singletonList(parsedDate1.toString()));
+
+                Map<String, Object> after = new LinkedHashMap<>();
+                after.put("overallData", district2Overall);
+                after.put("date", Collections.singletonList(parsedDate2.toString()));
+
+                Map<String, Object> changedFeature = new LinkedHashMap<>();
+                changedFeature.put("name", topTwoDifferences);
+                changedFeature.put("value", topTwoDifferences.stream()
+                        .map(district1Overall::get) // 차이가 큰 지표의 값을 가져옴
+                        .collect(Collectors.toList()));
+
                 Map<String, Object> beforeAndAfter = new LinkedHashMap<>();
-                beforeAndAfter.put("before", dateAnalysisService.calculateDateData(districtUuid1, parsedDate1.toString()));
-                beforeAndAfter.put("after", dateAnalysisService.calculateDateData(districtUuid2, parsedDate2.toString()));
+                beforeAndAfter.put("before", before);
+                beforeAndAfter.put("after", after);
+                beforeAndAfter.put("changedFeature", changedFeature);
 
                 Map<String, Object> eventWithBeforeAfter = new HashMap<>();
                 eventWithBeforeAfter.put("eventInfo", eventInfo);
