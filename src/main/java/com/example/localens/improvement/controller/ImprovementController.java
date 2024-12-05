@@ -189,11 +189,11 @@ public class ImprovementController {
                 improveMethod.put("uuid", event.getEventUuid().toString());
                 improveMethodList.add(improveMethod);
 
-                LocalDateTime parsedDate1 = event.getEventStart();
-                LocalDateTime parsedDate2 = event.getEventEnd();
+                LocalDate parsedDate1 = event.getEventStart().toLocalDate();
+                LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
 
-                Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), parsedDate1.toString());
-                Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), parsedDate2.toString());
+                Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), event.getEventStart().toString());
+                Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), event.getEventEnd().toString());
 
                 beforeOverallDataList.add((Map<String, Object>) date1Result.get("values"));
                 afterOverallDataList.add((Map<String, Object>) date2Result.get("values"));
