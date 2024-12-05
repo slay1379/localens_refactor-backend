@@ -264,15 +264,6 @@ public class CustomFeatureController {
                 radarInfoService
         );
 
-        // 두 상권의 기본 정보에서 위도와 경도 제거
-        Map<String, Object> district1Info = (Map<String, Object>) district1Data.get("districtInfo");
-        district1Info.remove("latitude");
-        district1Info.remove("longitude");
-
-        Map<String, Object> district2Info = (Map<String, Object>) district2Data.get("districtInfo");
-        district2Info.remove("latitude");
-        district2Info.remove("longitude");
-
         // 두 상권의 overallData 추출
         Map<String, Integer> district1Overall = (Map<String, Integer>) district1Data.get("overallData");
         Map<String, Integer> district2Overall = (Map<String, Integer>) district2Data.get("overallData");
@@ -331,13 +322,13 @@ public class CustomFeatureController {
 
         double result2 = e2.evaluate();
 
-        district1Info.put("customFeatureResult",result1);
-        district2Info.put("customFeatureResult",result2);
+        district1Overall.put("customFeatureResult",(int) result1);
+        district2Overall.put("customFeatureResult",(int)result2);
 
         // 결과 반환
         Map<String, Object> comparisonResult = new LinkedHashMap<>();
-        comparisonResult.put("district1", district1Info);
-        comparisonResult.put("district2", district2Info);
+        comparisonResult.put("district1", district1Overall);
+        comparisonResult.put("district2", district2Overall);
 
         return ResponseEntity.ok(comparisonResult);
     }
