@@ -167,38 +167,35 @@ public class ImprovementController {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일 HH:mm");
 
         // 이벤트 정보를 improveMethod 리스트에 추가
-        List<Map<String, String>> improveMethod = new ArrayList<>();
-        Map<String, Object> beforeAndAfter = new HashMap<>();
+        List<Map<String, Object>> improveMethod = new ArrayList<>();
         for (Event event : events) {
             if (event != null) {
                 Map<String, String> eventInfo = new HashMap<>();
                 eventInfo.put("image", event.getEventImg());
                 eventInfo.put("name", event.getEventName());
-                eventInfo.put("startdate", event.getEventStart().format(formatter));
-                eventInfo.put("enddate", event.getEventEnd().format(formatter));
+                eventInfo.put("date", event.getEventStart().format(formatter) + " ~ " + event.getEventEnd().format(formatter));
                 eventInfo.put("area", event.getEventPlace());
                 eventInfo.put("detail", event.getInfo());
 
-                improveMethod.add(eventInfo);
-
+                // beforeAndAfter 데이터 구성
                 LocalDateTime parsedDate1 = dateController.parseKoreanDate(event.getEventStart().format(formatter));
                 LocalDateTime parsedDate2 = dateController.parseKoreanDate(event.getEventEnd().format(formatter));
 
-                // 서비스 호출
-                Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), parsedDate1.toString());
-                Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), parsedDate2.toString());
+                Map<String, Object> beforeAndAfter = new LinkedHashMap<>();
+                beforeAndAfter.put("before", dateAnalysisService.calculateDateData(districtUuid1, parsedDate1.toString()));
+                beforeAndAfter.put("after", dateAnalysisService.calculateDateData(districtUuid2, parsedDate2.toString()));
 
-                beforeAndAfter.put("before", date1Result);
-                beforeAndAfter.put("after", date2Result);
+                Map<String, Object> eventWithBeforeAfter = new HashMap<>();
+                eventWithBeforeAfter.put("eventInfo", eventInfo);
+                eventWithBeforeAfter.put("beforeAndAfter", beforeAndAfter);
 
-
+                improveMethod.add(eventWithBeforeAfter);
             }
         }
 
         // 최종 응답 구성
         Map<String, Object> response = new HashMap<>();
         response.put("improveMethod", improveMethod);
-        response.put("beforeAndAfter", beforeAndAfter);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
