@@ -26,6 +26,7 @@ import com.example.localens.member.jwt.TokenProvider;
 import com.example.localens.member.repository.MemberRepository;
 import com.example.localens.member.service.MemberService;
 import com.influxdb.exceptions.UnauthorizedException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -348,19 +349,21 @@ public class CustomFeatureController {
 
         double result2 = e2.evaluate();
 
+        List<Integer> normalizeResult = normalize((int) result1, (int) result2);
+
         Map<String, Object> district1Response = new LinkedHashMap<>();
         district1Response.put("districtName", district1Info.get("districtName"));
         district1Response.put("clusterName", district1Info.get("clusterName"));
         district1Response.put("top", topTwo1);
         district1Response.put("overallData", district1Overall);
-        district1Response.put("customFeature", Map.of("name", customFeature.getFeatureName(), "value", (int) result1));
+        district1Response.put("customFeature", Map.of("name", customFeature.getFeatureName(), "value", normalizeResult.get(0)));
 
         Map<String, Object> district2Response = new LinkedHashMap<>();
         district2Response.put("districtName", district2Info.get("districtName"));
         district2Response.put("clusterName", district2Info.get("clusterName"));
         district2Response.put("top", topTwo2);
         district2Response.put("overallData", district2Overall);
-        district2Response.put("customFeature", Map.of("name", customFeature.getFeatureName(), "value", (int) result2));
+        district2Response.put("customFeature", Map.of("name", customFeature.getFeatureName(), "value", normalizeResult.get(1)));
 
         Map<String, Object> comparisonResult = new LinkedHashMap<>();
         comparisonResult.put("district1", district1Response);
@@ -471,5 +474,23 @@ public class CustomFeatureController {
         } catch (Exception exception) {
             return false;
         }
+    }
+
+    private List<Integer> normalize(int e1, int e2) {
+        List<Integer> result = new ArrayList<>();
+
+        // 최대값 계산
+        int max = Math.max(e1, e2);
+
+        // 최대값이 100보다 큰 경우 값을 비례적으로 나눠 정규화
+        if (max > 100) {
+            double scaleFactor = 100.0 / max;
+            e1 = (int) (e1 * scaleFactor);
+            e2 = (int) (e2 * scaleFactor);
+        }
+
+        result.add(e1);
+        result.add(e2);
+        return result;
     }
 }
