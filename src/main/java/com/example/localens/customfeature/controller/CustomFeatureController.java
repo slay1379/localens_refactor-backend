@@ -353,14 +353,14 @@ public class CustomFeatureController {
         district1Response.put("clusterName", district1Info.get("clusterName"));
         district1Response.put("top", topTwo1);
         district1Response.put("overallData", district1Overall);
-        district1Response.put(customFeature.getFeatureName(), (int) result1);
+        district1Response.put("customFeature", Map.of("name", customFeature.getFeatureName(), "value", (int) result1));
 
         Map<String, Object> district2Response = new LinkedHashMap<>();
         district2Response.put("districtName", district2Info.get("districtName"));
         district2Response.put("clusterName", district2Info.get("clusterName"));
         district2Response.put("top", topTwo2);
         district2Response.put("overallData", district2Overall);
-        district2Response.put(customFeature.getFeatureName(), (int) result2);
+        district2Response.put("customFeature", Map.of("name", customFeature.getFeatureName(), "value", (int) result2));
 
         Map<String, Object> comparisonResult = new LinkedHashMap<>();
         comparisonResult.put("district1", district1Response);
