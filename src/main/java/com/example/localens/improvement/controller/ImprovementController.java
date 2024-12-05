@@ -168,7 +168,6 @@ public class ImprovementController {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일");
 
-        // 이벤트 정보를 improveMethod 리스트에 추가
         List<Map<String, Object>> improveMethodList = new ArrayList<>();
         List<Map<String, Object>> beforeOverallDataList = new ArrayList<>();
         List<Map<String, Object>> afterOverallDataList = new ArrayList<>();
@@ -188,61 +187,38 @@ public class ImprovementController {
                 improveMethod.put("uuid", event.getEventUuid().toString());
                 improveMethodList.add(improveMethod);
 
-                // 수정된 부분: 이벤트마다 상권 데이터를 개별적으로 가져와서 비교하도록 변경
-                Map<String, Object> eventDistrict1Data = radarComparisonService.constructDistrictData(
-                        districtUuid1,
-                        radarFloatingPopulationService,
-                        radarStayVisitRatioService,
-                        radarCongestionRateService,
-                        radarStayPerVisitorService,
-                        radarVisitConcentrationService,
-                        radarStayDurationChangeService,
-                        radarInfoService
-                );
-
-                Map<String, Object> eventDistrict2Data = radarComparisonService.constructDistrictData(
-                        districtUuid2,
-                        radarFloatingPopulationService,
-                        radarStayVisitRatioService,
-                        radarCongestionRateService,
-                        radarStayPerVisitorService,
-                        radarVisitConcentrationService,
-                        radarStayDurationChangeService,
-                        radarInfoService
-                );
-
-                Map<String, Integer> eventDistrict1Overall = (Map<String, Integer>) eventDistrict1Data.get("overallData");
-                Map<String, Integer> eventDistrict2Overall = (Map<String, Integer>) eventDistrict2Data.get("overallData");
-
                 // beforeAndAfter 데이터 구성
                 LocalDate parsedDate1 = event.getEventStart().toLocalDate();
                 LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
 
+                Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), parsedDate1.toString());
+                Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(), parsedDate2.toString());
+
                 Map<String, Object> beforeOverallData = new LinkedHashMap<>();
-                beforeOverallData.put("population", eventDistrict1Overall.get("population"));
-                beforeOverallData.put("stayVisit", eventDistrict1Overall.get("stayVisit"));
-                beforeOverallData.put("congestion", eventDistrict1Overall.get("congestion"));
-                beforeOverallData.put("stayPerVisitor", eventDistrict1Overall.get("stayPerVisitor"));
-                beforeOverallData.put("visitConcentration", eventDistrict1Overall.get("visitConcentration"));
-                beforeOverallData.put("stayTimeChange", eventDistrict1Overall.get("stayTimeChange"));
+                beforeOverallData.put("population", date1Result.get("population"));
+                beforeOverallData.put("stayVisit", date1Result.get("stayVisit"));
+                beforeOverallData.put("congestion", date1Result.get("congestion"));
+                beforeOverallData.put("stayPerVisitor", date1Result.get("stayPerVisitor"));
+                beforeOverallData.put("visitConcentration", date1Result.get("visitConcentration"));
+                beforeOverallData.put("stayTimeChange", date1Result.get("stayTimeChange"));
                 beforeOverallDataList.add(beforeOverallData);
                 beforeDates.add(parsedDate1.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
 
                 Map<String, Object> afterOverallData = new LinkedHashMap<>();
-                afterOverallData.put("population", eventDistrict2Overall.get("population"));
-                afterOverallData.put("stayVisit", eventDistrict2Overall.get("stayVisit"));
-                afterOverallData.put("congestion", eventDistrict2Overall.get("congestion"));
-                afterOverallData.put("stayPerVisitor", eventDistrict2Overall.get("stayPerVisitor"));
-                afterOverallData.put("visitConcentration", eventDistrict2Overall.get("visitConcentration"));
-                afterOverallData.put("stayTimeChange", eventDistrict2Overall.get("stayTimeChange"));
+                afterOverallData.put("population", date2Result.get("population"));
+                afterOverallData.put("stayVisit", date2Result.get("stayVisit"));
+                afterOverallData.put("congestion", date2Result.get("congestion"));
+                afterOverallData.put("stayPerVisitor", date2Result.get("stayPerVisitor"));
+                afterOverallData.put("visitConcentration", date2Result.get("visitConcentration"));
+                afterOverallData.put("stayTimeChange", date2Result.get("stayTimeChange"));
                 afterOverallDataList.add(afterOverallData);
                 afterDates.add(parsedDate2.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
 
                 String biggestDifferenceMetric = null;
                 int biggestDifferenceValue = Integer.MIN_VALUE;
-                for (String key : eventDistrict2Overall.keySet()) {
-                    if (eventDistrict1Overall.containsKey(key)) {
-                        int difference = eventDistrict2Overall.get(key) - eventDistrict1Overall.get(key);
+                for (String key : date2Result.keySet()) {
+                    if (district1Overall.containsKey(key)) {
+                        int difference = (int) date2Result.get(key) - (int) date1Result.get(key);
                         if (difference > biggestDifferenceValue) {
                             biggestDifferenceMetric = key;
                             biggestDifferenceValue = difference;
@@ -277,7 +253,6 @@ public class ImprovementController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
 
 
 
