@@ -168,34 +168,33 @@ public class ImprovementController {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일");
 
-        // 이벤트 정보를 improveMethod 리스트에 추가
-        List<List<String>> improveMethods = new ArrayList<>();
-        List<Map<String, Object>> eventsInfo = new ArrayList<>();
+        List<List<Object>> eventsInfo = new ArrayList<>();
         for (Event event : events) {
             if (event != null) {
-                List<String> improveMethod = new ArrayList<>();
-                improveMethod.add(event.getEventUuid().toString());
-                improveMethod.add(event.getEventImg());
-                improveMethod.add(event.getEventName());
-                improveMethod.add(event.getEventStart().format(formatter) + " ~ " + event.getEventEnd().format(formatter));
-                improveMethod.add(event.getEventPlace());
-                improveMethod.add(event.getInfo());
-                improveMethods.add(improveMethod);
-
                 // beforeAndAfter 데이터 구성
                 LocalDate parsedDate1 = event.getEventStart().toLocalDate();
                 LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
 
                 List<Object> before = new ArrayList<>();
                 before.add(district1Overall);
-                before.add(Collections.singletonList(parsedDate1.toString()));  // 날짜만 추가
+                before.add(parsedDate1.toString());  // 날짜 추가
 
                 List<Object> after = new ArrayList<>();
                 after.add(district2Overall);
-                after.add(Collections.singletonList(parsedDate2.toString()));  // 날짜만 추가
+                after.add(parsedDate2.toString());  // 날짜 추가
 
-                String biggestDifferenceMetric = differences.get(0).getKey();
-                int biggestDifferenceValue = district2Overall.get(biggestDifferenceMetric) - district1Overall.get(biggestDifferenceMetric);
+                // 가장 큰 차이가 나는 지표와 그 값 계산
+                String biggestDifferenceMetric = null;
+                int biggestDifferenceValue = Integer.MIN_VALUE;
+                for (String key : district2Overall.keySet()) {
+                    if (district1Overall.containsKey(key)) {
+                        int difference = district2Overall.get(key) - district1Overall.get(key);
+                        if (Math.abs(difference) > Math.abs(biggestDifferenceValue)) {
+                            biggestDifferenceMetric = key;
+                            biggestDifferenceValue = difference;
+                        }
+                    }
+                }
 
                 List<Object> changedFeature = new ArrayList<>();
                 changedFeature.add(biggestDifferenceMetric);
@@ -206,16 +205,12 @@ public class ImprovementController {
                 beforeAndAfter.add(after);
                 beforeAndAfter.add(changedFeature);
 
-                Map<String, Object> eventWithBeforeAfter = new HashMap<>();
-                eventWithBeforeAfter.put("beforeAndAfter", beforeAndAfter);
-
-                eventsInfo.add(eventWithBeforeAfter);
+                eventsInfo.add(beforeAndAfter);
             }
         }
 
         // 최종 응답 구성
         Map<String, Object> response = new HashMap<>();
-        response.put("improveMethods", improveMethods);
         response.put("eventsInfo", eventsInfo);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
