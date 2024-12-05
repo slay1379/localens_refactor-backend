@@ -28,6 +28,7 @@ import com.example.localens.improvement.repository.EventMetricsRepository;
 import com.example.localens.improvement.repository.EventRepository;
 import com.example.localens.improvement.repository.MetricRepository;
 import com.example.localens.improvement.service.ImprovementService;
+import com.influxdb.client.domain.RoutesSystem;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -52,10 +53,19 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/improvements")
 public class ImprovementController {
+    private static final Logger logger = LoggerFactory.getLogger(ImprovementController.class);
 
     private final ImprovementService improvementService;
     private final MetricRepository metricRepository;
@@ -78,7 +88,6 @@ public class ImprovementController {
     private final DateCongestionRateService dateCongestionRateService;
     private final DateStayPerVisitorService dateStayPerVisitorService;
     private final DateStayDurationRateService dateStayDurationRateService;
-    private MessageUtil log;
 
     @Autowired
     public ImprovementController(ImprovementService improvementService,
@@ -123,6 +132,7 @@ public class ImprovementController {
         this.dateStayDurationRateService = dateStayDurationRateService;
     }
 
+
     @GetMapping("/recommendations/{districtUuid1}/{districtUuid2}")
     public ResponseEntity<Map<String, Object>> recommendEventsWithMetrics(
             @PathVariable Integer districtUuid1,
@@ -154,6 +164,9 @@ public class ImprovementController {
         // 두 상권의 overallData 추출
         Map<String, Integer> district1Overall = (Map<String, Integer>) district1Data.get("overallData");
         Map<String, Integer> district2Overall = (Map<String, Integer>) district2Data.get("overallData");
+
+        logger.debug("district1Overall: {}", district1Overall);
+        logger.debug("district2Overall: {}", district2Overall);
 
         // 각 지표의 차이를 계산하여 저장할 리스트 생성
         List<Map.Entry<String, Integer>> differences = new ArrayList<>();
@@ -195,6 +208,7 @@ public class ImprovementController {
         List<Event> events = eventRepository.findAllById(eventUuids);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일");
+        DateTimeFormatter isoFormatter = DateTimeFormatter.ISO_DATE_TIME; // ISO 포맷 변환을 위한 포맷터
 
         List<Map<String, Object>> improveMethodList = new ArrayList<>();
         List<Map<String, Object>> beforeOverallDataList = new ArrayList<>();
@@ -216,12 +230,17 @@ public class ImprovementController {
                 improveMethod.put("uuid", event.getEventUuid().toString());
                 improveMethodList.add(improveMethod);
 
-                int normalizedPopulationValue1 = datePopulationService.getNormalizedPopulationValue(event.getEventPlaceInt(), event.getEventStart().toLocalDate().toString());
-                int visitConcentrationValue1 = dateVisitConcentrationService.getNormalizedPopulationValue(event.getEventPlaceInt(), event.getEventStart().toLocalDate().toString());
-                int stayVisitRatioValue1 = dateStayVisitService.getNormalizedStayVisitRatio(event.getEventPlaceInt(), event.getEventStart().toLocalDate().toString());
-                int congestionRateValue1 = dateCongestionRateService.getNormalizedCongestionRate(event.getEventPlaceInt(), event.getEventStart().toLocalDate().toString());
-                int stayPerVisitorValue1 = dateStayPerVisitorService.getNormalizedStayPerVisitorValue(event.getEventPlaceInt(), event.getEventStart().toLocalDate().toString());
-                int stayDurationRateValue1 = dateStayDurationRateService.getNormalizedStayDurationRate(event.getEventPlaceInt(), event.getEventStart().toLocalDate().toString());
+
+                String startDateTimeStr = event.getEventStart().format(isoFormatter);
+                String endDateTimeStr = event.getEventEnd().format(isoFormatter);
+
+
+                int normalizedPopulationValue1 = datePopulationService.getNormalizedPopulationValue(event.getEventPlaceInt(), startDateTimeStr);
+                int visitConcentrationValue1 = dateVisitConcentrationService.getNormalizedPopulationValue(event.getEventPlaceInt(), startDateTimeStr);
+                int stayVisitRatioValue1 = dateStayVisitService.getNormalizedStayVisitRatio(event.getEventPlaceInt(), startDateTimeStr);
+                int congestionRateValue1 = dateCongestionRateService.getNormalizedCongestionRate(event.getEventPlaceInt(), startDateTimeStr);
+                int stayPerVisitorValue1 = dateStayPerVisitorService.getNormalizedStayPerVisitorValue(event.getEventPlaceInt(), startDateTimeStr);
+                int stayDurationRateValue1 = dateStayDurationRateService.getNormalizedStayDurationRate(event.getEventPlaceInt(), startDateTimeStr);
 
                 Map<String, Integer> values1 = new LinkedHashMap<>();
                 values1.put("population", normalizedPopulationValue1);
@@ -231,16 +250,16 @@ public class ImprovementController {
                 values1.put("stayPerVisitor", stayPerVisitorValue1);
                 values1.put("stayTimeChange", stayDurationRateValue1);
 
-                int normalizedPopulationValue2 = datePopulationService.getNormalizedPopulationValue(event.getEventPlaceInt(), event.getEventEnd().toLocalDate().toString());
-                int visitConcentrationValue2 = dateVisitConcentrationService.getNormalizedPopulationValue(event.getEventPlaceInt(), event.getEventEnd().toLocalDate().toString());
-                int stayVisitRatioValue2 = dateStayVisitService.getNormalizedStayVisitRatio(event.getEventPlaceInt(), event.getEventEnd().toLocalDate().toString());
-                int congestionRateValue2 = dateCongestionRateService.getNormalizedCongestionRate(event.getEventPlaceInt(), event.getEventEnd().toLocalDate().toString());
-                int stayPerVisitorValue2 = dateStayPerVisitorService.getNormalizedStayPerVisitorValue(event.getEventPlaceInt(), event.getEventEnd().toLocalDate().toString());
-                int stayDurationRateValue2 = dateStayDurationRateService.getNormalizedStayDurationRate(event.getEventPlaceInt(), event.getEventEnd().toLocalDate().toString());
+                int normalizedPopulationValue2 = datePopulationService.getNormalizedPopulationValue(event.getEventPlaceInt(), endDateTimeStr);
+                int visitConcentrationValue2 = dateVisitConcentrationService.getNormalizedPopulationValue(event.getEventPlaceInt(), endDateTimeStr);
+                int stayVisitRatioValue2 = dateStayVisitService.getNormalizedStayVisitRatio(event.getEventPlaceInt(), endDateTimeStr);
+                int congestionRateValue2 = dateCongestionRateService.getNormalizedCongestionRate(event.getEventPlaceInt(), endDateTimeStr);
+                int stayPerVisitorValue2 = dateStayPerVisitorService.getNormalizedStayPerVisitorValue(event.getEventPlaceInt(), endDateTimeStr);
+                int stayDurationRateValue2 = dateStayDurationRateService.getNormalizedStayDurationRate(event.getEventPlaceInt(), endDateTimeStr);
 
                 Map<String, Integer> values2 = new LinkedHashMap<>();
                 values2.put("population", normalizedPopulationValue2);
-                values2.put("stayVisit", stayVisitRatioValue2);
+                values2.put("stayVisit", visitConcentrationValue2);
                 values2.put("visitConcentration", visitConcentrationValue2);
                 values2.put("congestion", congestionRateValue2);
                 values2.put("stayPerVisitor", stayPerVisitorValue2);
@@ -252,7 +271,7 @@ public class ImprovementController {
                     if (values2.containsKey(key)) {
                         int v1 = values1.get(key);
                         int v2 = values2.get(key);
-                        int diff = v2-v1;
+                        int diff = v2 - v1;
                         diffMap.put(key, diff);
                     }
                 }
@@ -296,4 +315,5 @@ public class ImprovementController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
 }
