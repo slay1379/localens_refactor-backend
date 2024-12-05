@@ -162,8 +162,18 @@ public class ImprovementController {
         );
 
         // 두 상권의 overallData 추출
-        Map<String, Integer> district1Overall = (Map<String, Integer>) district1Data.get("overallData");
-        Map<String, Integer> district2Overall = (Map<String, Integer>) district2Data.get("overallData");
+        Object district1OverallObj = district1Data.get("overallData");
+        Object district2OverallObj = district2Data.get("overallData");
+
+        if (!(district1OverallObj instanceof Map) || !(district2OverallObj instanceof Map)) {
+            throw new ClassCastException("The overallData is not of expected type Map<String, Integer>");
+        }
+
+        @SuppressWarnings("unchecked")
+        Map<String, Integer> district1Overall = (Map<String, Integer>) district1OverallObj;
+
+        @SuppressWarnings("unchecked")
+        Map<String, Integer> district2Overall = (Map<String, Integer>) district2OverallObj;
 
         logger.debug("district1Overall: {}", district1Overall);
         logger.debug("district2Overall: {}", district2Overall);
@@ -259,7 +269,7 @@ public class ImprovementController {
 
                 Map<String, Integer> values2 = new LinkedHashMap<>();
                 values2.put("population", normalizedPopulationValue2);
-                values2.put("stayVisit", visitConcentrationValue2);
+                values2.put("stayVisit", stayVisitRatioValue2);
                 values2.put("visitConcentration", visitConcentrationValue2);
                 values2.put("congestion", congestionRateValue2);
                 values2.put("stayPerVisitor", stayPerVisitorValue2);
