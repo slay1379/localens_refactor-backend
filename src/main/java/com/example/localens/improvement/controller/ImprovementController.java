@@ -153,17 +153,17 @@ public class ImprovementController {
             topTwoDifferences.add(differences.get(0).getKey());
         }
 
-        List<String> metricsUuids = new ArrayList<>();
+        List<UUID> metricsUuids = new ArrayList<>();
         for (String metricName : topTwoDifferences) {
             // event_metric_change_type 테이블에서 metrics_uuid 찾기
-            String metricsUuid = metricRepository.findMetricsUuidByMetricsName(metricName);
+            UUID metricsUuid = metricRepository.findMetricsUuidByMetricsName(metricName);
             if (metricsUuid != null) {
                 metricsUuids.add(metricsUuid);
             }
         }
 
         // metrics_uuid가 event_metrics 테이블에서 매칭되는 event_uuid 찾기
-        List<String> eventUuids = eventMetricsRepository.findEventUuidByMetricsUuidIn(metricsUuids);
+        List<UUID> eventUuids = eventMetricsRepository.findEventUuidByMetricsUuidIn(metricsUuids);
 
         // 찾은 event_uuid를 통해 event 테이블에서 이벤트 정보 가져오기
         List<Event> events = eventRepository.findAllById(eventUuids);
@@ -200,13 +200,21 @@ public class ImprovementController {
                 beforeDates.add(parsedDate1.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
                 afterDates.add(parsedDate2.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
 
-                Map<String, String> date1TopTwo = (Map<String, String>) date1Result.get("topTwo");
-                Map<String, String> date2TopTwo = (Map<String, String>) date2Result.get("topTwo");
-
-                changedFeatureNames.add(date1TopTwo.get("first"));
-                changedFeatureNames.add(date2TopTwo.get("first"));
-                changedFeatureValues.add(0); // 차이를 계산하는 부분이 명확하지 않으므로 기본값 설정
-                changedFeatureValues.add(0);
+                String biggestDifferenceMetric = null;
+                int biggestDifferenceValue = Integer.MIN_VALUE;
+                for (String key : date2Result.keySet()) {
+                    if (date1Result.containsKey(key)) {
+                        int difference = (int) date2Result.get(key) - (int) date1Result.get(key);
+                        if (difference > biggestDifferenceValue) {
+                            biggestDifferenceMetric = key;
+                            biggestDifferenceValue = difference;
+                        }
+                    }
+                }
+                if (biggestDifferenceMetric != null) {
+                    changedFeatureNames.add(biggestDifferenceMetric);
+                    changedFeatureValues.add(biggestDifferenceValue);
+                }
             }
         }
 
@@ -233,6 +241,4 @@ public class ImprovementController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
-
 }
