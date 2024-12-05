@@ -1,6 +1,7 @@
 package com.example.localens.improvement.domain;
 
 import java.io.Serializable;
+import java.util.UUID;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,6 +10,6 @@ import lombok.Setter;
 @Setter
 @EqualsAndHashCode
 public class EventMetricsId implements Serializable {
-    private String eventUuid;
-    private String metricsUuid;
+    private UUID eventUuid;
+    private UUID metricsUuid;
 }

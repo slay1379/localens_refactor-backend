@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
+import java.util.UUID;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,10 +17,10 @@ import lombok.Setter;
 public class EventMetrics {
 
     @Id
-    @Column(name = "event_uuid")
-    private String eventUuid;
+    @Column(name = "event_uuid", columnDefinition = "BINARY(16)")
+    private UUID eventUuid;
 
     @Id
-    @Column(name = "metrics_uuid")
-    private String metricsUuid;
+    @Column(name = "metrics_uuid", columnDefinition = "BINARY(16)")
+    private UUID metricsUuid;
 }

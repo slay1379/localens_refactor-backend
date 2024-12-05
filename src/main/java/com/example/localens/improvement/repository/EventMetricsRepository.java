@@ -8,4 +8,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface EventMetricsRepository extends JpaRepository<EventMetrics, EventMetricsId> {
     List<EventMetrics> findByMetricsUuidIn(List<String> metricsUuids);
+
+    List<String> findEventUuidByMetricsUuidIn(List<String> metricsUuids);
 }

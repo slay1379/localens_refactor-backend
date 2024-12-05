@@ -115,7 +115,7 @@ public class DateController {
     /**
      * 한글 날짜를 LocalDateTime으로 변환하는 메서드
      */
-    private LocalDateTime parseKoreanDate(String date) {
+    public LocalDateTime parseKoreanDate(String date) {
         for (DateTimeFormatter formatter : DATE_FORMATTERS) {
             try {
                 // T00:00:00 제거, 날짜만 파싱
