@@ -190,22 +190,47 @@ public class ImprovementController {
                 improveMethod.put("uuid", event.getEventUuid().toString());
                 improveMethodList.add(improveMethod);
 
+                //미완성
                 Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(),
                         event.getEventStart().toString());
                 Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(),
                         event.getEventEnd().toString());
 
-                //미완성
-                Map<String, Integer> date1Values = (Map<String, Integer>) date1Result.get("values");
-                Map<String, Integer> date2Values = (Map<String, Integer>) date2Result.get("values");
-                /*
-                // 두 날짜 간의 차이를 계산
+            // values를 Object 형태로 받고, 그 중 Integer만 추출
+                Map<String, Object> date1ValuesTemp = (Map<String, Object>) date1Result.get("values");
+                Map<String, Object> date2ValuesTemp = (Map<String, Object>) date2Result.get("values");
+
+                Map<String, Integer> date1Values = new LinkedHashMap<>();
+                Map<String, Integer> date2Values = new LinkedHashMap<>();
+
+                for (Map.Entry<String, Object> entry : date1ValuesTemp.entrySet()) {
+                    Object value = entry.getValue();
+                    if (value instanceof Integer) {
+                        date1Values.put(entry.getKey(), (Integer) value);
+                    } else {
+                        // value가 Integer가 아닐 경우 처리 로직(로그 남기기 등)
+                        // 필요하다면 여기서 변환하거나 스킵
+                        System.out.println("date1ValuesTemp contains non-integer value for key: " + entry.getKey());
+                    }
+                }
+
+                for (Map.Entry<String, Object> entry : date2ValuesTemp.entrySet()) {
+                    Object value = entry.getValue();
+                    if (value instanceof Integer) {
+                        date2Values.put(entry.getKey(), (Integer) value);
+                    } else {
+                        // value가 Integer가 아닐 경우 처리 로직
+                        System.out.println("date2ValuesTemp contains non-integer value for key: " + entry.getKey());
+                    }
+                }
+
+// 이후 date1Values, date2Values를 사용하여 차이 계산
                 Map<String, Integer> diffMap = new LinkedHashMap<>();
                 for (String key : date1Values.keySet()) {
                     if (date2Values.containsKey(key)) {
                         int v1 = date1Values.get(key);
                         int v2 = date2Values.get(key);
-                        int diff = Mathv2 - v1);
+                        int diff = Math.abs(v2 - v1);
                         diffMap.put(key, diff);
                     }
                 }
@@ -223,7 +248,7 @@ public class ImprovementController {
 
                 // 여기서 beforeOverallDataList, afterOverallDataList, beforeDates, afterDates에
                 // 필요한 값들을 추가하는 로직도 구현할 수 있음.
-                // 예: beforeOverallDataList.add(date1Values) 등*/
+                // 예: beforeOverallDataList.add(date1Values) 등
 
                 beforeOverallDataList.add(Map.of("values", date1Values));
                 afterOverallDataList.add(Map.of("values", date2Values));
