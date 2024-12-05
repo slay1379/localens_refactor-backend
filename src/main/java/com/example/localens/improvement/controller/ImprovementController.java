@@ -189,17 +189,17 @@ public class ImprovementController {
             topTwoDifferences.add(differences.get(0).getKey());
         }
 
-        List<UUID> metricsUuids = new ArrayList<>();
+        List<String> metricsUuids = new ArrayList<>();
         for (String metricName : topTwoDifferences) {
             // event_metric_change_type 테이블에서 metrics_uuid 찾기
-            UUID metricsUuid = metricRepository.findMetricsUuidByMetricsName(metricName);
+            String metricsUuid = metricRepository.findMetricsUuidByMetricsName(metricName);
             if (metricsUuid != null) {
                 metricsUuids.add(metricsUuid);
             }
         }
 
         // metrics_uuid가 event_metrics 테이블에서 매칭되는 event_uuid 찾기
-        List<UUID> eventUuids = eventMetricsRepository.findEventUuidByMetricsUuidIn(metricsUuids);
+        List<String> eventUuids = eventMetricsRepository.findEventUuidByMetricsUuidIn(metricsUuids);
 
         // 찾은 event_uuid를 통해 event 테이블에서 이벤트 정보 가져오기
         List<Event> events = eventRepository.findAllById(eventUuids);
@@ -277,16 +277,15 @@ public class ImprovementController {
         Map<String, Object> beforeAndAfter = new LinkedHashMap<>();
         beforeAndAfter.put("before", before);
         beforeAndAfter.put("after", after);
-
-        Map<String, Object> changedFeature = new LinkedHashMap<>();
-        changedFeature.put("name", changedFeatureNames);
-        changedFeature.put("value", changedFeatureValues);
+        beforeAndAfter.put("changedFeature", Map.of(
+                "name", changedFeatureNames,
+                "value", changedFeatureValues
+        ));
 
         // 최종 응답 구성
         Map<String, Object> response = new HashMap<>();
         response.put("ImproveMethod", improveMethodList);
         response.put("beforeAndAfter", beforeAndAfter);
-        response.put("changedFeature", changedFeature);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
