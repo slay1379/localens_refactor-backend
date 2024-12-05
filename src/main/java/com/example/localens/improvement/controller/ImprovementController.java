@@ -169,43 +169,44 @@ public class ImprovementController {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일");
 
         // 이벤트 정보를 improveMethod 리스트에 추가
+        List<List<String>> improveMethods = new ArrayList<>();
         List<Map<String, Object>> eventsInfo = new ArrayList<>();
         for (Event event : events) {
             if (event != null) {
-                Map<String, String> ImproveMethod = new HashMap<>();
-                ImproveMethod.put("eventUuid", event.getEventUuid().toString());
-                ImproveMethod.put("image", event.getEventImg());
-                ImproveMethod.put("name", event.getEventName());
-                ImproveMethod.put("date", event.getEventStart().format(formatter) + " ~ " + event.getEventEnd().format(formatter));
-                ImproveMethod.put("area", event.getEventPlace());
-                ImproveMethod.put("detail", event.getInfo());
+                List<String> improveMethod = new ArrayList<>();
+                improveMethod.add(event.getEventUuid().toString());
+                improveMethod.add(event.getEventImg());
+                improveMethod.add(event.getEventName());
+                improveMethod.add(event.getEventStart().format(formatter) + " ~ " + event.getEventEnd().format(formatter));
+                improveMethod.add(event.getEventPlace());
+                improveMethod.add(event.getInfo());
+                improveMethods.add(improveMethod);
 
                 // beforeAndAfter 데이터 구성
                 LocalDate parsedDate1 = event.getEventStart().toLocalDate();
                 LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
 
-                Map<String, Object> before = new LinkedHashMap<>();
-                before.put("overallData", district1Overall);
-                before.put("date", Collections.singletonList(parsedDate1.toString()));  // 날짜만 추가
+                List<Object> before = new ArrayList<>();
+                before.add(district1Overall);
+                before.add(Collections.singletonList(parsedDate1.toString()));  // 날짜만 추가
 
-                Map<String, Object> after = new LinkedHashMap<>();
-                after.put("overallData", district2Overall);
-                after.put("date", Collections.singletonList(parsedDate2.toString()));  // 날짜만 추가
+                List<Object> after = new ArrayList<>();
+                after.add(district2Overall);
+                after.add(Collections.singletonList(parsedDate2.toString()));  // 날짜만 추가
 
                 String biggestDifferenceMetric = differences.get(0).getKey();
                 int biggestDifferenceValue = district2Overall.get(biggestDifferenceMetric) - district1Overall.get(biggestDifferenceMetric);
 
-                Map<String, Object> changedFeature = new LinkedHashMap<>();
-                changedFeature.put("name", biggestDifferenceMetric);
-                changedFeature.put("value", biggestDifferenceValue);
+                List<Object> changedFeature = new ArrayList<>();
+                changedFeature.add(biggestDifferenceMetric);
+                changedFeature.add(biggestDifferenceValue);
 
-                Map<String, Object> beforeAndAfter = new LinkedHashMap<>();
-                beforeAndAfter.put("before", before);
-                beforeAndAfter.put("after", after);
-                beforeAndAfter.put("changedFeature", changedFeature);
+                List<Object> beforeAndAfter = new ArrayList<>();
+                beforeAndAfter.add(before);
+                beforeAndAfter.add(after);
+                beforeAndAfter.add(changedFeature);
 
                 Map<String, Object> eventWithBeforeAfter = new HashMap<>();
-                eventWithBeforeAfter.put("ImproveMethod", ImproveMethod);
                 eventWithBeforeAfter.put("beforeAndAfter", beforeAndAfter);
 
                 eventsInfo.add(eventWithBeforeAfter);
@@ -214,6 +215,7 @@ public class ImprovementController {
 
         // 최종 응답 구성
         Map<String, Object> response = new HashMap<>();
+        response.put("improveMethods", improveMethods);
         response.put("eventsInfo", eventsInfo);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
