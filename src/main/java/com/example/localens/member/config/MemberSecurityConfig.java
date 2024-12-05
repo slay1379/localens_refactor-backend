@@ -63,7 +63,8 @@ public class MemberSecurityConfig {
                                 "/api/datecompare/**",
                                 "/api/details/**",
                                 "/api/main/**",
-                                "/api/compare/**"
+                                "/api/compare/**",
+                                "/api/improvements/**"
                         ).permitAll() // 인증 없이 접근을 허용하는 엔드포인트
                         .anyRequest().authenticated() // 나머지 요청은 인증 필요
         );
