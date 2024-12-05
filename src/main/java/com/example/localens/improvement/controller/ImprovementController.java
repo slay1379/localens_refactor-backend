@@ -8,6 +8,12 @@ import com.example.localens.analysis.dto.RadarStayPerVisitorResponse;
 import com.example.localens.analysis.dto.RadarStayVisitRatioResponse;
 import com.example.localens.analysis.dto.RadarVisitConcentrationResponse;
 import com.example.localens.analysis.service.DateAnalysisService;
+import com.example.localens.analysis.service.DateCongestionRateService;
+import com.example.localens.analysis.service.DatePopulationService;
+import com.example.localens.analysis.service.DateStayDurationRateService;
+import com.example.localens.analysis.service.DateStayPerVisitorService;
+import com.example.localens.analysis.service.DateStayVisitService;
+import com.example.localens.analysis.service.DateVisitConcentrationService;
 import com.example.localens.analysis.service.RadarComparisonService;
 import com.example.localens.analysis.service.RadarCongestionRateService;
 import com.example.localens.analysis.service.RadarFloatingPopulationService;
@@ -33,8 +39,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 import org.aspectj.bridge.MessageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -64,6 +72,12 @@ public class ImprovementController {
     private final RadarStayDurationChangeService radarStayDurationChangeService;
     private final RadarInfoService radarInfoService;
     private final RadarVisitConcentrationService radarVisitConcentrationService;
+    private final DatePopulationService datePopulationService;
+    private final DateVisitConcentrationService dateVisitConcentrationService;
+    private final DateStayVisitService dateStayVisitService;
+    private final DateCongestionRateService dateCongestionRateService;
+    private final DateStayPerVisitorService dateStayPerVisitorService;
+    private final DateStayDurationRateService dateStayDurationRateService;
     private MessageUtil log;
 
     @Autowired
@@ -80,7 +94,13 @@ public class ImprovementController {
                                  RadarStayPerVisitorService radarStayPerVisitorService,
                                  RadarStayDurationChangeService radarStayDurationChangeService,
                                  RadarInfoService radarInfoService,
-                                 RadarVisitConcentrationService radarVisitConcentrationService) {
+                                 RadarVisitConcentrationService radarVisitConcentrationService,
+                                 DatePopulationService datePopulationService,
+                                 DateVisitConcentrationService dateVisitConcentrationService,
+                                 DateStayVisitService dateStayVisitService,
+                                 DateCongestionRateService dateCongestionRateService,
+                                 DateStayPerVisitorService dateStayPerVisitorService,
+                                 DateStayDurationRateService dateStayDurationRateService) {
         this.improvementService = improvementService;
         this.metricRepository = metricRepository;
         this.eventRepository = eventRepository;
@@ -95,6 +115,12 @@ public class ImprovementController {
         this.radarStayDurationChangeService = radarStayDurationChangeService;
         this.radarInfoService = radarInfoService;
         this.radarVisitConcentrationService = radarVisitConcentrationService;
+        this.datePopulationService = datePopulationService;
+        this.dateVisitConcentrationService = dateVisitConcentrationService;
+        this.dateStayPerVisitorService = dateStayPerVisitorService;
+        this.dateCongestionRateService = dateCongestionRateService;
+        this.dateStayVisitService = dateStayVisitService;
+        this.dateStayDurationRateService = dateStayDurationRateService;
     }
 
     @GetMapping("/recommendations/{districtUuid1}/{districtUuid2}")
@@ -190,68 +216,58 @@ public class ImprovementController {
                 improveMethod.put("uuid", event.getEventUuid().toString());
                 improveMethodList.add(improveMethod);
 
+                int normalizedPopulationValue1 = datePopulationService.getNormalizedPopulationValue(event.getEventPlaceInt(), event.getEventStart().toLocalDate().toString());
+                int visitConcentrationValue1 = dateVisitConcentrationService.getNormalizedPopulationValue(event.getEventPlaceInt(), event.getEventStart().toLocalDate().toString());
+                int stayVisitRatioValue1 = dateStayVisitService.getNormalizedStayVisitRatio(event.getEventPlaceInt(), event.getEventStart().toLocalDate().toString());
+                int congestionRateValue1 = dateCongestionRateService.getNormalizedCongestionRate(event.getEventPlaceInt(), event.getEventStart().toLocalDate().toString());
+                int stayPerVisitorValue1 = dateStayPerVisitorService.getNormalizedStayPerVisitorValue(event.getEventPlaceInt(), event.getEventStart().toLocalDate().toString());
+                int stayDurationRateValue1 = dateStayDurationRateService.getNormalizedStayDurationRate(event.getEventPlaceInt(), event.getEventStart().toLocalDate().toString());
+
+                Map<String, Integer> values1 = new LinkedHashMap<>();
+                values1.put("population", normalizedPopulationValue1);
+                values1.put("stayVisit", stayVisitRatioValue1);
+                values1.put("visitConcentration", visitConcentrationValue1);
+                values1.put("congestion", congestionRateValue1);
+                values1.put("stayPerVisitor", stayPerVisitorValue1);
+                values1.put("stayTimeChange", stayDurationRateValue1);
+
+                int normalizedPopulationValue2 = datePopulationService.getNormalizedPopulationValue(event.getEventPlaceInt(), event.getEventEnd().toLocalDate().toString());
+                int visitConcentrationValue2 = dateVisitConcentrationService.getNormalizedPopulationValue(event.getEventPlaceInt(), event.getEventEnd().toLocalDate().toString());
+                int stayVisitRatioValue2 = dateStayVisitService.getNormalizedStayVisitRatio(event.getEventPlaceInt(), event.getEventEnd().toLocalDate().toString());
+                int congestionRateValue2 = dateCongestionRateService.getNormalizedCongestionRate(event.getEventPlaceInt(), event.getEventEnd().toLocalDate().toString());
+                int stayPerVisitorValue2 = dateStayPerVisitorService.getNormalizedStayPerVisitorValue(event.getEventPlaceInt(), event.getEventEnd().toLocalDate().toString());
+                int stayDurationRateValue2 = dateStayDurationRateService.getNormalizedStayDurationRate(event.getEventPlaceInt(), event.getEventEnd().toLocalDate().toString());
+
+                Map<String, Integer> values2 = new LinkedHashMap<>();
+                values2.put("population", normalizedPopulationValue2);
+                values2.put("stayVisit", stayVisitRatioValue2);
+                values2.put("visitConcentration", visitConcentrationValue2);
+                values2.put("congestion", congestionRateValue2);
+                values2.put("stayPerVisitor", stayPerVisitorValue2);
+                values2.put("stayTimeChange", stayDurationRateValue2);
+
                 //미완성
-                Map<String, Object> date1Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(),
-                        event.getEventStart().toString());
-                Map<String, Object> date2Result = dateAnalysisService.calculateDateData(event.getEventPlaceInt(),
-                        event.getEventEnd().toString());
-
-            // values를 Object 형태로 받고, 그 중 Integer만 추출
-                Map<String, Object> date1ValuesTemp = (Map<String, Object>) date1Result.get("values");
-                Map<String, Object> date2ValuesTemp = (Map<String, Object>) date2Result.get("values");
-
-                Map<String, Integer> date1Values = new LinkedHashMap<>();
-                Map<String, Integer> date2Values = new LinkedHashMap<>();
-
-                for (Map.Entry<String, Object> entry : date1ValuesTemp.entrySet()) {
-                    Object value = entry.getValue();
-                    if (value instanceof Integer) {
-                        date1Values.put(entry.getKey(), (Integer) value);
-                    } else {
-                        // value가 Integer가 아닐 경우 처리 로직(로그 남기기 등)
-                        // 필요하다면 여기서 변환하거나 스킵
-                        System.out.println("date1ValuesTemp contains non-integer value for key: " + entry.getKey());
-                    }
-                }
-
-                for (Map.Entry<String, Object> entry : date2ValuesTemp.entrySet()) {
-                    Object value = entry.getValue();
-                    if (value instanceof Integer) {
-                        date2Values.put(entry.getKey(), (Integer) value);
-                    } else {
-                        // value가 Integer가 아닐 경우 처리 로직
-                        System.out.println("date2ValuesTemp contains non-integer value for key: " + entry.getKey());
-                    }
-                }
-
-// 이후 date1Values, date2Values를 사용하여 차이 계산
                 Map<String, Integer> diffMap = new LinkedHashMap<>();
-                for (String key : date1Values.keySet()) {
-                    if (date2Values.containsKey(key)) {
-                        int v1 = date1Values.get(key);
-                        int v2 = date2Values.get(key);
-                        int diff = Math.abs(v2 - v1);
+                for (String key : values1.keySet()) {
+                    if (values2.containsKey(key)) {
+                        int v1 = values1.get(key);
+                        int v2 = values2.get(key);
+                        int diff = v2-v1;
                         diffMap.put(key, diff);
                     }
                 }
 
-                // 차이가 가장 큰 지표 찾기
-                Map.Entry<String, Integer> maxEntry = diffMap.entrySet().stream()
-                        .max(Map.Entry.comparingByValue())
+                Entry<String, Integer> maxEntry = diffMap.entrySet().stream()
+                        .max(Entry.comparingByValue())
                         .orElse(null);
 
                 if (maxEntry != null) {
-                    // 가장 큰 차이를 갖는 지표명, 값 추가
                     changedFeatureNames.add(maxEntry.getKey());
                     changedFeatureValues.add(maxEntry.getValue());
                 }
 
-                // 여기서 beforeOverallDataList, afterOverallDataList, beforeDates, afterDates에
-                // 필요한 값들을 추가하는 로직도 구현할 수 있음.
-                // 예: beforeOverallDataList.add(date1Values) 등
-
-                beforeOverallDataList.add(Map.of("values", date1Values));
-                afterOverallDataList.add(Map.of("values", date2Values));
+                beforeOverallDataList.add(Map.of("values", values1));
+                afterOverallDataList.add(Map.of("values", values2));
                 beforeDates.add(event.getEventStart().format(formatter));
                 afterDates.add(event.getEventEnd().format(formatter));
             }
