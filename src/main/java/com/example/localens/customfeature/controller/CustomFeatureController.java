@@ -1,5 +1,6 @@
 package com.example.localens.customfeature.controller;
 
+import com.example.localens.analysis.domain.Pair;
 import com.example.localens.analysis.dto.RadarCongestionRateResponse;
 import com.example.localens.analysis.dto.RadarFloatingPopulationResponse;
 import com.example.localens.analysis.dto.RadarStayDurationChangeResponse;
@@ -14,6 +15,7 @@ import com.example.localens.analysis.service.RadarStayDurationChangeService;
 import com.example.localens.analysis.service.RadarStayPerVisitorService;
 import com.example.localens.analysis.service.RadarStayVisitRatioService;
 import com.example.localens.analysis.service.RadarVisitConcentrationService;
+import com.example.localens.analysis.util.RadarUtils;
 import com.example.localens.customfeature.DTO.CustomFeatureDto;
 import com.example.localens.customfeature.domain.CustomFeature;
 import com.example.localens.customfeature.domain.CustomFeatureCalculationRequest;
@@ -264,6 +266,14 @@ public class CustomFeatureController {
                 radarInfoService
         );
 
+        Map<String, Object> district1Info = (Map<String, Object>) district1Data.get("districtInfo");
+        district1Info.remove("latitude");
+        district1Info.remove("longitude");
+
+        Map<String, Object> district2Info = (Map<String, Object>) district2Data.get("districtInfo");
+        district2Info.remove("latitude");
+        district2Info.remove("longitude");
+
         // 두 상권의 overallData 추출
         Map<String, Integer> district1Overall = (Map<String, Integer>) district1Data.get("overallData");
         Map<String, Integer> district2Overall = (Map<String, Integer>) district2Data.get("overallData");
@@ -302,6 +312,22 @@ public class CustomFeatureController {
         overallDataMap2.put("visitConcentration", (int)(visitConcentration2.get방문_집중도() * 100));
         overallDataMap2.put("stayTimeChange", (int)(stayDurationChange2.get평균_체류시간_변화율() * 100));
 
+        List<Object> overallDataList1 = List.of(floatingPopulation1, stayVisitRatio1, congestionRate1, stayPerVisitor1, visitConcentration1, stayDurationChange1);
+        List<Object> overallDataList2 = List.of(floatingPopulation2, stayVisitRatio2, congestionRate2, stayPerVisitor2, visitConcentration2, stayDurationChange2);
+
+        List<Pair<String, Double>> topTwoPairs1 = RadarUtils.findTopTwo(overallDataList1);
+        List<Pair<String, Double>> topTwoPairs2 = RadarUtils.findTopTwo(overallDataList2);
+
+        Map<String, Object> topTwo1 = Map.of(
+                "name", topTwoPairs1.get(0).getKey(),
+                "value", (int) (topTwoPairs1.get(0).getValue() * 100)
+        );
+
+        Map<String, Object> topTwo2 = Map.of(
+                "name", topTwoPairs2.get(0).getKey(),
+                "value", (int) (topTwoPairs2.get(0).getValue() * 100)
+        );
+
         Expression e1 = new ExpressionBuilder(formula)
                 .variables(overallDataMap1.keySet())
                 .build();
@@ -322,13 +348,23 @@ public class CustomFeatureController {
 
         double result2 = e2.evaluate();
 
-        district1Overall.put("customFeatureResult",(int) result1);
-        district2Overall.put("customFeatureResult",(int)result2);
+        Map<String, Object> district1Response = new LinkedHashMap<>();
+        district1Response.put("districtName", district1Info.get("districtName"));
+        district1Response.put("clusterName", district1Info.get("clusterName"));
+        district1Response.put("top", topTwo1);
+        district1Response.put("overallData", district1Overall);
+        district1Response.put(customFeature.getFeatureName(), (int) result1);
 
-        // 결과 반환
+        Map<String, Object> district2Response = new LinkedHashMap<>();
+        district2Response.put("districtName", district2Info.get("districtName"));
+        district2Response.put("clusterName", district2Info.get("clusterName"));
+        district2Response.put("top", topTwo2);
+        district2Response.put("overallData", district2Overall);
+        district2Response.put(customFeature.getFeatureName(), (int) result2);
+
         Map<String, Object> comparisonResult = new LinkedHashMap<>();
-        comparisonResult.put("district1", district1Overall);
-        comparisonResult.put("district2", district2Overall);
+        comparisonResult.put("district1", district1Response);
+        comparisonResult.put("district2", district2Response);
 
         return ResponseEntity.ok(comparisonResult);
     }
