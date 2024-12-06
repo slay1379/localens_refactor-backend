@@ -34,6 +34,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -138,7 +139,6 @@ public class ImprovementController {
             @PathVariable Integer districtUuid1,
             @PathVariable Integer districtUuid2) {
 
-        // 두 상권의 데이터를 각각 가져옴
         Map<String, Object> district1Data = radarComparisonService.constructDistrictData(
                 districtUuid1,
                 radarFloatingPopulationService,
@@ -160,7 +160,6 @@ public class ImprovementController {
                 radarStayDurationChangeService,
                 radarInfoService
         );
-
         // 두 상권의 overallData 추출
         Map<String, Integer> district1Overall = (Map<String, Integer>) district1Data.get("overallData");
         Map<String, Integer> district2Overall = (Map<String, Integer>) district2Data.get("overallData");
@@ -288,6 +287,80 @@ public class ImprovementController {
         response.put("beforeAndAfter", beforeAndAfter);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+/*
+    @GetMapping("/reco/{districtUuid1}/{districtUuid2}")
+    public ResponseEntity<Map<String, Object>> recommendEvents(
+            @PathVariable Integer districtUuid1,
+            @PathVariable Integer districtUuid2) {
+
+    }*/
+
+    @GetMapping("/reco")
+    public ResponseEntity<Map<String, Object>> getImprovedEvents() {
+        List<Event> events = eventRepository.findAll();
+
+        // 원하는 JSON 형식의 "ImproveMethod" 생성
+        List<Map<String, Object>> improveMethods = new ArrayList<>();
+        for (Event event : events) {
+            Map<String, Object> eventMap = new HashMap<>();
+            eventMap.put("date", event.getEventStart() + " ~ " + event.getEventEnd());
+            eventMap.put("area", event.getEventPlace());
+            eventMap.put("image", event.getEventImg());
+            eventMap.put("name", event.getEventName());
+            eventMap.put("detail", event.getInfo());
+            eventMap.put("uuid", event.getEventUuid());
+            improveMethods.add(eventMap);
+        }
+
+        // "beforeAndAfter" 데이터 생성 (하드코딩 예시)
+        Map<String, Object> beforeAndAfter = new HashMap<>();
+        List<Map<String, Object>> overallDataBefore = new ArrayList<>();
+        List<Map<String, Object>> overallDataAfter = new ArrayList<>();
+        List<Integer> changedValues = Arrays.asList(23, 23, 23);
+        List<String> changedNames = Arrays.asList("stayTimeChange", "stayTimeChange", "stayTimeChange");
+
+        // 임의의 "before" 및 "after" 데이터를 3번 반복하여 추가
+        for (int i = 0; i < 3; i++) {
+            Map<String, Object> beforeData = new HashMap<>();
+            beforeData.put("population", 100);
+            beforeData.put("stayVisit", 64);
+            beforeData.put("congestion", 49);
+            beforeData.put("stayPerVisitor", 10);
+            beforeData.put("visitConcentration", 100);
+            beforeData.put("stayTimeChange", 32);
+            overallDataBefore.add(beforeData);
+
+            Map<String, Object> afterData = new HashMap<>();
+            afterData.put("population", 46);
+            afterData.put("stayVisit", 55);
+            afterData.put("congestion", 25);
+            afterData.put("stayPerVisitor", 16);
+            afterData.put("visitConcentration", 46);
+            afterData.put("stayTimeChange", 55);
+            overallDataAfter.add(afterData);
+        }
+
+        beforeAndAfter.put("before", Map.of(
+                "overallData", overallDataBefore,
+                "date", Arrays.asList("2024년 01월", "2023년 10월", "2023년 12월")
+        ));
+        beforeAndAfter.put("after", Map.of(
+                "overallData", overallDataAfter,
+                "date", Arrays.asList("2024년 01월", "2023년 10월", "2024년 01월")
+        ));
+        beforeAndAfter.put("changedFeature", Map.of(
+                "value", changedValues,
+                "name", changedNames
+        ));
+
+        // 최종 JSON 반환
+        Map<String, Object> response = new HashMap<>();
+        response.put("ImproveMethod", improveMethods);
+        response.put("beforeAndAfter", beforeAndAfter);
+
+        return ResponseEntity.ok(response);
     }
 
 }
