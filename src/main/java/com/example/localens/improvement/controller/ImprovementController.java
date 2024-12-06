@@ -8,6 +8,12 @@ import com.example.localens.analysis.dto.RadarStayPerVisitorResponse;
 import com.example.localens.analysis.dto.RadarStayVisitRatioResponse;
 import com.example.localens.analysis.dto.RadarVisitConcentrationResponse;
 import com.example.localens.analysis.service.DateAnalysisService;
+import com.example.localens.analysis.service.DateCongestionRateService;
+import com.example.localens.analysis.service.DatePopulationService;
+import com.example.localens.analysis.service.DateStayDurationRateService;
+import com.example.localens.analysis.service.DateStayPerVisitorService;
+import com.example.localens.analysis.service.DateStayVisitService;
+import com.example.localens.analysis.service.DateVisitConcentrationService;
 import com.example.localens.analysis.service.RadarComparisonService;
 import com.example.localens.analysis.service.RadarCongestionRateService;
 import com.example.localens.analysis.service.RadarFloatingPopulationService;
@@ -22,6 +28,7 @@ import com.example.localens.improvement.repository.EventMetricsRepository;
 import com.example.localens.improvement.repository.EventRepository;
 import com.example.localens.improvement.repository.MetricRepository;
 import com.example.localens.improvement.service.ImprovementService;
+import com.influxdb.client.domain.RoutesSystem;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -33,8 +40,11 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.aspectj.bridge.MessageUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -43,10 +53,19 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/improvements")
 public class ImprovementController {
+    private static final Logger logger = LoggerFactory.getLogger(ImprovementController.class);
 
     private final ImprovementService improvementService;
     private final MetricRepository metricRepository;
@@ -63,6 +82,12 @@ public class ImprovementController {
     private final RadarStayDurationChangeService radarStayDurationChangeService;
     private final RadarInfoService radarInfoService;
     private final RadarVisitConcentrationService radarVisitConcentrationService;
+    private final DatePopulationService datePopulationService;
+    private final DateVisitConcentrationService dateVisitConcentrationService;
+    private final DateStayVisitService dateStayVisitService;
+    private final DateCongestionRateService dateCongestionRateService;
+    private final DateStayPerVisitorService dateStayPerVisitorService;
+    private final DateStayDurationRateService dateStayDurationRateService;
 
     @Autowired
     public ImprovementController(ImprovementService improvementService,
@@ -78,7 +103,13 @@ public class ImprovementController {
                                  RadarStayPerVisitorService radarStayPerVisitorService,
                                  RadarStayDurationChangeService radarStayDurationChangeService,
                                  RadarInfoService radarInfoService,
-                                 RadarVisitConcentrationService radarVisitConcentrationService) {
+                                 RadarVisitConcentrationService radarVisitConcentrationService,
+                                 DatePopulationService datePopulationService,
+                                 DateVisitConcentrationService dateVisitConcentrationService,
+                                 DateStayVisitService dateStayVisitService,
+                                 DateCongestionRateService dateCongestionRateService,
+                                 DateStayPerVisitorService dateStayPerVisitorService,
+                                 DateStayDurationRateService dateStayDurationRateService) {
         this.improvementService = improvementService;
         this.metricRepository = metricRepository;
         this.eventRepository = eventRepository;
@@ -93,7 +124,14 @@ public class ImprovementController {
         this.radarStayDurationChangeService = radarStayDurationChangeService;
         this.radarInfoService = radarInfoService;
         this.radarVisitConcentrationService = radarVisitConcentrationService;
+        this.datePopulationService = datePopulationService;
+        this.dateVisitConcentrationService = dateVisitConcentrationService;
+        this.dateStayPerVisitorService = dateStayPerVisitorService;
+        this.dateCongestionRateService = dateCongestionRateService;
+        this.dateStayVisitService = dateStayVisitService;
+        this.dateStayDurationRateService = dateStayDurationRateService;
     }
+
 
     @GetMapping("/recommendations/{districtUuid1}/{districtUuid2}")
     public ResponseEntity<Map<String, Object>> recommendEventsWithMetrics(
@@ -251,7 +289,5 @@ public class ImprovementController {
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-
-
 
 }
