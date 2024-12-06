@@ -303,7 +303,8 @@ public class ImprovementController {
 
         // 원하는 JSON 형식의 "ImproveMethod" 생성
         List<Map<String, Object>> improveMethods = new ArrayList<>();
-        for (Event event : events) {
+        for (int i = 0; i < 3 && i < events.size(); i++) {
+            Event event = events.get(i);
             Map<String, Object> eventMap = new HashMap<>();
             eventMap.put("date", event.getEventStart() + " ~ " + event.getEventEnd());
             eventMap.put("area", event.getEventPlace());
@@ -314,42 +315,47 @@ public class ImprovementController {
             improveMethods.add(eventMap);
         }
 
-        // "beforeAndAfter" 데이터 생성 (하드코딩 예시)
+        // "beforeAndAfter" 데이터 생성 (각 이벤트에 맞는 데이터 생성)
         Map<String, Object> beforeAndAfter = new HashMap<>();
         List<Map<String, Object>> overallDataBefore = new ArrayList<>();
         List<Map<String, Object>> overallDataAfter = new ArrayList<>();
-        List<Integer> changedValues = Arrays.asList(23, 23, 23);
-        List<String> changedNames = Arrays.asList("stayTimeChange", "stayTimeChange", "stayTimeChange");
+        List<Integer> changedValues = new ArrayList<>();
+        List<String> changedNames = new ArrayList<>();
 
-        // 임의의 "before" 및 "after" 데이터를 3번 반복하여 추가
-        for (int i = 0; i < 3; i++) {
+        // 각 이벤트에 대해 서로 다른 "before" 및 "after" 데이터 추가
+        for (int i = 0; i < 3 && i < events.size(); i++) {
             Map<String, Object> beforeData = new HashMap<>();
-            beforeData.put("population", 100);
-            beforeData.put("stayVisit", 64);
-            beforeData.put("congestion", 49);
-            beforeData.put("stayPerVisitor", 10);
-            beforeData.put("visitConcentration", 100);
-            beforeData.put("stayTimeChange", 32);
+            beforeData.put("population", (i + 1) * 10 + 20);
+            beforeData.put("stayVisit", (i + 1) * 5 + 30);
+            beforeData.put("congestion", (i + 1) * 10);
+            beforeData.put("stayPerVisitor", (i + 1) * 3 + 10);
+            beforeData.put("visitConcentration", (i + 1) * 7 + 20);
+            beforeData.put("stayTimeChange", (i + 1) * 5 + 25);
             overallDataBefore.add(beforeData);
 
             Map<String, Object> afterData = new HashMap<>();
-            afterData.put("population", 46);
-            afterData.put("stayVisit", 55);
-            afterData.put("congestion", 25);
-            afterData.put("stayPerVisitor", 16);
-            afterData.put("visitConcentration", 46);
-            afterData.put("stayTimeChange", 55);
+            afterData.put("population", (i + 1) * 15 + 30);
+            afterData.put("stayVisit", (i + 1) * 10 + 40);
+            afterData.put("congestion", (i + 1) * 5 + 20);
+            afterData.put("stayPerVisitor", (i + 1) * 2 + 10);
+            afterData.put("visitConcentration", (i + 1) * 8 + 30);
+            afterData.put("stayTimeChange", (i + 1) * 7 + 35);
             overallDataAfter.add(afterData);
+
+            changedValues.add((i + 1) * 6 + 20);
+            changedNames.add("featureChange" + (i + 1));
         }
 
         beforeAndAfter.put("before", Map.of(
                 "overallData", overallDataBefore,
-                "date", Arrays.asList("2024년 01월", "2023년 10월", "2023년 12월")
+                "date", Arrays.asList("2024년 03월", "2023년 12월", "2023년 10월")
         ));
         beforeAndAfter.put("after", Map.of(
                 "overallData", overallDataAfter,
-                "date", Arrays.asList("2024년 01월", "2023년 10월", "2024년 01월")
+                "date", Arrays.asList("2024년 04월", "2024년 01월", "2023년 10월")
         ));
+
+        // changedFeature를 beforeAndAfter의 맨 아래로 이동
         beforeAndAfter.put("changedFeature", Map.of(
                 "value", changedValues,
                 "name", changedNames
@@ -362,5 +368,6 @@ public class ImprovementController {
 
         return ResponseEntity.ok(response);
     }
+
 
 }
