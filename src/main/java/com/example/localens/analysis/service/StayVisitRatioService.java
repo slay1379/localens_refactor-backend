@@ -52,20 +52,58 @@ public class StayVisitRatioService {
     private Map<String, Double> processAndSortTimeZoneRatios(List<FluxTable> queryResult) {
         Map<String, Double> timeZoneRatios = new LinkedHashMap<>();
 
+        // 숫자 -> 영어 단어 매핑
+        Map<String, String> numberToWordMap = Map.ofEntries(
+                Map.entry("0", "zero"),
+                Map.entry("1", "one"),
+                Map.entry("2", "two"),
+                Map.entry("3", "three"),
+                Map.entry("4", "four"),
+                Map.entry("5", "five"),
+                Map.entry("6", "six"),
+                Map.entry("7", "seven"),
+                Map.entry("8", "eight"),
+                Map.entry("9", "nine"),
+                Map.entry("10", "ten"),
+                Map.entry("11", "eleven"),
+                Map.entry("12", "twelve"),
+                Map.entry("13", "thirteen"),
+                Map.entry("14", "fourteen"),
+                Map.entry("15", "fifteen"),
+                Map.entry("16", "sixteen"),
+                Map.entry("17", "seventeen"),
+                Map.entry("18", "eighteen"),
+                Map.entry("19", "nineteen"),
+                Map.entry("20", "twenty"),
+                Map.entry("21", "twentyOne"),
+                Map.entry("22", "twentyTwo"),
+                Map.entry("23", "twentyThree")
+        );
+
+        // 영어 단어 -> 숫자 매핑 (역매핑 생성)
+        Map<String, String> wordToNumberMap = numberToWordMap.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
+
         // Step 4.1: 데이터 변환
         for (FluxTable table : queryResult) {
             for (FluxRecord record : table.getRecords()) {
                 String timeZone = record.getValueByKey("tmzn").toString(); // 시간대
                 Double value = Double.valueOf(record.getValueByKey("_value").toString()); // 비율 값
 
-                // 시간대에 '시' 추가
-                timeZoneRatios.put(timeZone + "시", Math.round(value * 10.0) / 10.0);
+                // 숫자를 영어 단어로 변환
+                String timeZoneInWords = numberToWordMap.getOrDefault(timeZone, timeZone);
+                timeZoneRatios.put(timeZoneInWords, Math.round(value * 10.0) / 10.0);
             }
         }
 
-        // Step 4.2: 시간대 정렬
+        // Step 4.2: 시간대 정렬 (영어 단어를 숫자로 다시 매핑)
         return timeZoneRatios.entrySet().stream()
-                .sorted(Comparator.comparingInt(entry -> Integer.parseInt(entry.getKey().replace("시", "")))) // 숫자 기준 정렬
+                .sorted(Comparator.comparingInt(entry -> {
+                    // 영어 단어를 숫자로 다시 매핑
+                    String word = entry.getKey();
+                    String number = wordToNumberMap.getOrDefault(word, "-1"); // 매핑 실패 시 -1
+                    return Integer.parseInt(number);
+                }))
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         Map.Entry::getValue,

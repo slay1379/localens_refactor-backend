@@ -5,6 +5,7 @@ import com.example.localens.improvement.domain.EventMetrics;
 import com.example.localens.improvement.repository.EventMetricsRepository;
 import com.example.localens.improvement.repository.EventRepository;
 import com.example.localens.influx.InfluxDBService;
+import com.example.localens.s3.service.S3Service;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,27 +22,47 @@ public class ImprovementService {
     private final EventRepository eventRepository;
     private final EventMetricsRepository eventMetricsRepository;
     private final InfluxDBService influxDBService;
+    private final S3Service s3Service;
 
     @Autowired
     public ImprovementService(EventRepository eventRepository,
                               EventMetricsRepository eventMetricsRepository,
-                              InfluxDBService influxDBService) {
+                              InfluxDBService influxDBService,
+                              S3Service s3Service) {
         this.eventRepository = eventRepository;
         this.eventMetricsRepository = eventMetricsRepository;
         this.influxDBService = influxDBService;
+        this.s3Service = s3Service;
     }
 
-    public List<Event> recommendEvents(String districtUuidNow, String districtUuidTarget) {
+    public Map<String, Object> recommendEventsWithDistrictMetrics(String districtUuidNow, String districtUuidTarget) {
         Map<String, Double> metricsA = influxDBService.getLatestMetricsByDistrictUuid(districtUuidNow);
         Map<String, Double> metricsB = influxDBService.getLatestMetricsByDistrictUuid(districtUuidTarget);
 
         Map<String, Double> metricDifferences = calculateMetricDifferences(metricsA, metricsB);
-
         List<String> topTwoMetrics = getTopTwoMetrics(metricDifferences);
-
         List<Event> recommendedEvents = findEventByMetrics(topTwoMetrics);
 
-        return recommendedEvents;
+        recommendedEvents.forEach(event -> {
+            String imageUrl = s3Service.generatePresignedUrl("localens-image", event.getEventImg());
+            event.setEventImg(imageUrl);
+        });
+
+        Map<String, List<Map<String, Double>>> eventMetricsData = new HashMap<>();
+        for (Event event : recommendedEvents) {
+            List<Map<String, Double>> metricsDuringEvent = influxDBService.getMetricsByDistrictUuidAndTimeRange(
+                    districtUuidNow,
+                    event.getEventStart(),
+                    event.getEventEnd()
+            );
+            eventMetricsData.put(event.getEventUuid(), metricsDuringEvent);
+        }
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("recommendedEvents", recommendedEvents);
+        result.put("eventMetricsData", eventMetricsData);
+
+        return result;
     }
 
     private Map<String, Double> calculateMetricDifferences(Map<String, Double> metricsA, Map<String, Double> metricsB) {

@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +17,21 @@ public class StayDurationChangeService {
 
     private final CommercialDistrictRepository districtRepository; // MySQL 연결
     private final InfluxDBClientWrapper influxDBClientWrapper; // InfluxDB 연결
+
+    // 숫자와 단어 매핑
+    private final Map<String, String> numberToWordMap = Map.ofEntries(
+            Map.entry("0", "zero"), Map.entry("1", "one"), Map.entry("2", "two"),
+            Map.entry("3", "three"), Map.entry("4", "four"), Map.entry("5", "five"),
+            Map.entry("6", "six"), Map.entry("7", "seven"), Map.entry("8", "eight"),
+            Map.entry("9", "nine"), Map.entry("10", "ten"), Map.entry("11", "eleven"),
+            Map.entry("12", "twelve"), Map.entry("13", "thirteen"), Map.entry("14", "fourteen"),
+            Map.entry("15", "fifteen"), Map.entry("16", "sixteen"), Map.entry("17", "seventeen"),
+            Map.entry("18", "eighteen"), Map.entry("19", "nineteen"), Map.entry("20", "twenty"),
+            Map.entry("21", "twentyOne"), Map.entry("22", "twentyTwo"), Map.entry("23", "twentyThree")
+    );
+
+    private final Map<String, String> wordToNumberMap = numberToWordMap.entrySet().stream()
+            .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey));
 
     public StayDurationChangeResponse calculateAvgStayTimeChangeRate(Integer districtUuid) {
         // Step 1: MySQL에서 상권 이름 조회
@@ -34,59 +50,45 @@ public class StayDurationChangeService {
 
         List<FluxTable> queryResult = influxDBClientWrapper.query(fluxQuery);
 
-        // Debug: print the number of results
-        System.out.println("InfluxDB query result size: " + queryResult.size());
-
         Map<String, Double> changeRates = calculateCongestionRate(queryResult);
 
-        System.out.println("Calculated congestion rate: " + changeRates);
         return new StayDurationChangeResponse(changeRates);
     }
 
-    // 혼잡도 변화율 계산
     private Map<String, Double> calculateCongestionRate(List<FluxTable> queryResult) {
         // Step 4.1: 시간대별 데이터 수집
         Map<String, Double> timeZoneData = new LinkedHashMap<>();
 
-        // 먼저 tmzn을 기준으로 데이터를 합산합니다.
         for (FluxTable table : queryResult) {
             for (FluxRecord record : table.getRecords()) {
                 String timeZone = record.getValueByKey("tmzn").toString(); // 시간대
                 Double currentValue = Double.valueOf(record.getValueByKey("_value").toString()); // 현재 값
 
-                // 각 시간대별로 _value를 합산
-                timeZoneData.put(timeZone, currentValue);
+                // 숫자를 영어 단어로 변환
+                String timeZoneInWords = numberToWordMap.getOrDefault(timeZone, timeZone);
+                timeZoneData.put(timeZoneInWords, currentValue);
             }
         }
 
-        // Debug: print timeZoneData after summing values
-        System.out.println("Summed timeZoneData: " + timeZoneData);
-
-        // Step 4.2: 체류시간 변화율 계산
         Map<String, Double> timeZoneRatios = new LinkedHashMap<>();
-        String[] timeZones = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23"};
+        List<String> sortedTimeZones = timeZoneData.keySet().stream()
+                .sorted(Comparator.comparingInt(timeZone -> Integer.parseInt(wordToNumberMap.get(timeZone))))
+                .toList();
 
-        for (int i = 0; i < timeZones.length; i++) {
-            String currentTimeZone = timeZones[i];
-            String previousTimeZone = timeZones[(i == 0) ? 23 : (i - 1)];
+        for (int i = 0; i < sortedTimeZones.size(); i++) {
+            String currentTimeZone = sortedTimeZones.get(i);
+            String previousTimeZone = sortedTimeZones.get((i == 0) ? sortedTimeZones.size() - 1 : i - 1);
 
-            // 현재 시간대와 이전 시간대의 _value 차이를 계산
             Double currentValue = timeZoneData.getOrDefault(currentTimeZone, 0.0);
-            System.out.println("currentValue: " + currentValue);
             Double previousValue = timeZoneData.getOrDefault(previousTimeZone, 0.0);
-            System.out.println("previousValue: " + previousValue);
 
-            // 혼잡도 변화율 계산 (변화율 = (current - previous) / previous * 100)
             if (previousValue != 0) {
                 double congestionRate = ((currentValue - previousValue) / previousValue);
-                timeZoneRatios.put(currentTimeZone + "시", Math.round(congestionRate * 100.0) / 100.0); // 소수점 첫째자리로 반올림
+                timeZoneRatios.put(currentTimeZone, Math.round(congestionRate * 100.0) / 100.0);
             } else {
-                timeZoneRatios.put(currentTimeZone + "시", 0.0); // 이전 값이 없을 경우 변화율 0으로 설정
+                timeZoneRatios.put(currentTimeZone, 0.0);
             }
         }
-
-        // Debug: print the final timeZoneRatios
-        System.out.println("Final timeZoneRatios: " + timeZoneRatios);
 
         return timeZoneRatios;
     }

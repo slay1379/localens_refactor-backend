@@ -43,6 +43,17 @@ public class AgeGenderRatioService {
     }
 
     private Map<String, Map<String, Double>> processAgeGenderRatios(List<FluxTable> queryResult) {
+        Map<String, String> ageGroupMapping = Map.of(
+                "10대", "Teenagers",
+                "10대 미만", "Under10",
+                "20대", "Twenties",
+                "30대", "Thirties",
+                "40대", "Forties",
+                "50대", "Fifties",
+                "60대", "Sixties",
+                "70대 이상", "OverSeventies"
+        );
+
         // 임시로 성별 데이터를 저장
         Map<String, Double> totalByGender = new HashMap<>(); // 성별별 전체 합
         Map<String, Map<String, Double>> ageGenderMap = new LinkedHashMap<>(); // 연령대별 성별 데이터
@@ -54,8 +65,11 @@ public class AgeGenderRatioService {
                 String sex = record.getValueByKey("sex").toString(); // 성별
                 Double value = Double.valueOf(record.getValueByKey("_value").toString()); // 유동인구 값
 
+                // 연령대 한글 -> 영어 변환
+                String ageGroupEnglish = ageGroupMapping.getOrDefault(ageGroup, ageGroup);
+
                 // 연령대별 데이터 추가
-                ageGenderMap.computeIfAbsent(ageGroup, k -> new LinkedHashMap<>())
+                ageGenderMap.computeIfAbsent(ageGroupEnglish, k -> new LinkedHashMap<>())
                         .merge(sex, value, Double::sum);
 
                 // 성별별 총합 계산

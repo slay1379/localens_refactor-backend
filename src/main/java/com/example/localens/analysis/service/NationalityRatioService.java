@@ -44,6 +44,10 @@ public class NationalityRatioService {
 
     // 내외국인 비율 계산
     private Map<String, Double> processNationalityRatios(List<FluxTable> queryResult) {
+        Map<String, String> nationalityMapping = Map.of(
+                "내국인", "Local",
+                "장기체류외국인", "Foreigner"
+        );
         Map<String, Double> nationalityMap = new HashMap<>();
 
         // 데이터를 내국인, 외국인별로 분류
@@ -51,7 +55,9 @@ public class NationalityRatioService {
             for (FluxRecord record : table.getRecords()) {
                 String nationality = record.getValueByKey("nationality").toString(); // 내외국인 구분
                 Double value = Double.valueOf(record.getValueByKey("_value").toString()); // 유동인구 값
-                nationalityMap.merge(nationality, value, Double::sum); // 값 누적
+
+                String translatedNationality = nationalityMapping.getOrDefault(nationality, nationality);
+                nationalityMap.merge(translatedNationality, value, Double::sum); // 값 누적
             }
         }
 

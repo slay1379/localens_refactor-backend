@@ -42,12 +42,12 @@ public class RadarComparisonService {
 
         // 각 서비스 호출 결과를 변수에 저장
         Map<String, Integer> overallData = new LinkedHashMap<>();
-        overallData.put("유동인구_수", (int)(floatingPopulationService.getNormalizedFloatingPopulation(districtUuid).get유동인구_수() * 100));
-        overallData.put("체류_방문_비율", (int)(stayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid).get체류_방문_비율() * 100));
-        overallData.put("혼잡도_변화율", (int)(congestionRateService.getCongestionRateByDistrictUuid(districtUuid).get혼잡도_변화율() * 100));
-        overallData.put("체류시간_대비_방문자_수", (int)(stayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid).get체류시간_대비_방문자_수() * 100));
-        overallData.put("방문_집중도", (int)(visitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid).get방문_집중도() * 100));
-        overallData.put("평균_체류시간_변화율", (int)(stayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid).get평균_체류시간_변화율() * 100));
+        overallData.put("population", (int)(floatingPopulationService.getNormalizedFloatingPopulation(districtUuid).get유동인구_수() * 100));
+        overallData.put("stayVisit", (int)(stayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid).get체류_방문_비율() * 100));
+        overallData.put("congestion", (int)(congestionRateService.getCongestionRateByDistrictUuid(districtUuid).get혼잡도_변화율() * 100));
+        overallData.put("stayPerVisitor", (int)(stayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid).get체류시간_대비_방문자_수() * 100));
+        overallData.put("visitConcentration", (int)(visitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid).get방문_집중도() * 100));
+        overallData.put("stayTimeChange", (int)(stayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid).get평균_체류시간_변화율() * 100));
 
         // 상권 및 클러스터 정보 추가
         Map<String, Object> districtInfo = new LinkedHashMap<>();
