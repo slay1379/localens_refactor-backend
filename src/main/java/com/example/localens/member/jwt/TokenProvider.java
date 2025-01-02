@@ -4,6 +4,7 @@ import com.example.localens.member.dto.TokenDto;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,7 +23,7 @@ import java.util.Date;
 @Component
 public class TokenProvider {
     private static final String BEARER_TYPE = "Bearer ";
-    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 30;            // 30분
+    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 12;            // 12시간
     private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7;  // 7일
 
     private final Key key;
@@ -84,9 +85,9 @@ public class TokenProvider {
         return false;
     }
 
-    public String getCurrentUuid(String accessToken) {
+    public UUID getCurrentUuid(String accessToken) {
         Claims claims = parseClaims(accessToken);
-        return claims.getSubject();  // 토큰에서 subject (UUID) 추출
+        return UUID.fromString(claims.getSubject());
     }
 
     public String extractToken(String authorizationHeader) {

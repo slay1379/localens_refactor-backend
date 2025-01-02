@@ -19,6 +19,16 @@ public class DateAnalysisService {
     private final DateStayPerVisitorService dateStayPerVisitorService;
     private final DateStayDurationRateService dateStayDurationRateService;
 
+    // 영어 key를 한글로 매핑하는 Map
+    private static final Map<String, String> keyToKoreanMap = Map.of(
+            "population", "유동인구 수",
+            "stayVisit", "체류/방문 비율",
+            "congestion", "혼잡도 변화율",
+            "stayPerVisitor", "체류시간 대비 방문자 수",
+            "visitConcentration", "방문 집중도",
+            "stayTimeChange", "체류시간 변화율"
+    );
+
     public Map<String, Object> calculateDateData(Integer districtUuid, String date) {
         int normalizedPopulationValue = datePopulationService.getNormalizedPopulationValue(districtUuid, date);
         int visitConcentrationValue = dateVisitConcentrationService.getNormalizedPopulationValue(districtUuid, date);
@@ -41,8 +51,12 @@ public class DateAnalysisService {
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .collect(Collectors.toList());
 
-        String firstMaxName = sortedEntries.get(0).getKey();
-        String secondMaxName = sortedEntries.get(1).getKey();
+        String firstMaxKey = sortedEntries.get(0).getKey();
+        String secondMaxKey = sortedEntries.get(1).getKey();
+
+        // 한글 변환
+        String firstMaxName = keyToKoreanMap.getOrDefault(firstMaxKey, firstMaxKey);
+        String secondMaxName = keyToKoreanMap.getOrDefault(secondMaxKey, secondMaxKey);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("values", values);

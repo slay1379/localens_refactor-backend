@@ -7,6 +7,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CustomFeatureCalculationRequest {
+    private String featureName;
     private String formula;
-    private Map<String, Double> variables;
 }

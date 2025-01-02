@@ -35,35 +35,9 @@ public class ImprovementService {
         this.s3Service = s3Service;
     }
 
-    public Map<String, Object> recommendEventsWithDistrictMetrics(String districtUuidNow, String districtUuidTarget) {
-        Map<String, Double> metricsA = influxDBService.getLatestMetricsByDistrictUuid(districtUuidNow);
-        Map<String, Double> metricsB = influxDBService.getLatestMetricsByDistrictUuid(districtUuidTarget);
+    /*public Map<String, Double> recommendationEvents(String districts1, String districts2) {
 
-        Map<String, Double> metricDifferences = calculateMetricDifferences(metricsA, metricsB);
-        List<String> topTwoMetrics = getTopTwoMetrics(metricDifferences);
-        List<Event> recommendedEvents = findEventByMetrics(topTwoMetrics);
-
-        recommendedEvents.forEach(event -> {
-            String imageUrl = s3Service.generatePresignedUrl("localens-image", event.getEventImg());
-            event.setEventImg(imageUrl);
-        });
-
-        Map<String, List<Map<String, Double>>> eventMetricsData = new HashMap<>();
-        for (Event event : recommendedEvents) {
-            List<Map<String, Double>> metricsDuringEvent = influxDBService.getMetricsByDistrictUuidAndTimeRange(
-                    districtUuidNow,
-                    event.getEventStart(),
-                    event.getEventEnd()
-            );
-            eventMetricsData.put(event.getEventUuid(), metricsDuringEvent);
-        }
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("recommendedEvents", recommendedEvents);
-        result.put("eventMetricsData", eventMetricsData);
-
-        return result;
-    }
+    }*/
 
     private Map<String, Double> calculateMetricDifferences(Map<String, Double> metricsA, Map<String, Double> metricsB) {
         Map<String, Double> differences = new HashMap<>();
@@ -91,7 +65,7 @@ public class ImprovementService {
                 .collect(Collectors.toList());
     }
 
-    private List<Event> findEventByMetrics(List<String> metricsUuids) {
+    /*private List<Event> findEventByMetrics(List<String> metricsUuids) {
         List<EventMetrics> eventMetricsList = eventMetricsRepository.findByMetricsUuidIn(metricsUuids);
 
         Set<String> eventUuids = eventMetricsList.stream()
@@ -99,5 +73,5 @@ public class ImprovementService {
                 .collect(Collectors.toSet());
 
         return eventRepository.findAllById(eventUuids);
-    }
+    }*/
 }
