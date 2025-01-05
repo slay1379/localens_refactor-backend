@@ -20,4 +20,18 @@ public class MetricStatsService {
         }
         return new double[]{0.0, 1.0};
     }
+
+    public double normalizeValue(String place, String field, double rawValue) {
+        double[] minMax = getMinMax(place, field);
+        double minVal = minMax[0];
+        double maxVal = minMax[1];
+        if (Double.compare(minVal, maxVal) == 0) {
+            return 0.1;
+        }
+        double ratio = (rawValue - minVal) / (maxVal - minVal);
+        double scaled = ratio * (1 - 0.1) + 0.f;
+        if (scaled < 0.1) scaled = 0.1;
+        if (scaled > 1.0) scaled = 1.0;
+        return scaled;
+    }
 }
