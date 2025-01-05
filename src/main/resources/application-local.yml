@@ -1,0 +1,27 @@
+spring:
+  profiles:
+    active: local
+  datasource:
+    url: jdbc:mysql://localhost:3306/localens
+    username: root
+    password: slay01379
+
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+influxdb:
+  url: http://localhost:8086
+  token: TpMEWlqVZYCBM34FRdxBh09trb71XadkSStyOK75cwtiTj4Y3aNLpVRlSRdtxAyETzAgvRPXMTFOu70l2VVvaQ==
+  org: localens
+  bucket: dev
+  measurement: hourly
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.springframework.security: DEBUG
