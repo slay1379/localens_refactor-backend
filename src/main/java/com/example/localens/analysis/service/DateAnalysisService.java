@@ -1,72 +1,63 @@
 package com.example.localens.analysis.service;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
+import com.example.localens.analysis.repository.CommercialDistrictRepository;
+import com.example.localens.influx.InfluxDBClientWrapper;
+import com.influxdb.query.FluxRecord;
+import com.influxdb.query.FluxTable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Map.Entry;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class DateAnalysisService {
+    private final InfluxDBClientWrapper influxDBClientWrapper;
+    private final MetricStatsService metricStatsService;
 
-    private final DatePopulationService datePopulationService;
-    private final DateVisitConcentrationService dateVisitConcentrationService;
-    private final DateStayVisitService dateStayVisitService;
-    private final DateCongestionRateService dateCongestionRateService;
-    private final DateStayPerVisitorService dateStayPerVisitorService;
-    private final DateStayDurationRateService dateStayDurationRateService;
+    public Map<String, Integer> analyzeDate(String place, String date) {
+        Map<String, Double> rawValues = queryInfluxForDate(place, date);
 
-    // 영어 key를 한글로 매핑하는 Map
-    private static final Map<String, String> keyToKoreanMap = Map.of(
-            "population", "유동인구 수",
-            "stayVisit", "체류/방문 비율",
-            "congestion", "혼잡도 변화율",
-            "stayPerVisitor", "체류시간 대비 방문자 수",
-            "visitConcentration", "방문 집중도",
-            "stayTimeChange", "체류시간 변화율"
-    );
+        Map<String, Integer> normalizedMap = new LinkedHashMap<>();
+        for (Entry<String, Double> entry : rawValues.entrySet()) {
+            String field = entry.getKey();
+            double rawValue = entry.getValue();
+            double normalized = metricStatsService.normalizeValue(place, field, rawValue);
+            normalizedMap.put(field, (int) Math.round(normalized * 100));
+        }
+        return normalizedMap;
+    }
 
-    public Map<String, Object> calculateDateData(Integer districtUuid, String date) {
-        int normalizedPopulationValue = datePopulationService.getNormalizedPopulationValue(districtUuid, date);
-        int visitConcentrationValue = dateVisitConcentrationService.getNormalizedPopulationValue(districtUuid, date);
-        int stayVisitRatioValue = dateStayVisitService.getNormalizedStayVisitRatio(districtUuid, date);
-        int congestionRateValue = dateCongestionRateService.getNormalizedCongestionRate(districtUuid, date);
-        int stayPerVisitorValue = dateStayPerVisitorService.getNormalizedStayPerVisitorValue(districtUuid, date);
-        int stayDurationRateValue = dateStayDurationRateService.getNormalizedStayDurationRate(districtUuid, date);
+    private Map<String, Double> queryInfluxForDate(String place, String date) {
+        String fluxQuery = String.format(
+                "from(bucket: \"date_compare_population\") "
+                        + "|> range(start: 2023-07-30T00:00:00Z, stop: now()) "
+                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\") "
+                        + "|> keep(columns: [\"_time\", \"_field\", \"_value\"])",
+                place
+        );
+        List<FluxTable> tables = influxDBClientWrapper.query(fluxQuery);
 
-        Map<String, Integer> values = new LinkedHashMap<>();
-        values.put("population", normalizedPopulationValue);
-        values.put("stayVisit", stayVisitRatioValue);
-        values.put("visitConcentration", visitConcentrationValue);
-        values.put("congestion", congestionRateValue);
-        values.put("stayPerVisitor", stayPerVisitorValue);
-        values.put("stayTimeChange", stayDurationRateValue);
+        Map<String, Double> rawMap = new LinkedHashMap<>();
+        for (FluxTable table : tables) {
+            for (var record : table.getRecords()) {
+                Object fieldObj = record.getValueByKey("_field");
+                if (fieldObj == null) {
+                    continue;
+                }
+                String fieldName = fieldObj.toString();
 
-        // 가장 큰 값과 두 번째로 큰 값 찾기
-        List<Map.Entry<String, Integer>> sortedEntries = values.entrySet()
-                .stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                .collect(Collectors.toList());
-
-        String firstMaxKey = sortedEntries.get(0).getKey();
-        String secondMaxKey = sortedEntries.get(1).getKey();
-
-        // 한글 변환
-        String firstMaxName = keyToKoreanMap.getOrDefault(firstMaxKey, firstMaxKey);
-        String secondMaxName = keyToKoreanMap.getOrDefault(secondMaxKey, secondMaxKey);
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("values", values);
-
-        Map<String, String> topTwo = new LinkedHashMap<>();
-        topTwo.put("first", firstMaxName);
-        topTwo.put("second", secondMaxName);
-
-        result.put("topTwo", topTwo);
-
-        return result;
+                Object valueObj = record.getValueByKey("_value");
+                if (valueObj != null) {
+                    double numericValue = Double.parseDouble(valueObj.toString());
+                    rawMap.put(fieldName, numericValue);
+                }
+            }
+        }
+        return rawMap;
     }
 }
