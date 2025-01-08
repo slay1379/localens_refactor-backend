@@ -18,63 +18,14 @@ import java.util.*;
 @RequiredArgsConstructor
 public class RadarController {
 
-    private final RadarFloatingPopulationService radarFloatingPopulationService;
-    private final RadarStayVisitRatioService radarStayVisitRatioService;
-    private final RadarCongestionRateService radarCongestionRateService;
-    private final RadarStayPerVisitorService radarStayPerVisitorService;
-    private final RadarStayDurationChangeService radarStayDurationChangeService;
-    private final RadarInfoService radarInfoService;
+    private final RadarAnalysisService radarAnalysisService;
     private final RadarComparisonService radarComparisonService;
-    private final RadarVisitConcentrationService radarVisitConcentrationService;
 
     @GetMapping("/main/{districtUuid}")
     public ResponseEntity<Map<String, Object>> getOverallData(@PathVariable Integer districtUuid) {
-        // 서비스에서 상권 정보 조회
-        var commercialDistrict = radarInfoService.getCommercialDistrictByUuid(districtUuid);
+        Map<String, Object> radarData = radarAnalysisService.getRadarData(districtUuid);
 
-        // 각 서비스 호출 결과를 변수에 저장
-        RadarFloatingPopulationResponse floatingPopulation = radarFloatingPopulationService.getNormalizedFloatingPopulation(districtUuid);
-        RadarStayVisitRatioResponse stayVisitRatio = radarStayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid);
-        RadarCongestionRateResponse congestionRate = radarCongestionRateService.getCongestionRateByDistrictUuid(districtUuid);
-        RadarStayPerVisitorResponse stayPerVisitor = radarStayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid);
-        RadarVisitConcentrationResponse visitConcentration = radarVisitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid);
-        RadarStayDurationChangeResponse stayDurationChange = radarStayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid);
-
-
-        // 데이터 리스트 생성
-        List<Object> overallData = List.of(floatingPopulation, stayVisitRatio, congestionRate, stayPerVisitor, visitConcentration, stayDurationChange);
-
-        // 가장 큰 두 값을 찾기
-        List<Pair<String, Double>> topTwoPairs = RadarUtils.findTopTwo(overallData);
-
-        // 결과 데이터 준비
-        Map<String, Object> overallDataMap = new LinkedHashMap<>();
-        overallDataMap.put("population", (int)(floatingPopulation.get유동인구_수() * 100));
-        overallDataMap.put("stayVisit", (int)(stayVisitRatio.get체류_방문_비율() * 100));
-        overallDataMap.put("congestion", (int)(congestionRate.get혼잡도_변화율() * 100));
-        overallDataMap.put("stayPerVisitor", (int)(stayPerVisitor.get체류시간_대비_방문자_수() * 100));
-        overallDataMap.put("visitConcentration", (int)(visitConcentration.get방문_집중도() * 100));
-        overallDataMap.put("stayTimeChange", (int)(stayDurationChange.get평균_체류시간_변화율() * 100));
-
-        // Top 2 데이터 준비
-        Map<String, Object> topTwo = new LinkedHashMap<>();
-        topTwo.put("first", Map.of("name", topTwoPairs.get(0).getKey(), "value", (int) (topTwoPairs.get(0).getValue() * 100)));
-        topTwo.put("second", Map.of("name", topTwoPairs.get(1).getKey(), "value", (int) (topTwoPairs.get(1).getValue() * 100)));
-
-        // 상권 정보 준비
-        Map<String, Object> districtInfo = new LinkedHashMap<>();
-        districtInfo.put("districtName", commercialDistrict.getDistrictName());
-        districtInfo.put("clusterName", commercialDistrict.getCluster().getClusterName());
-        districtInfo.put("latitude", commercialDistrict.getLatitude());
-        districtInfo.put("longitude", commercialDistrict.getLongitude());
-
-        // 최종 응답 데이터
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("districtInfo", districtInfo);
-        response.put("overallData", overallDataMap);
-        response.put("topTwo", topTwo);
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(radarData);
     }
 
 
