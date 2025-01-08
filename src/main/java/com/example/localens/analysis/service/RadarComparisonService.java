@@ -102,47 +102,6 @@ public class RadarComparisonService {
         return result;
     }
 
-
-    public Map<String, Object> constructDistrictData(
-            Integer districtUuid,
-            RadarFloatingPopulationService floatingPopulationService,
-            RadarStayVisitRatioService stayVisitRatioService,
-            RadarCongestionRateService congestionRateService,
-            RadarStayPerVisitorService stayPerVisitorService,
-            RadarVisitConcentrationService visitConcentrationService,
-            RadarStayDurationChangeService stayDurationChangeService,
-            RadarInfoService infoService
-    ) {
-        // 상권 정보 조회
-        var commercialDistrict = infoService.getCommercialDistrictByUuid(districtUuid);
-
-        // 각 서비스 호출 결과를 변수에 저장
-        Map<String, Integer> overallData = new LinkedHashMap<>();
-        overallData.put("population", (int)(floatingPopulationService.getNormalizedFloatingPopulation(districtUuid).get유동인구_수() * 100));
-        overallData.put("stayVisit", (int)(stayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid).get체류_방문_비율() * 100));
-        overallData.put("congestion", (int)(congestionRateService.getCongestionRateByDistrictUuid(districtUuid).get혼잡도_변화율() * 100));
-        overallData.put("stayPerVisitor", (int)(stayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid).get체류시간_대비_방문자_수() * 100));
-        overallData.put("visitConcentration", (int)(visitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid).get방문_집중도() * 100));
-        overallData.put("stayTimeChange", (int)(stayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid).get평균_체류시간_변화율() * 100));
-
-        // 상권 및 클러스터 정보 추가
-        Map<String, Object> districtInfo = new LinkedHashMap<>();
-        districtInfo.put("districtName", commercialDistrict.getDistrictName());
-        districtInfo.put("clusterName", commercialDistrict.getCluster().getClusterName());
-        districtInfo.put("latitude", commercialDistrict.getLatitude());
-        districtInfo.put("longitude", commercialDistrict.getLongitude());
-
-        Map<String, Object> topTwo = findTopTwo(overallData);
-
-        // 최종 반환 데이터
-        Map<String, Object> response = new LinkedHashMap<>();
-        response.put("districtInfo", districtInfo);
-        response.put("overallData", overallData);
-        response.put("topTwo", topTwo);
-
-        return response;
-    }
-
     public Map<String, Object> findTopTwo(Map<String, Integer> overallData) {
         // 데이터를 차이값 기준으로 정렬
         List<Map.Entry<String, Integer>> sortedEntries = new ArrayList<>(overallData.entrySet());
