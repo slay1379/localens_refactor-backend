@@ -47,6 +47,7 @@ public class RadarAnalysisService {
 
         result.put("districtInfo", districtInfo);
         result.put("overallData", normalizedMap);
+        return result;
     }
 
     private Map<String, Double> queryRadarRawData(String place) {
