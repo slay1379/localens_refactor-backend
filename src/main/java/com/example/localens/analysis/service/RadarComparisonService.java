@@ -1,11 +1,15 @@
 package com.example.localens.analysis.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class RadarComparisonService {
+
+    private final RadarAnalysisService radarAnalysisService;
 
     private static final LinkedHashMap<String, String> keyToKoreanMap = new LinkedHashMap<>() {{
         put("population", "유동인구 수");
@@ -15,6 +19,46 @@ public class RadarComparisonService {
         put("visitConcentration", "방문 집중도");
         put("stayTimeChange", "체류시간 변화율");
     }};
+
+    public Map<String, Object> compareTwoDistricts(Integer districtUuid1, Integer districtUuid2) {
+        Map<String, Object> district1Radar = radarAnalysisService.getRadarData(districtUuid1);
+        Map<String, Object> district2Radar = radarAnalysisService.getRadarData(districtUuid2);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Integer> district1Overall = (Map<String, Integer>) district1Radar.get("overallData");
+        @SuppressWarnings("unchecked")
+        Map<String, Integer> district2Overall = (Map<String, Integer>) district2Radar.get("overallData");
+
+        Map<String, Double> differences = new HashMap<>();
+        for (String key : district1Overall.keySet()) {
+            double diff = Math.abs(district1Overall.get(key) - district2Overall.get(key));
+            differences.put(key, diff);
+        }
+
+        List<Map.Entry<String, Double>> sortedDiffs = new ArrayList<>(differences.entrySet());
+        sortedDiffs.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
+
+        Map<String, Object> topDifferences = new LinkedHashMap<>();
+        for (int i = 0; i < Math.min(3, sortedDiffs.size()); i++) {
+            String key = sortedDiffs.get(i).getKey();
+            Double val = sortedDiffs.get(i).getValue();
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("name", keyToKoreanMap.getOrDefault(key, key));
+            item.put("value1", district1Overall.get(key));
+            item.put("value2", district2Overall.get(key));
+            item.put("difference", val);
+
+            topDifferences.put("key" + (i + 1), item);
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("district1", district1Radar);
+        result.put("district2", district2Radar);
+        result.put("topDifferences", topDifferences);
+
+        return result;
+    }
 
     public Map<String, Map<String, Object>> findTopDifferences(Map<String, Integer> district1Overall, Map<String, Integer> district2Overall) {
         // 차이를 계산
