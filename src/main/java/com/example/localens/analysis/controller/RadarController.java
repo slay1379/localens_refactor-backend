@@ -83,56 +83,7 @@ public class RadarController {
             @PathVariable Integer districtUuid1,
             @PathVariable Integer districtUuid2
     ) {
-        // 두 상권의 데이터를 각각 가져옴
-        Map<String, Object> district1Data = radarComparisonService.constructDistrictData(
-                districtUuid1,
-                radarFloatingPopulationService,
-                radarStayVisitRatioService,
-                radarCongestionRateService,
-                radarStayPerVisitorService,
-                radarVisitConcentrationService,
-                radarStayDurationChangeService,
-                radarInfoService
-        );
-
-        Map<String, Object> district2Data = radarComparisonService.constructDistrictData(
-                districtUuid2,
-                radarFloatingPopulationService,
-                radarStayVisitRatioService,
-                radarCongestionRateService,
-                radarStayPerVisitorService,
-                radarVisitConcentrationService,
-                radarStayDurationChangeService,
-                radarInfoService
-        );
-
-        // 두 상권의 districtInfo에서 불필요한 정보 제거
-        Map<String, Object> district1Info = (Map<String, Object>) district1Data.get("districtInfo");
-        district1Info.remove("latitude");
-        district1Info.remove("longitude");
-
-        Map<String, Object> district2Info = (Map<String, Object>) district2Data.get("districtInfo");
-        district2Info.remove("latitude");
-        district2Info.remove("longitude");
-
-        // 두 상권의 overallData 추출
-        Map<String, Integer> district1Overall = (Map<String, Integer>) district1Data.get("overallData");
-        Map<String, Integer> district2Overall = (Map<String, Integer>) district2Data.get("overallData");
-
-        // arrangedData 계산
-        Map<String, Map<String, Integer>> arrangedData = radarComparisonService.calculateArrangedData(district1Overall, district2Overall);
-
-        // arrangedData 추가
-        district1Data.put("arrangedData", arrangedData.get("district1"));
-        district2Data.put("arrangedData", arrangedData.get("district2"));
-
-        Map<String, Map<String, Object>> topDifferences = radarComparisonService.findTopDifferences(district1Overall, district2Overall);
-
-        // 최종 결과 반환
-        Map<String, Object> comparisonResult = new LinkedHashMap<>();
-        comparisonResult.put("district1", district1Data);
-        comparisonResult.put("district2", district2Data);
-        comparisonResult.put("largestDifferences", topDifferences);
+        Map<String, Object> comparisonResult = radarComparisonService.compareTwoDistricts(districtUuid1, districtUuid2);
 
         return ResponseEntity.ok(comparisonResult);
     }
