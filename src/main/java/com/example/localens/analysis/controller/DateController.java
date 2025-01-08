@@ -84,6 +84,7 @@
 
 package com.example.localens.analysis.controller;
 
+import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.analysis.service.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -105,6 +106,7 @@ import java.util.Map;
 public class DateController {
 
     private final DateAnalysisService dateAnalysisService;
+    private final CommercialDistrictRepository commercialDistrictRepository;
 
     // 두 가지 날짜 형식을 모두 지원하는 DateTimeFormatter 목록
     private static final List<DateTimeFormatter> DATE_FORMATTERS = List.of(
@@ -147,11 +149,12 @@ public class DateController {
 
             log.info("Parsed dates: date1={}, date2={}", parsedDate1, parsedDate2);
 
+            String place = commercialDistrictRepository.findDistrictNameByDistrictUuid(
+                    districtUuid);
+
             // 서비스 호출
-            Map<String, Integer> result1 = dateAnalysisService.analyzeDate(/*place는 내부에서 districtUuid -> place 변환*/,
-                    parsedDate1.toString());
-            Map<String, Integer> result2 = dateAnalysisService.analyzeDate(/*place는 내부에서 districtUuid -> place 변환*/,
-                    parsedDate2.toString());
+            Map<String, Integer> result1 = dateAnalysisService.analyzeDate(place, parsedDate1.toString());
+            Map<String, Integer> result2 = dateAnalysisService.analyzeDate(place, parsedDate2.toString());
 
             // 응답 데이터 준비
             response.put("date1", result1);
