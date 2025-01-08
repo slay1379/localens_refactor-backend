@@ -115,19 +115,17 @@ public class DateController {
     /**
      * 한글 날짜를 LocalDateTime으로 변환하는 메서드
      */
-    public LocalDateTime parseKoreanDate(String date) {
+    public LocalDateTime parseKoreanDate(String dateStr) {
         for (DateTimeFormatter formatter : DATE_FORMATTERS) {
             try {
                 // T00:00:00 제거, 날짜만 파싱
-                return LocalDateTime.of(
-                        LocalDate.parse(date, formatter),
-                        LocalTime.MIDNIGHT // 시간은 00:00:00으로 설정
-                );
+                LocalDate date = LocalDate.parse(dateStr, formatter);
+                return LocalDateTime.of(date, LocalTime.MIDNIGHT);
             } catch (Exception e) {
                 // Ignore and try the next formatter
             }
         }
-        throw new IllegalArgumentException("Invalid date format: " + date + ". Please use 'yyyy년 MM월 dd일' or 'yyyy년 M월 d일'.");
+        throw new IllegalArgumentException("Invalid date format: " + dateStr + ". Please use 'yyyy년 MM월 dd일' or 'yyyy년 M월 d일'.");
     }
 
     /**
@@ -140,6 +138,7 @@ public class DateController {
             @RequestParam String date2
     ) {
         log.info("Received request for districtUuid: {}, date1: {}, date2: {}", districtUuid, date1, date2);
+        Map<String, Object> response = new LinkedHashMap<>();
 
         try {
             // 한글 형식 날짜 파싱
@@ -149,21 +148,22 @@ public class DateController {
             log.info("Parsed dates: date1={}, date2={}", parsedDate1, parsedDate2);
 
             // 서비스 호출
-            Map<String, Object> date1Result = dateAnalysisService.calculateDateData(districtUuid, parsedDate1.toString());
-            Map<String, Object> date2Result = dateAnalysisService.calculateDateData(districtUuid, parsedDate2.toString());
+            Map<String, Integer> result1 = dateAnalysisService.analyzeDate(/*place는 내부에서 districtUuid -> place 변환*/,
+                    parsedDate1.toString());
+            Map<String, Integer> result2 = dateAnalysisService.analyzeDate(/*place는 내부에서 districtUuid -> place 변환*/,
+                    parsedDate2.toString());
 
             // 응답 데이터 준비
-            Map<String, Object> response = new LinkedHashMap<>();
-            response.put("date1", date1Result);
-            response.put("date2", date2Result);
+            response.put("date1", result1);
+            response.put("date2", result2);
+            log.info("Compare result = {}", response);
 
-            log.info("Response prepared successfully: {}", response);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             log.error("Invalid date format: {}", e.getMessage());
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
-            log.error("Error occurred while processing request for districtUuid: {}, date1: {}, date2: {}", districtUuid, date1, date2, e);
+            log.error("Unexpected error in compareDates", e);
             return ResponseEntity.internalServerError().body(Map.of("error", "An unexpected error occurred."));
         }
     }
