@@ -24,7 +24,6 @@ public class RadarController {
     @GetMapping("/main/{districtUuid}")
     public ResponseEntity<Map<String, Object>> getOverallData(@PathVariable Integer districtUuid) {
         Map<String, Object> radarData = radarAnalysisService.getRadarData(districtUuid);
-
         return ResponseEntity.ok(radarData);
     }
 

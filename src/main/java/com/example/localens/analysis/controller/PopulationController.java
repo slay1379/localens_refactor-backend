@@ -19,26 +19,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class PopulationController {
 
-    private final PopulationRatioService populationRatioService;
-    private final StayVisitRatioService stayVisitRatioService;
-    private final CongestionRateService congestionRateService;
-    private final StayPerVisitorService stayPerVisitorService;
-    private final StayDurationChangeService stayDurationChangeService;
-    private final AgeGenderRatioService ageGenderRatioService;
-    private final NationalityRatioService nationalityRatioService;
-
+    private final PopulationDetailsService populationDetailsService;
 
     @GetMapping("/details/{districtUuid}")
     public ResponseEntity<Map<String, Object>> getAllRatiosByDistrictUuid(@PathVariable Integer districtUuid) {
-
-        Map<String, Object> results = new LinkedHashMap<>();
-        results.put("hourlyFloatingPopulation", populationRatioService.getPopulationRatioByDistrictUuid(districtUuid).get시간대별_유동인구수());
-        results.put("hourlyStayVisitRatio", stayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid).get시간대별_체류방문비율());
-        results.put("hourlyCongestionRateChange", congestionRateService.getCongestionRateByDistrictUuid(districtUuid).get시간대별_혼잡도_변화율());
-        results.put("stayPerVisitorDuration", stayPerVisitorService.getStayPopulationRatioByDistrictUuid(districtUuid).get체류시간_대비_방문자수());
-        results.put("hourlyAvgStayDurationChange", stayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid).get시간대별_평균_체류시간_변화율());
-        results.put("ageGroupStayPattern", ageGenderRatioService.getAgeGenderPopulationRatio(districtUuid).get연령대별_체류패턴());
-        results.put("nationalityStayPattern", nationalityRatioService.getNationalityPopulationRatio(districtUuid).get국적별_체류패턴());
+        Map<String, Object> results = populationDetailsService.getDetailsByDistrictUuid(districtUuid);
 
         return ResponseEntity.ok(results);
     }
