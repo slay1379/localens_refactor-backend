@@ -186,25 +186,11 @@ public class CustomFeatureController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
+        // 2) 커스텀 피처
         CustomFeature customFeature = customFeatureService.getCustomFeatureById(customFeatureUuid);
         if (customFeature == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Invalid featureUuid"));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error","Invalid featureUuid"));
         }
-        String formula = customFeature.getFormula();
-
-        Map<String, Object> district1Info = (Map<String, Object>) district1Data.get("districtInfo");
-        district1Info.remove("latitude");
-        district1Info.remove("longitude");
-
-        Map<String, Object> district2Info = (Map<String, Object>) district2Data.get("districtInfo");
-        district2Info.remove("latitude");
-        district2Info.remove("longitude");
-
-        // 두 상권의 overallData 추출
-        Map<String, Integer> district1Overall = (Map<String, Integer>) district1Data.get("overallData");
-        Map<String, Integer> district2Overall = (Map<String, Integer>) district2Data.get("overallData");
-
-        CustomFeature customFeature = customFeatureService.getCustomFeatureById(customFeatureUuid);
         String formula = customFeature.getFormula();
 
         try {
