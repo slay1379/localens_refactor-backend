@@ -7,6 +7,7 @@ import com.example.localens.analysis.dto.RadarStayDurationChangeResponse;
 import com.example.localens.analysis.dto.RadarStayPerVisitorResponse;
 import com.example.localens.analysis.dto.RadarStayVisitRatioResponse;
 import com.example.localens.analysis.dto.RadarVisitConcentrationResponse;
+import com.example.localens.analysis.service.PopulationDetailsService;
 import com.example.localens.analysis.service.RadarComparisonService;
 import com.example.localens.analysis.service.RadarInfoService;
 import com.example.localens.analysis.util.RadarUtils;
@@ -54,14 +55,7 @@ public class CustomFeatureController {
     private final TokenProvider tokenProvider;
     private final MemberRepository memberRepository;
 
-    private final RadarComparisonService radarComparisonService;
-    private final RadarFloatingPopulationService radarFloatingPopulationService;
-    private final RadarStayVisitRatioService radarStayVisitRatioService;
-    private final RadarCongestionRateService radarCongestionRateService;
-    private final RadarStayPerVisitorService radarStayPerVisitorService;
-    private final RadarStayDurationChangeService radarStayDurationChangeService;
-    private final RadarInfoService radarInfoService;
-    private final RadarVisitConcentrationService radarVisitConcentrationService;
+    private final PopulationDetailsService populationDetailsService;
 
     @Value("${influxdb.measurement}")
     private String measurement;
@@ -72,27 +66,13 @@ public class CustomFeatureController {
                                    MemberService memberService,
                                    TokenProvider tokenProvider,
                                    MemberRepository memberRepository,
-                                   RadarComparisonService radarComparisonService,
-                                   RadarFloatingPopulationService radarFloatingPopulationService,
-                                   RadarStayVisitRatioService radarStayVisitRatioService,
-                                   RadarCongestionRateService radarCongestionRateService,
-                                   RadarStayPerVisitorService radarStayPerVisitorService,
-                                   RadarStayDurationChangeService radarStayDurationChangeService,
-                                   RadarInfoService radarInfoService,
-                                   RadarVisitConcentrationService radarVisitConcentrationService) {
+                                   PopulationDetailsService populationDetailsService) {
         this.customFeatureService = customFeatureService;
         this.influxDBService = influxDBService;
         this.memberService = memberService;
         this.tokenProvider = tokenProvider;
         this.memberRepository = memberRepository;
-        this.radarComparisonService = radarComparisonService;
-        this.radarFloatingPopulationService = radarFloatingPopulationService;
-        this.radarStayVisitRatioService = radarStayVisitRatioService;
-        this.radarCongestionRateService = radarCongestionRateService;
-        this.radarStayPerVisitorService = radarStayPerVisitorService;
-        this.radarStayDurationChangeService = radarStayDurationChangeService;
-        this.radarInfoService = radarInfoService;
-        this.radarVisitConcentrationService = radarVisitConcentrationService;
+        this.populationDetailsService = populationDetailsService;
     }
 
     // 현재 지표 가져오기
@@ -139,35 +119,11 @@ public class CustomFeatureController {
         }
 
         try {
-            RadarFloatingPopulationResponse floatingPopulation1 = radarFloatingPopulationService.getNormalizedFloatingPopulation(districtUuid1);
-            RadarStayVisitRatioResponse stayVisitRatio1 = radarStayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid1);
-            RadarCongestionRateResponse congestionRate1 = radarCongestionRateService.getCongestionRateByDistrictUuid(districtUuid1);
-            RadarStayPerVisitorResponse stayPerVisitor1 = radarStayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid1);
-            RadarVisitConcentrationResponse visitConcentration1 = radarVisitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid1);
-            RadarStayDurationChangeResponse stayDurationChange1 = radarStayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid1);
+            Map<String, Object> details1 = populationDetailsService.getDetailsByDistrictUuid(districtUuid1);
+            Map<String, Object> details2 = populationDetailsService.getDetailsByDistrictUuid(districtUuid2);
 
-            RadarFloatingPopulationResponse floatingPopulation2 = radarFloatingPopulationService.getNormalizedFloatingPopulation(districtUuid2);
-            RadarStayVisitRatioResponse stayVisitRatio2 = radarStayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid2);
-            RadarCongestionRateResponse congestionRate2 = radarCongestionRateService.getCongestionRateByDistrictUuid(districtUuid2);
-            RadarStayPerVisitorResponse stayPerVisitor2 = radarStayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid2);
-            RadarVisitConcentrationResponse visitConcentration2 = radarVisitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid2);
-            RadarStayDurationChangeResponse stayDurationChange2 = radarStayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid2);
-
-            Map<String, Object> overallDataMap1 = new LinkedHashMap<>();
-            overallDataMap1.put("population", (int)(floatingPopulation1.get유동인구_수() * 100));
-            overallDataMap1.put("stayVisit", (int)(stayVisitRatio1.get체류_방문_비율() * 100));
-            overallDataMap1.put("congestion", (int)(congestionRate1.get혼잡도_변화율() * 100));
-            overallDataMap1.put("stayPerVisitor", (int)(stayPerVisitor1.get체류시간_대비_방문자_수() * 100));
-            overallDataMap1.put("visitConcentration", (int)(visitConcentration1.get방문_집중도() * 100));
-            overallDataMap1.put("stayTimeChange", (int)(stayDurationChange1.get평균_체류시간_변화율() * 100));
-
-            Map<String, Object> overallDataMap2 = new LinkedHashMap<>();
-            overallDataMap2.put("population", (int)(floatingPopulation2.get유동인구_수() * 100));
-            overallDataMap2.put("stayVisit", (int)(stayVisitRatio2.get체류_방문_비율() * 100));
-            overallDataMap2.put("congestion", (int)(congestionRate2.get혼잡도_변화율() * 100));
-            overallDataMap2.put("stayPerVisitor", (int)(stayPerVisitor2.get체류시간_대비_방문자_수() * 100));
-            overallDataMap2.put("visitConcentration", (int)(visitConcentration2.get방문_집중도() * 100));
-            overallDataMap2.put("stayTimeChange", (int)(stayDurationChange2.get평균_체류시간_변화율() * 100));
+            Map<String, Object> overallDataMap1 = buildOverallData(details1);
+            Map<String, Object> overallDataMap2 = buildOverallData(details2);
 
             Expression e1 = new ExpressionBuilder(formula)
                     .variables(overallDataMap1.keySet())
@@ -208,6 +164,7 @@ public class CustomFeatureController {
 
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception exception) {
+            exception.printStackTrace();
             return new ResponseEntity<>("Error calculating formula", HttpStatus.BAD_REQUEST);
         }
     }
@@ -229,28 +186,11 @@ public class CustomFeatureController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
 
-        // 두 상권의 데이터를 각각 가져옴
-        Map<String, Object> district1Data = radarComparisonService.constructDistrictData(
-                districtUuid1,
-                radarFloatingPopulationService,
-                radarStayVisitRatioService,
-                radarCongestionRateService,
-                radarStayPerVisitorService,
-                radarVisitConcentrationService,
-                radarStayDurationChangeService,
-                radarInfoService
-        );
-
-        Map<String, Object> district2Data = radarComparisonService.constructDistrictData(
-                districtUuid2,
-                radarFloatingPopulationService,
-                radarStayVisitRatioService,
-                radarCongestionRateService,
-                radarStayPerVisitorService,
-                radarVisitConcentrationService,
-                radarStayDurationChangeService,
-                radarInfoService
-        );
+        CustomFeature customFeature = customFeatureService.getCustomFeatureById(customFeatureUuid);
+        if (customFeature == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Invalid featureUuid"));
+        }
+        String formula = customFeature.getFormula();
 
         Map<String, Object> district1Info = (Map<String, Object>) district1Data.get("districtInfo");
         district1Info.remove("latitude");
@@ -267,97 +207,71 @@ public class CustomFeatureController {
         CustomFeature customFeature = customFeatureService.getCustomFeatureById(customFeatureUuid);
         String formula = customFeature.getFormula();
 
-        // 사용자 커스텀 피처 조회 및 계산 후 기존 데이터에 추가
-        RadarFloatingPopulationResponse floatingPopulation1 = radarFloatingPopulationService.getNormalizedFloatingPopulation(districtUuid1);
-        RadarStayVisitRatioResponse stayVisitRatio1 = radarStayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid1);
-        RadarCongestionRateResponse congestionRate1 = radarCongestionRateService.getCongestionRateByDistrictUuid(districtUuid1);
-        RadarStayPerVisitorResponse stayPerVisitor1 = radarStayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid1);
-        RadarVisitConcentrationResponse visitConcentration1 = radarVisitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid1);
-        RadarStayDurationChangeResponse stayDurationChange1 = radarStayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid1);
+        try {
+            // 3) 상권1, 상권2 종합 파생지표
+            Map<String, Object> details1 = populationDetailsService.getDetailsByDistrictUuid(districtUuid1);
+            Map<String, Object> details2 = populationDetailsService.getDetailsByDistrictUuid(districtUuid2);
 
-        RadarFloatingPopulationResponse floatingPopulation2 = radarFloatingPopulationService.getNormalizedFloatingPopulation(districtUuid2);
-        RadarStayVisitRatioResponse stayVisitRatio2 = radarStayVisitRatioService.getStayVisitRatioByDistrictUuid(districtUuid2);
-        RadarCongestionRateResponse congestionRate2 = radarCongestionRateService.getCongestionRateByDistrictUuid(districtUuid2);
-        RadarStayPerVisitorResponse stayPerVisitor2 = radarStayPerVisitorService.getStayPerVisitorByDistrictUuid(districtUuid2);
-        RadarVisitConcentrationResponse visitConcentration2 = radarVisitConcentrationService.getVisitConcentrationByDistrictUuid(districtUuid2);
-        RadarStayDurationChangeResponse stayDurationChange2 = radarStayDurationChangeService.calculateAvgStayTimeChangeRate(districtUuid2);
+            // 4) buildOverallData
+            Map<String, Object> overallDataMap1 = buildOverallData(details1);
+            Map<String, Object> overallDataMap2 = buildOverallData(details2);
 
-        Map<String, Object> overallDataMap1 = new LinkedHashMap<>();
-        overallDataMap1.put("population", (int)(floatingPopulation1.get유동인구_수() * 100));
-        overallDataMap1.put("stayVisit", (int)(stayVisitRatio1.get체류_방문_비율() * 100));
-        overallDataMap1.put("congestion", (int)(congestionRate1.get혼잡도_변화율() * 100));
-        overallDataMap1.put("stayPerVisitor", (int)(stayPerVisitor1.get체류시간_대비_방문자_수() * 100));
-        overallDataMap1.put("visitConcentration", (int)(visitConcentration1.get방문_집중도() * 100));
-        overallDataMap1.put("stayTimeChange", (int)(stayDurationChange1.get평균_체류시간_변화율() * 100));
+            // 5) Expression 계산
+            Expression e1 = new ExpressionBuilder(formula)
+                    .variables(overallDataMap1.keySet())
+                    .build();
+            for (Map.Entry<String, Object> entry : overallDataMap1.entrySet()) {
+                e1.setVariable(entry.getKey(), ((Number) entry.getValue()).doubleValue());
+            }
+            double result1 = e1.evaluate();
 
-        Map<String, Object> overallDataMap2 = new LinkedHashMap<>();
-        overallDataMap2.put("population", (int)(floatingPopulation2.get유동인구_수() * 100));
-        overallDataMap2.put("stayVisit", (int)(stayVisitRatio2.get체류_방문_비율() * 100));
-        overallDataMap2.put("congestion", (int)(congestionRate2.get혼잡도_변화율() * 100));
-        overallDataMap2.put("stayPerVisitor", (int)(stayPerVisitor2.get체류시간_대비_방문자_수() * 100));
-        overallDataMap2.put("visitConcentration", (int)(visitConcentration2.get방문_집중도() * 100));
-        overallDataMap2.put("stayTimeChange", (int)(stayDurationChange2.get평균_체류시간_변화율() * 100));
+            Expression e2 = new ExpressionBuilder(formula)
+                    .variables(overallDataMap2.keySet())
+                    .build();
+            for (Map.Entry<String, Object> entry : overallDataMap2.entrySet()) {
+                e2.setVariable(entry.getKey(), ((Number) entry.getValue()).doubleValue());
+            }
+            double result2 = e2.evaluate();
 
-        List<Object> overallDataList1 = List.of(floatingPopulation1, stayVisitRatio1, congestionRate1, stayPerVisitor1, visitConcentration1, stayDurationChange1);
-        List<Object> overallDataList2 = List.of(floatingPopulation2, stayVisitRatio2, congestionRate2, stayPerVisitor2, visitConcentration2, stayDurationChange2);
+            // 6) 정규화
+            List<Integer> normalizeResult = normalize((int) result1, (int) result2);
 
-        List<Pair<String, Double>> topTwoPairs1 = RadarUtils.findTopTwo(overallDataList1);
-        List<Pair<String, Double>> topTwoPairs2 = RadarUtils.findTopTwo(overallDataList2);
+            // 7) 임의로 districtName/clusterName등을 "details"에서 구하거나 DB에서 구할 수도 있음
+            //    여기서는 생략 or 필요 시 populationDetailsService가 districtName까지 주도록 해도 됨.
 
-        Map<String, Object> topTwo1 = Map.of(
-                "name", topTwoPairs1.get(0).getKey(),
-                "value", (int) (topTwoPairs1.get(0).getValue() * 100)
-        );
+            // 예시 응답
+            Map<String, Object> district1Response = new LinkedHashMap<>();
+            district1Response.put("districtName", "상권1"); // 임의
+            district1Response.put("clusterName", "클러스터1");
+            district1Response.put("overallData", overallDataMap1);
+            district1Response.put("customFeature", Map.of(
+                    "name", customFeature.getFeatureName(),
+                    "value", normalizeResult.get(0)
+            ));
 
-        Map<String, Object> topTwo2 = Map.of(
-                "name", topTwoPairs2.get(0).getKey(),
-                "value", (int) (topTwoPairs2.get(0).getValue() * 100)
-        );
+            Map<String, Object> district2Response = new LinkedHashMap<>();
+            district2Response.put("districtName", "상권2"); // 임의
+            district2Response.put("clusterName", "클러스터2");
+            district2Response.put("overallData", overallDataMap2);
+            district2Response.put("customFeature", Map.of(
+                    "name", customFeature.getFeatureName(),
+                    "value", normalizeResult.get(1)
+            ));
 
-        Expression e1 = new ExpressionBuilder(formula)
-                .variables(overallDataMap1.keySet())
-                .build();
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("district1", district1Response);
+            result.put("district2", district2Response);
 
-        for (Map.Entry<String, Object> entry : overallDataMap1.entrySet()) {
-            e1.setVariable(entry.getKey(), ((Number) entry.getValue()).doubleValue());
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error","Error in compareDistricts"));
         }
-
-        double result1 = e1.evaluate();
-
-        Expression e2 = new ExpressionBuilder(formula)
-                .variables(overallDataMap2.keySet())
-                .build();
-
-        for (Map.Entry<String, Object> entry : overallDataMap2.entrySet()) {
-            e2.setVariable(entry.getKey(), ((Number) entry.getValue()).doubleValue());
-        }
-
-        double result2 = e2.evaluate();
-
-        List<Integer> normalizeResult = normalize((int) result1, (int) result2);
-
-        Map<String, Object> district1Response = new LinkedHashMap<>();
-        district1Response.put("districtName", district1Info.get("districtName"));
-        district1Response.put("clusterName", district1Info.get("clusterName"));
-        district1Response.put("top", topTwo1);
-        district1Response.put("overallData", district1Overall);
-        district1Response.put("customFeature", Map.of("name", customFeature.getFeatureName(), "value", normalizeResult.get(0)));
-
-        Map<String, Object> district2Response = new LinkedHashMap<>();
-        district2Response.put("districtName", district2Info.get("districtName"));
-        district2Response.put("clusterName", district2Info.get("clusterName"));
-        district2Response.put("top", topTwo2);
-        district2Response.put("overallData", district2Overall);
-        district2Response.put("customFeature", Map.of("name", customFeature.getFeatureName(), "value", normalizeResult.get(1)));
-
-        Map<String, Object> comparisonResult = new LinkedHashMap<>();
-        comparisonResult.put("district1", district1Response);
-        comparisonResult.put("district2", district2Response);
-
-        return ResponseEntity.ok(comparisonResult);
     }
 
     //현재 사용자 커스텀 피처 조회
+
     @GetMapping("/list")
     public ResponseEntity<List<CustomFeatureDto>> listCustomFeatures(@RequestHeader("Authorization") String authorizationHeader) {
         String token = tokenProvider.extractToken(authorizationHeader);
@@ -381,17 +295,21 @@ public class CustomFeatureController {
                 "stayTimeChange", "평균 체류시간 변화율"
         );
 
-        List<CustomFeatureDto> customFeatureDtos = customFeatures.stream()
+        List<CustomFeatureDto> dtoList = customFeatures.stream()
                 .map(feature -> {
-                    String formula = feature.getFormula();
+                    String f = feature.getFormula();
                     for (Map.Entry<String, String> entry : reverseFieldMapping.entrySet()) {
-                        formula = formula.replace(entry.getKey(), entry.getValue());
+                        f = f.replace(entry.getKey(), entry.getValue());
                     }
-                    return new CustomFeatureDto(feature.getFeatureUuid(), feature.getFeatureName(), formula);
+                    return new CustomFeatureDto(
+                            feature.getFeatureUuid(),
+                            feature.getFeatureName(),
+                            f
+                    );
                 })
                 .collect(Collectors.toList());
 
-        return new ResponseEntity<>(customFeatureDtos, HttpStatus.OK);
+        return new ResponseEntity<>(dtoList, HttpStatus.OK);
     }
 
     // 피처 생성 처리
@@ -415,8 +333,8 @@ public class CustomFeatureController {
         CustomFeature savedCustomFeature = customFeatureService.saveCustomFeature(customFeature, userUuid);
         return new ResponseEntity<>(savedCustomFeature, HttpStatus.CREATED);
     }*/
-
     //피처 삭제
+
     @DeleteMapping("/{customFeatureId}")
     public ResponseEntity<?> deleteCustomFeature(@RequestHeader("Authorization") String authorizationHeader,
                                                  @PathVariable String customFeatureId) {
@@ -430,16 +348,15 @@ public class CustomFeatureController {
             return new ResponseEntity<>("Unauthorized", HttpStatus.UNAUTHORIZED);
         }
 
-        CustomFeature customFeature = customFeatureService.getCustomFeatureById(customFeatureId);
-        if (customFeature == null || !customFeature.getMember().getMemberUuid().equals(userUuid)) {
+        CustomFeature cf = customFeatureService.getCustomFeatureById(customFeatureId);
+        if (cf == null || !cf.getMember().getMemberUuid().equals(userUuid)) {
             return new ResponseEntity<>("Not Found or Unauthorized", HttpStatus.NOT_FOUND);
         }
-
         customFeatureService.deleteFeature(customFeatureId);
         return new ResponseEntity<>("Feature deleted successfully", HttpStatus.OK);
     }
-
     // 수식 검증 메서드
+
     private boolean isValidFormula(String formula) {
         try {
             // 변수 목록을 InfluxDBService에서 가져옴
@@ -460,7 +377,6 @@ public class CustomFeatureController {
             return false;
         }
     }
-
     private List<Integer> normalize(int e1, int e2) {
         List<Integer> result = new ArrayList<>();
 
@@ -477,5 +393,45 @@ public class CustomFeatureController {
         result.add(e1);
         result.add(e2);
         return result;
+    }
+
+    private Map<String, Object> buildOverallData(Map<String, Object> details) {
+        // 1) 결과 map
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        // (a) population
+        double pop = averageOf( (Map<String,Double>) details.get("hourlyFloatingPopulation") );
+        result.put("population", (int)(pop * 100));
+
+        // (b) 체류/방문 비율
+        double stayVisit = averageOf( (Map<String,Double>) details.get("hourlyStayVisitRatio") );
+        result.put("stayVisit", (int)(stayVisit * 100));
+
+        // (c) 혼잡도
+        double congestion = averageOf( (Map<String,Double>) details.get("hourlyCongestionRateChange") );
+        result.put("congestion", (int)(congestion * 100));
+
+        // (d) 체류시간 대비 방문자 수
+        double spv = averageOf( (Map<String,Double>) details.get("stayPerVisitorDuration") );
+        result.put("stayPerVisitor", (int)(spv * 100));
+
+        // (e) 방문 집중도
+        double vConc = averageOf( (Map<String,Double>) details.get("visitConcentration") );
+        result.put("visitConcentration", (int)(vConc * 100));
+
+        // (f) 평균 체류시간 변화율
+        double stayTimeChange = averageOf( (Map<String,Double>) details.get("hourlyAvgStayDurationChange") );
+        result.put("stayTimeChange", (int)(stayTimeChange * 100));
+
+        return result;
+    }
+
+    private double averageOf(Map<String, Double> map) {
+        if (map == null || map.isEmpty()) return 0.0;
+        double sum = 0.0;
+        for (Double val : map.values()) {
+            sum += val;
+        }
+        return sum / map.size();
     }
 }
