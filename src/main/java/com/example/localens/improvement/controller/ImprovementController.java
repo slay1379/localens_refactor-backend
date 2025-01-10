@@ -2,6 +2,7 @@ package com.example.localens.improvement.controller;
 
 import com.example.localens.analysis.controller.DateController;
 import com.example.localens.analysis.service.DateAnalysisService;
+import com.example.localens.analysis.service.PopulationDetailsService;
 import com.example.localens.analysis.service.RadarComparisonService;
 import com.example.localens.analysis.service.RadarInfoService;
 import com.example.localens.improvement.domain.Event;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,20 +43,7 @@ public class ImprovementController {
     private final DateController dateController;
     private final DateAnalysisService dateAnalysisService;
 
-    private final RadarComparisonService radarComparisonService;
-    private final RadarFloatingPopulationService radarFloatingPopulationService;
-    private final RadarStayVisitRatioService radarStayVisitRatioService;
-    private final RadarCongestionRateService radarCongestionRateService;
-    private final RadarStayPerVisitorService radarStayPerVisitorService;
-    private final RadarStayDurationChangeService radarStayDurationChangeService;
-    private final RadarInfoService radarInfoService;
-    private final RadarVisitConcentrationService radarVisitConcentrationService;
-    private final DatePopulationService datePopulationService;
-    private final DateVisitConcentrationService dateVisitConcentrationService;
-    private final DateStayVisitService dateStayVisitService;
-    private final DateCongestionRateService dateCongestionRateService;
-    private final DateStayPerVisitorService dateStayPerVisitorService;
-    private final DateStayDurationRateService dateStayDurationRateService;
+    private final PopulationDetailsService populationDetailsService;
 
     @Autowired
     public ImprovementController(ImprovementService improvementService,
@@ -63,89 +52,36 @@ public class ImprovementController {
                                  EventMetricsRepository eventMetricsRepository,
                                  DateController dateController,
                                  DateAnalysisService dateAnalysisService,
-                                 RadarComparisonService radarComparisonService,
-                                 RadarFloatingPopulationService radarFloatingPopulationService,
-                                 RadarStayVisitRatioService radarStayVisitRatioService,
-                                 RadarCongestionRateService radarCongestionRateService,
-                                 RadarStayPerVisitorService radarStayPerVisitorService,
-                                 RadarStayDurationChangeService radarStayDurationChangeService,
-                                 RadarInfoService radarInfoService,
-                                 RadarVisitConcentrationService radarVisitConcentrationService,
-                                 DatePopulationService datePopulationService,
-                                 DateVisitConcentrationService dateVisitConcentrationService,
-                                 DateStayVisitService dateStayVisitService,
-                                 DateCongestionRateService dateCongestionRateService,
-                                 DateStayPerVisitorService dateStayPerVisitorService,
-                                 DateStayDurationRateService dateStayDurationRateService) {
+                                 PopulationDetailsService populationDetailsService) {
         this.improvementService = improvementService;
         this.metricRepository = metricRepository;
         this.eventRepository = eventRepository;
         this.eventMetricsRepository = eventMetricsRepository;
         this.dateController = dateController;
         this.dateAnalysisService = dateAnalysisService;
-        this.radarComparisonService = radarComparisonService;
-        this.radarFloatingPopulationService = radarFloatingPopulationService;
-        this.radarStayVisitRatioService = radarStayVisitRatioService;
-        this.radarCongestionRateService = radarCongestionRateService;
-        this.radarStayPerVisitorService = radarStayPerVisitorService;
-        this.radarStayDurationChangeService = radarStayDurationChangeService;
-        this.radarInfoService = radarInfoService;
-        this.radarVisitConcentrationService = radarVisitConcentrationService;
-        this.datePopulationService = datePopulationService;
-        this.dateVisitConcentrationService = dateVisitConcentrationService;
-        this.dateStayPerVisitorService = dateStayPerVisitorService;
-        this.dateCongestionRateService = dateCongestionRateService;
-        this.dateStayVisitService = dateStayVisitService;
-        this.dateStayDurationRateService = dateStayDurationRateService;
+        this.populationDetailsService = populationDetailsService;
     }
-
 
     @GetMapping("/recommendations/{districtUuid1}/{districtUuid2}")
     public ResponseEntity<Map<String, Object>> recommendEventsWithMetrics(
             @PathVariable Integer districtUuid1,
             @PathVariable Integer districtUuid2) {
 
-        Map<String, Object> district1Data = radarComparisonService.constructDistrictData(
-                districtUuid1,
-                radarFloatingPopulationService,
-                radarStayVisitRatioService,
-                radarCongestionRateService,
-                radarStayPerVisitorService,
-                radarVisitConcentrationService,
-                radarStayDurationChangeService,
-                radarInfoService
-        );
+        Map<String, Object> district1Data = populationDetailsService.getDetailsByDistrictUuid(districtUuid1);
+        Map<String, Object> district2Data = populationDetailsService.getDetailsByDistrictUuid(districtUuid2);
 
-        Map<String, Object> district2Data = radarComparisonService.constructDistrictData(
-                districtUuid2,
-                radarFloatingPopulationService,
-                radarStayVisitRatioService,
-                radarCongestionRateService,
-                radarStayPerVisitorService,
-                radarVisitConcentrationService,
-                radarStayDurationChangeService,
-                radarInfoService
-        );
-        // 두 상권의 overallData 추출
-        Map<String, Integer> district1Overall = (Map<String, Integer>) district1Data.get("overallData");
-        Map<String, Integer> district2Overall = (Map<String, Integer>) district2Data.get("overallData");
+        Map<String, Integer> district1Overall = buildOverallData(district1Data);
+        Map<String, Integer> district2Overall = buildOverallData(district2Data);
 
-        // 각 지표의 차이를 계산하여 저장할 리스트 생성
-        List<Map.Entry<String, Integer>> differences = new ArrayList<>();
-
+        List<Map.Entry<String,Integer>> differences = new ArrayList<>();
         for (String key : district1Overall.keySet()) {
             if (district2Overall.containsKey(key)) {
-                int value1 = district1Overall.get(key);
-                int value2 = district2Overall.get(key);
-                int difference = Math.abs(value1 - value2);
-                differences.add(new AbstractMap.SimpleEntry<>(key, difference));
+                int diff = Math.abs(district1Overall.get(key) - district2Overall.get(key));
+                differences.add(new AbstractMap.SimpleEntry<>(key, diff));
             }
         }
-
-        // 차이를 기준으로 내림차순 정렬
         differences.sort((e1, e2) -> e2.getValue().compareTo(e1.getValue()));
 
-        // 차이가 가장 많이 나는 지표 두 개 추출
         List<String> topTwoDifferences = new ArrayList<>();
         if (differences.size() >= 2) {
             topTwoDifferences.add(differences.get(0).getKey());
@@ -156,22 +92,16 @@ public class ImprovementController {
 
         List<String> metricsUuids = new ArrayList<>();
         for (String metricName : topTwoDifferences) {
-            // event_metric_change_type 테이블에서 metrics_uuid 찾기
             String metricsUuid = metricRepository.findMetricsUuidByMetricsName(metricName);
             if (metricsUuid != null) {
                 metricsUuids.add(metricsUuid);
             }
         }
-
-        // metrics_uuid가 event_metrics 테이블에서 매칭되는 event_uuid 찾기
         List<String> eventUuids = eventMetricsRepository.findEventUuidByMetricsUuidIn(metricsUuids);
-
-        // 찾은 event_uuid를 통해 event 테이블에서 이벤트 정보 가져오기
         List<Event> events = eventRepository.findAllById(eventUuids);
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy년 MM월 dd일");
 
-        // 이벤트 정보를 improveMethod 리스트에 추가
         List<Map<String, Object>> improveMethodList = new ArrayList<>();
         List<Map<String, Object>> beforeOverallDataList = new ArrayList<>();
         List<Map<String, Object>> afterOverallDataList = new ArrayList<>();
@@ -181,54 +111,55 @@ public class ImprovementController {
         List<Integer> changedFeatureValues = new ArrayList<>();
 
         for (Event event : events) {
-            if (event != null) {
-                Map<String, Object> improveMethod = new HashMap<>();
-                improveMethod.put("image", event.getEventImg());
-                improveMethod.put("name", event.getEventName());
-                improveMethod.put("date", event.getEventStart().format(formatter) + " ~ " + event.getEventEnd().format(formatter));
-                improveMethod.put("area", event.getEventPlace());
-                improveMethod.put("detail", event.getInfo());
-                improveMethod.put("uuid", event.getEventUuid().toString());
-                improveMethodList.add(improveMethod);
+            if (event == null) continue;
 
-                // beforeAndAfter 데이터 구성
-                LocalDate parsedDate1 = event.getEventStart().toLocalDate();
-                LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
+            Map<String, Object> improveMethod = new HashMap<>();
+            improveMethod.put("image", event.getEventImg());
+            improveMethod.put("name", event.getEventName());
+            improveMethod.put("date", event.getEventStart().format(formatter) + " ~ " + event.getEventEnd().format(formatter));
+            improveMethod.put("area", event.getEventPlace());
+            improveMethod.put("detail", event.getInfo());
+            improveMethod.put("uuid", event.getEventUuid().toString());
+            improveMethodList.add(improveMethod);
 
-                Map<String, Object> beforeOverallData = new LinkedHashMap<>();
-                beforeOverallData.put("population", district1Overall.get("population"));
-                beforeOverallData.put("stayVisit", district1Overall.get("stayVisit"));
-                beforeOverallData.put("congestion", district1Overall.get("congestion"));
-                beforeOverallData.put("stayPerVisitor", district1Overall.get("stayPerVisitor"));
-                beforeOverallData.put("visitConcentration", district1Overall.get("visitConcentration"));
-                beforeOverallData.put("stayTimeChange", district1Overall.get("stayTimeChange"));
-                beforeOverallDataList.add(beforeOverallData);
-                beforeDates.add(parsedDate1.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
+            LocalDate parsedDate1 = event.getEventStart().toLocalDate();
+            LocalDate parsedDate2 = event.getEventEnd().toLocalDate();
 
-                Map<String, Object> afterOverallData = new LinkedHashMap<>();
-                afterOverallData.put("population", district2Overall.get("population"));
-                afterOverallData.put("stayVisit", district2Overall.get("stayVisit"));
-                afterOverallData.put("congestion", district2Overall.get("congestion"));
-                afterOverallData.put("stayPerVisitor", district2Overall.get("stayPerVisitor"));
-                afterOverallData.put("visitConcentration", district2Overall.get("visitConcentration"));
-                afterOverallData.put("stayTimeChange", district2Overall.get("stayTimeChange"));
-                afterOverallDataList.add(afterOverallData);
-                afterDates.add(parsedDate2.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
+            // before( district1Overall )
+            Map<String, Object> beforeOverallData = new LinkedHashMap<>();
+            beforeOverallData.put("population", district1Overall.get("population"));
+            beforeOverallData.put("stayVisit", district1Overall.get("stayVisit"));
+            beforeOverallData.put("congestion", district1Overall.get("congestion"));
+            beforeOverallData.put("stayPerVisitor", district1Overall.get("stayPerVisitor"));
+            beforeOverallData.put("visitConcentration", district1Overall.get("visitConcentration"));
+            beforeOverallData.put("stayTimeChange", district1Overall.get("stayTimeChange"));
+            beforeOverallDataList.add(beforeOverallData);
+            beforeDates.add(parsedDate1.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
 
-                String biggestDifferenceMetric = null;
-                int biggestDifferenceValue = Integer.MIN_VALUE;
-                for (String key : district2Overall.keySet()) {
-                    if (district1Overall.containsKey(key)) {
-                        int difference = district2Overall.get(key) - district1Overall.get(key);
-                        if (difference > biggestDifferenceValue) {
-                            biggestDifferenceMetric = key;
-                            biggestDifferenceValue = difference;
-                        }
+            // after( district2Overall )
+            Map<String, Object> afterOverallData = new LinkedHashMap<>();
+            afterOverallData.put("population", district2Overall.get("population"));
+            afterOverallData.put("stayVisit", district2Overall.get("stayVisit"));
+            afterOverallData.put("congestion", district2Overall.get("congestion"));
+            afterOverallData.put("stayPerVisitor", district2Overall.get("stayPerVisitor"));
+            afterOverallData.put("visitConcentration", district2Overall.get("visitConcentration"));
+            afterOverallData.put("stayTimeChange", district2Overall.get("stayTimeChange"));
+            afterOverallDataList.add(afterOverallData);
+            afterDates.add(parsedDate2.format(DateTimeFormatter.ofPattern("yyyy년 MM월")));
+
+            String biggestDifferenceMetric = null;
+            int biggestDifferenceValue = Integer.MIN_VALUE;
+            for (String key : district2Overall.keySet()) {
+                if (district1Overall.containsKey(key)) {
+                    int difference = district2Overall.get(key) - district1Overall.get(key);
+                    if (difference > biggestDifferenceValue) {
+                        biggestDifferenceMetric = key;
+                        biggestDifferenceValue = difference;
                     }
                 }
-                changedFeatureNames.add(biggestDifferenceMetric);
-                changedFeatureValues.add(biggestDifferenceValue);
             }
+            changedFeatureNames.add(biggestDifferenceMetric);
+            changedFeatureValues.add(biggestDifferenceValue);
         }
 
         Map<String, Object> before = new LinkedHashMap<>();
@@ -247,13 +178,14 @@ public class ImprovementController {
                 "value", changedFeatureValues
         ));
 
-        // 최종 응답 구성
+        // 최종 응답
         Map<String, Object> response = new HashMap<>();
         response.put("ImproveMethod", improveMethodList);
         response.put("beforeAndAfter", beforeAndAfter);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
 
 /*
     @GetMapping("/reco/{districtUuid1}/{districtUuid2}")
@@ -262,7 +194,6 @@ public class ImprovementController {
             @PathVariable Integer districtUuid2) {
 
     }*/
-
     @GetMapping("/reco")
     public ResponseEntity<Map<String, Object>> getImprovedEvents() {
         List<Event> events = eventRepository.findAll();
@@ -335,5 +266,37 @@ public class ImprovementController {
         return ResponseEntity.ok(response);
     }
 
+    private Map<String, Integer> buildOverallData(Map<String, Object> details) {
+        Map<String, Integer> result = new LinkedHashMap<>();
+
+        double pop = averageOf((Map<String, Double>) details.get("hourlyFloatingPopulation"));
+        result.put("population", (int) (pop * 100));
+
+        double stayVisit = averageOf( (Map<String,Double>) details.get("hourlyStayVisitRatio") );
+        result.put("stayVisit", (int)(stayVisit * 100));
+
+        double congestion = averageOf( (Map<String,Double>) details.get("hourlyCongestionRateChange") );
+        result.put("congestion", (int)(congestion * 100));
+
+        double spv = averageOf( (Map<String,Double>) details.get("stayPerVisitorDuration") );
+        result.put("stayPerVisitor", (int)(spv * 100));
+
+        double vConc = averageOf( (Map<String,Double>) details.get("visitConcentration") );
+        result.put("visitConcentration", (int)(vConc * 100));
+
+        double stayTimeChange = averageOf( (Map<String,Double>) details.get("hourlyAvgStayDurationChange") );
+        result.put("stayTimeChange", (int)(stayTimeChange * 100));
+
+        return result;
+    }
+
+    private double averageOf(Map<String, Double> map) {
+        if (map == null || map.isEmpty()) return 0.0;
+        double sum = 0.0;
+        for (double val : map.values()) {
+            sum += val;
+        }
+        return sum / map.size();
+    }
 
 }
