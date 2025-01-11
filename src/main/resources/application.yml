@@ -5,7 +5,7 @@ spring:
   application:
     name: localens
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:default}
+    active: local
   datasource:
     url: jdbc:mysql://localens.cpc8gqku4ew1.ap-northeast-2.rds.amazonaws.com:3306/localens
     username: localens
