@@ -34,8 +34,8 @@ public class DateAnalysisService {
 
     private Map<String, Double> queryInfluxForDate(String place, String date) {
         String fluxQuery = String.format(
-                "from(bucket: \"date_compare_population\") "
-                        + "|> range(start: 2023-07-30T00:00:00Z, stop: now()) "
+                "from(bucket: \"aggregate_24h\") "
+                        + "|> range(start: -30d) "
                         + "|> filter(fn: (r) => r[\"place\"] == \"%s\") "
                         + "|> keep(columns: [\"_time\", \"_field\", \"_value\"])",
                 place
