@@ -1,5 +1,8 @@
 package com.example.localens.analysis.service;
 
+import com.example.localens.analysis.dto.CompareTwoDistrictsDTO;
+import com.example.localens.analysis.dto.DifferenceItemDTO;
+import com.example.localens.analysis.dto.RadarDataDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,14 +23,12 @@ public class RadarComparisonService {
         put("stayTimeChange", "체류시간 변화율");
     }};
 
-    public Map<String, Object> compareTwoDistricts(Integer districtUuid1, Integer districtUuid2) {
-        Map<String, Object> district1Radar = radarAnalysisService.getRadarData(districtUuid1);
-        Map<String, Object> district2Radar = radarAnalysisService.getRadarData(districtUuid2);
+    public CompareTwoDistrictsDTO compareTwoDistricts(Integer districtUuid1, Integer districtUuid2) {
+        RadarDataDTO district1Radar = radarAnalysisService.getRadarData(districtUuid1);
+        RadarDataDTO district2Radar = radarAnalysisService.getRadarData(districtUuid2);
 
-        @SuppressWarnings("unchecked")
-        Map<String, Integer> district1Overall = (Map<String, Integer>) district1Radar.get("overallData");
-        @SuppressWarnings("unchecked")
-        Map<String, Integer> district2Overall = (Map<String, Integer>) district2Radar.get("overallData");
+        Map<String, Integer> district1Overall = district1Radar.getOverallData();
+        Map<String, Integer> district2Overall = district2Radar.getOverallData();
 
         Map<String, Double> differences = new HashMap<>();
         for (String key : district1Overall.keySet()) {
@@ -38,24 +39,25 @@ public class RadarComparisonService {
         List<Map.Entry<String, Double>> sortedDiffs = new ArrayList<>(differences.entrySet());
         sortedDiffs.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
 
-        Map<String, Object> topDifferences = new LinkedHashMap<>();
-        for (int i = 0; i < Math.min(3, sortedDiffs.size()); i++) {
+        List<DifferenceItemDTO> topDifferences = new ArrayList<>();
+        int limit = Math.min(3, sortedDiffs.size());
+        for (int i = 0; i < limit; i++) {
             String key = sortedDiffs.get(i).getKey();
             Double val = sortedDiffs.get(i).getValue();
 
-            Map<String, Object> item = new HashMap<>();
-            item.put("name", keyToKoreanMap.getOrDefault(key, key));
-            item.put("value1", district1Overall.get(key));
-            item.put("value2", district2Overall.get(key));
-            item.put("difference", val);
+            DifferenceItemDTO item = new DifferenceItemDTO();
+            item.setName(keyToKoreanMap.getOrDefault(key, key));
+            item.setValue1(district1Overall.get(key));
+            item.setValue2(district2Overall.get(key));
+            item.setDifference(val);
 
-            topDifferences.put("key" + (i + 1), item);
+            topDifferences.add(item);
         }
 
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("district1", district1Radar);
-        result.put("district2", district2Radar);
-        result.put("topDifferences", topDifferences);
+        CompareTwoDistrictsDTO result = new CompareTwoDistrictsDTO();
+        result.setDistrict1(district1Radar);
+        result.setDistrict2(district2Radar);
+        result.setTopDifferences(topDifferences);
 
         return result;
     }

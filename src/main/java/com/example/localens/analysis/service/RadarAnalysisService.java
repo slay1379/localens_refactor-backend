@@ -1,6 +1,9 @@
 package com.example.localens.analysis.service;
 
 import com.example.localens.analysis.domain.CommercialDistrict;
+import com.example.localens.analysis.dto.ClusterDTO;
+import com.example.localens.analysis.dto.DistrictDTO;
+import com.example.localens.analysis.dto.RadarDataDTO;
 import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
@@ -21,7 +24,7 @@ public class RadarAnalysisService {
     private final MetricStatsService metricStatsService;
     private final InfluxDBClientWrapper influxDBClientWrapper;
 
-    public Map<String, Object> getRadarData(Integer districtUuid) {
+    public RadarDataDTO getRadarData(Integer districtUuid) {
         //1) 상권 정보 조회
         CommercialDistrict district = districtRepository.findById(districtUuid)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid districtUuid: " + districtUuid));
@@ -37,17 +40,21 @@ public class RadarAnalysisService {
             normalizedMap.put(field, (int) Math.round(normalized * 100));
         }
 
-        Map<String, Object> result = new LinkedHashMap<>();
-        Map<String, Object> districtInfo = new LinkedHashMap<>();
-        districtInfo.put("districtName", district.getDistrictName());
-        districtInfo.put("latitude", district.getLatitude());
-        districtInfo.put("longitude", district.getLongitude());
-        districtInfo.put("cluster", district.getCluster());
-        districtInfo.put("districtUuid", district.getDistrictUuid());
+        DistrictDTO districtDTO = new DistrictDTO();
+        districtDTO.setDistrictUuid(district.getDistrictUuid());
+        districtDTO.setDistrictName(district.getDistrictName());
+        if (district.getCluster() != null) {
+            ClusterDTO clusterDTO = new ClusterDTO();
+            clusterDTO.setClusterName(district.getCluster().getClusterName());
+            clusterDTO.setClusterUuid(district.getCluster().getClusterUuid());
+            districtDTO.setCluster(clusterDTO);
+        }
 
-        result.put("districtInfo", districtInfo);
-        result.put("overallData", normalizedMap);
-        return result;
+        RadarDataDTO radarDataDTO = new RadarDataDTO();
+        radarDataDTO.setDistrictInfo(districtDTO);
+        radarDataDTO.setOverallData(normalizedMap);
+
+        return radarDataDTO;
     }
 
     private Map<String, Double> queryRadarRawData(String place) {
