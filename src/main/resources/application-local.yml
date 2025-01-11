@@ -15,9 +15,9 @@ spring:
 influxdb:
   url: http://localhost:8086
   token: TpMEWlqVZYCBM34FRdxBh09trb71XadkSStyOK75cwtiTj4Y3aNLpVRlSRdtxAyETzAgvRPXMTFOu70l2VVvaQ==
-  org: localens
-  bucket: dev
-  measurement: hourly
+  org: dev
+  bucket: hourly
+  measurement: visitor_data
 
 server:
   port: 8080
