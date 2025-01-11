@@ -57,8 +57,8 @@ public class RadarAnalysisService {
         //       그리고 상권(place)에 맞춰 필터링을 어떻게 할지 결정
         //     - 여러 지표가 같은 measurement & bucket에 저장돼 있다 가정.
         String fluxQuery = String.format(
-                "from(bucket: \"result_radar_bucket\") "
-                        + "|> range(start: 2023-07-30T00:00:00Z, stop: now()) "
+                "from(bucket: \"aggregate_24h\") "
+                        + "|> range(start: -30d) "
                         + "|> filter(fn: (r) => r[\"place\"] == \"%s\") "
                         + "|> keep(columns: [\"_time\", \"_field\", \"_value\"])",
                 place
