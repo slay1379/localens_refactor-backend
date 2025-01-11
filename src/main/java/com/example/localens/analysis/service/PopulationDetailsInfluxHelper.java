@@ -44,9 +44,9 @@ public class PopulationDetailsInfluxHelper {
         //    여기서는 bucket="result_bucket" 라고 가정.
         //    "tmzn" = 시간대(0~23), "_value" = 유동인구 값
         String fluxQuery = String.format(
-                "from(bucket: \"result_bucket\") "
-                        + "|> range(start: 2023-07-30T00:00:00Z, stop: now()) "
-                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"population\") "
+                "from(bucket: \"aggregate_24h\") "
+                        + "|> range(start: -30d) "
+                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"total_population\") "
                         + "|> keep(columns: [\"tmzn\", \"_value\"]) ",
                 place
         );
@@ -84,9 +84,9 @@ public class PopulationDetailsInfluxHelper {
         }
 
         String fluxQuery = String.format(
-                "from(bucket: \"result_stay_visit_bucket\") "
-                        + "|> range(start: 2023-07-30T00:00:00Z, stop: now()) "
-                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"stayVisit\") "
+                "from(bucket: \"aggregate_24h\") "
+                        + "|> range(start: -30d) "
+                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"stay_visit_ratio\") "
                         + "|> keep(columns: [\"tmzn\", \"_value\"]) ",
                 place
         );
@@ -122,9 +122,9 @@ public class PopulationDetailsInfluxHelper {
         }
 
         String fluxQuery = String.format(
-                "from(bucket: \"result_bucket\") "
-                        + "|> range(start: 2023-07-30T00:00:00Z, stop: now()) "
-                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"congestion\") "
+                "from(bucket: \"aggregate_24h\") "
+                        + "|> range(start: -30d) "
+                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"congestion_rate\") "
                         + "|> keep(columns: [\"tmzn\", \"_value\"]) ",
                 place
         );
@@ -161,9 +161,9 @@ public class PopulationDetailsInfluxHelper {
 
         // 예시 bucket: "stay_per_visitor_bucket", field: "stayPerVisitor"
         String fluxQuery = String.format(
-                "from(bucket: \"stay_per_visitor_bucket\") "
-                        + "|> range(start: 2023-07-30T00:00:00Z, stop: now()) "
-                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"stayPerVisitor\") "
+                "from(bucket: \"aggregate_24h\") "
+                        + "|> range(start: -30d) "
+                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"stay_per_visitor\") "
                         + "|> keep(columns: [\"tmzn\", \"_value\"]) ",
                 place
         );
@@ -200,8 +200,8 @@ public class PopulationDetailsInfluxHelper {
 
         // 예: bucket: "date_stay_duration", field: "stayTimeChange"
         String fluxQuery = String.format(
-                "from(bucket: \"date_stay_duration\") "
-                        + "|> range(start: 2023-07-30T00:00:00Z, stop: now()) "
+                "from(bucket: \"aggregate_24h\") "
+                        + "|> range(start: -30d) "
                         + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"stayTimeChange\") "
                         + "|> keep(columns: [\"tmzn\", \"_value\"]) ",
                 place
@@ -241,8 +241,8 @@ public class PopulationDetailsInfluxHelper {
         // field: (가능하다면) "visitDuration" or "population"
         // columns: age_group, sex, _value
         String fluxQuery = String.format(
-                "from(bucket: \"age_gender_bucket\") "
-                        + "|> range(start: 2024-01-30T00:00:00Z, stop: now()) "
+                "from(bucket: \"aggregate_24h\") "
+                        + "|> range(start: -30d) "
                         + "|> filter(fn: (r) => r[\"place\"] == \"%s\") "
                         + "|> keep(columns: [\"age_group\", \"sex\", \"_value\"]) ",
                 place
@@ -288,8 +288,8 @@ public class PopulationDetailsInfluxHelper {
         // 예: bucket: "nationality_bucket"
         // columns: nationality, _value
         String fluxQuery = String.format(
-                "from(bucket: \"nationality_bucket\") "
-                        + "|> range(start: 2024-01-30T00:00:00Z, stop: now()) "
+                "from(bucket: \"aggregate_24h\") "
+                        + "|> range(start: -30d) "
                         + "|> filter(fn: (r) => r[\"place\"] == \"%s\") "
                         + "|> keep(columns: [\"nationality\", \"_value\"]) ",
                 place
