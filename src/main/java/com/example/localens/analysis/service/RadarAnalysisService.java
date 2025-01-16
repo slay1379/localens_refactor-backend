@@ -1,21 +1,20 @@
 package com.example.localens.analysis.service;
 
 import com.example.localens.analysis.domain.CommercialDistrict;
-import com.example.localens.analysis.dto.ClusterDTO;
 import com.example.localens.analysis.dto.DistrictDTO;
 import com.example.localens.analysis.dto.RadarDataDTO;
 import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.*;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RadarAnalysisService {
@@ -25,71 +24,147 @@ public class RadarAnalysisService {
     private final InfluxDBClientWrapper influxDBClientWrapper;
 
     public RadarDataDTO getRadarData(Integer districtUuid) {
-        //1) 상권 정보 조회
+        // 1) 상권정보 조회
         CommercialDistrict district = districtRepository.findById(districtUuid)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid districtUuid: " + districtUuid));
+
         String place = district.getDistrictName();
 
-        Map<String, Double> rawData = queryRadarRawData(place);
+        // 2) InfluxDB에서 데이터 조회
+        Map<String, Double> rawData = new LinkedHashMap<>();
 
+        // 체류시간 대비 방문자 수 조회
+        String stayPerVisitorQuery = String.format("""
+            from(bucket: "stay_per_visitor_bucket")
+                |> range(start: -30d)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "stay_to_visitor")
+                |> last()
+            """, place);
+        rawData.put("stayPerVisitor", executeQuery(stayPerVisitorQuery));
+
+        // 유동인구 수 조회
+        String populationQuery = String.format("""
+            from(bucket: "result_bucket")
+                |> range(start: -30d)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "total_population")
+                |> last()
+            """, place);
+        rawData.put("population", executeQuery(populationQuery));
+
+        // 체류/방문 비율 조회
+        String stayVisitQuery = String.format("""
+            from(bucket: "result_stay_visit_bucket")
+                |> range(start: -30d)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
+                |> last()
+            """, place);
+        rawData.put("stayVisit", executeQuery(stayVisitQuery));
+
+        // 혼잡도 변화율 조회
+        String congestionQuery = String.format("""
+            from(bucket: "date_congestion")
+                |> range(start: -30d)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "congestion_change_rate")
+                |> last()
+            """, place);
+        rawData.put("congestion", executeQuery(congestionQuery));
+
+        // 체류시간 변화율 조회
+        String stayTimeChangeQuery = String.format("""
+            from(bucket: "date_stay_duration")
+                |> range(start: -30d)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "stay_duration_change_rate")
+                |> last()
+            """, place);
+        rawData.put("stayTimeChange", executeQuery(stayTimeChangeQuery));
+
+        // visitConcentration은 혼잡도를 재사용 (실제로는 별도 데이터가 있다면 그것을 사용)
+        rawData.put("visitConcentration", executeQuery(congestionQuery));
+
+        // 3) 정규화
         Map<String, Integer> normalizedMap = new LinkedHashMap<>();
-        for (Entry<String, Double> entry : rawData.entrySet()) {
-            String field = entry.getKey();
-            Double rawValue = entry.getValue();
-            double normalized = metricStatsService.normalizeValue(place, field, rawValue);
-            normalizedMap.put(field, (int) Math.round(normalized * 100));
+        for (Map.Entry<String, Double> entry : rawData.entrySet()) {
+            String finalField = entry.getKey();
+            double rawValue = entry.getValue();
+            double normalized = metricStatsService.normalizeValue(place, finalField, rawValue);
+            int scaled = (int) Math.round(normalized * 100);
+            normalizedMap.put(finalField, scaled);
         }
 
+        // 4) DistrictDTO 생성
         DistrictDTO districtDTO = new DistrictDTO();
-        districtDTO.setDistrictUuid(district.getDistrictUuid());
         districtDTO.setDistrictName(district.getDistrictName());
+        if (district.getLatitude() != null) {
+            districtDTO.setLatitude(district.getLatitude().doubleValue());
+        }
+        if (district.getLongitude() != null) {
+            districtDTO.setLongitude(district.getLongitude().doubleValue());
+        }
         if (district.getCluster() != null) {
-            ClusterDTO clusterDTO = new ClusterDTO();
-            clusterDTO.setClusterName(district.getCluster().getClusterName());
-            clusterDTO.setClusterUuid(district.getCluster().getClusterUuid());
-            districtDTO.setCluster(clusterDTO);
+            districtDTO.setClusterName(district.getCluster().getClusterName());
         }
 
+        // 5) 상위 2개 추출
+        Map<String, Object> topTwoMap = findTopTwo(normalizedMap);
+
+        // 6) RadarDataDTO 생성
         RadarDataDTO radarDataDTO = new RadarDataDTO();
         radarDataDTO.setDistrictInfo(districtDTO);
         radarDataDTO.setOverallData(normalizedMap);
+        radarDataDTO.setTopTwo(topTwoMap);
 
         return radarDataDTO;
     }
 
-    private Map<String, Double> queryRadarRawData(String place) {
-
-        // (1) Flux 쿼리 작성
-        //     - 어떤 버킷을 쓸지, 어떤 기간(range)을 쓸지,
-        //       그리고 상권(place)에 맞춰 필터링을 어떻게 할지 결정
-        //     - 여러 지표가 같은 measurement & bucket에 저장돼 있다 가정.
-        String fluxQuery = String.format(
-                "from(bucket: \"aggregate_24h\") "
-                        + "|> range(start: -30d) "
-                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\") "
-                        + "|> keep(columns: [\"_time\", \"_field\", \"_value\"])",
-                place
-        );
-
-        List<FluxTable> tables = influxDBClientWrapper.query(fluxQuery);
-
-        Map<String, Double> rawData = new LinkedHashMap<>();
-
-        for (FluxTable table : tables) {
-            for (FluxRecord record : table.getRecords()) {
-                Object fieldObj = record.getValueByKey("_field");
-                Object valueObj = record.getValueByKey("_value");
-
-                if (fieldObj == null || valueObj == null) {
-                    continue;
-                }
-
-                String fieldName = fieldObj.toString();
-                double numericValue = Double.parseDouble(valueObj.toString());
-
-                rawData.put(fieldName, numericValue);
+    private double executeQuery(String query) {
+        try {
+            List<FluxTable> tables = influxDBClientWrapper.query(query);
+            if (tables.isEmpty() || tables.get(0).getRecords().isEmpty()) {
+                return 0.0;
             }
+            Object value = tables.get(0).getRecords().get(0).getValueByKey("_value");
+            return value != null ? Double.parseDouble(value.toString()) : 0.0;
+        } catch (Exception e) {
+            log.error("Error executing query: {}", e.getMessage());
+            return 0.0;
         }
-        return rawData;
+    }
+
+    private Map<String, Object> findTopTwo(Map<String, Integer> overallData) {
+        List<Map.Entry<String, Integer>> sorted = new ArrayList<>(overallData.entrySet());
+        sorted.sort((a, b) -> b.getValue().compareTo(a.getValue()));
+
+        Map<String, String> keyToKoreanMap = new LinkedHashMap<>();
+        keyToKoreanMap.put("population", "유동인구 수");
+        keyToKoreanMap.put("stayVisit", "체류/방문 비율");
+        keyToKoreanMap.put("congestion", "혼잡도 변화율");
+        keyToKoreanMap.put("stayPerVisitor", "체류시간 대비 방문자 수");
+        keyToKoreanMap.put("visitConcentration", "방문 집중도");
+        keyToKoreanMap.put("stayTimeChange", "체류시간 변화율");
+
+        Map<String, Object> topTwo = new LinkedHashMap<>();
+
+        if (!sorted.isEmpty()) {
+            var firstKey = sorted.get(0).getKey();
+            var firstVal = sorted.get(0).getValue();
+            Map<String, Object> firstMap = new LinkedHashMap<>();
+            firstMap.put("value", firstVal);
+            firstMap.put("name", keyToKoreanMap.getOrDefault(firstKey, firstKey));
+            topTwo.put("first", firstMap);
+        }
+        if (sorted.size() > 1) {
+            var secondKey = sorted.get(1).getKey();
+            var secondVal = sorted.get(1).getValue();
+            Map<String, Object> secondMap = new LinkedHashMap<>();
+            secondMap.put("value", secondVal);
+            secondMap.put("name", keyToKoreanMap.getOrDefault(secondKey, secondKey));
+            topTwo.put("second", secondMap);
+        }
+        return topTwo;
     }
 }
