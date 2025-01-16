@@ -52,8 +52,8 @@ public class StatsBatchService {
     // InfluxDB에서 field의 min값 구하기
     private double queryMinValue(String place, String field) {
         String fluxQuery = String.format(
-                "from(bucket: \"date_compare_population\") " +
-                        "|> range(start: 2023-07-30T00:00:00Z, stop: now()) " +
+                "from(bucket: \"hourly\") " +
+                        "|> range(start: 2024-08-01T00:00:00Z, stop: 2024-09-30T00:00:00Z) " +
                         "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"%s\") " +
                         "|> group() " +
                         "|> min(column: \"_value\")",
@@ -65,8 +65,8 @@ public class StatsBatchService {
     // InfluxDB에서 field의 max값 구하기
     private double queryMaxValue(String place, String field) {
         String fluxQuery = String.format(
-                "from(bucket: \"date_compare_population\") " +
-                        "|> range(start: 2023-07-30T00:00:00Z, stop: now()) " +
+                "from(bucket: \"hourly\") " +
+                        "|> range(start: 2024-08-01T00:00:00Z, stop: 2024-09-30T00:00:00Z) " +
                         "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"%s\") " +
                         "|> group() " +
                         "|> max(column: \"_value\")",
@@ -95,9 +95,13 @@ public class StatsBatchService {
                         .field(field)
                         .build()
                 );
+
         stats.setMinValue(minVal);
         stats.setMaxValue(maxVal);
         stats.setLastUpdated(LocalDateTime.now());
+
+        log.info("Upserting MetricStatistics: place={}, field={}, minValue={}, maxValue={}",
+                place, field, minVal, maxVal);
 
         metricStatisticsRepository.save(stats);
     }
