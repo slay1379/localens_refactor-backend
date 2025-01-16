@@ -10,8 +10,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DistrictDTO {
-    private Integer districtUuid;
     private String districtName;
-
-    private ClusterDTO cluster;
+    private Double latitude;
+    private Double longitude;
+    private String clusterName;
 }
