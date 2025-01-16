@@ -7,7 +7,7 @@ spring:
   profiles:
     active: local
   datasource:
-    url: jdbc:mysql://localens.cpc8gqku4ew1.ap-northeast-2.rds.amazonaws.com:3306/localens
+    url: jdbc:mysql://localens-db.cpc8gqku4ew1.ap-northeast-2.rds.amazonaws.com:3306/localens_db
     username: localens
     password: localens
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -17,8 +17,8 @@ spring:
     show-sql: true
 
 influxdb:
-  url: http://15.165.37.65:8086
-  token: duNMs9CKGD6w2JEiQBlSx7Yd6h7d2b1Yr_c063X3H-WK6DUVMc0JQxymh8xlw8j0i_4FEV3HwNa_JrGEuU0zBQ==
+  url: http://98.83.145.125:8086
+  token: DzFccT9Op233fL1U3-1bKzeywQKUD8CReyhdVVjF0nKd1SZDo_B16HpQT1LGoTadAZzbiCon9YWH9hyaobofDA==
   org: dev
   bucket: hourly
   measurement: visitor_data
