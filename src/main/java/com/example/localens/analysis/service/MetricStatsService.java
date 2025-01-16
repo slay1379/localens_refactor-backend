@@ -4,8 +4,10 @@ import com.example.localens.analysis.domain.MetricStatistics;
 import com.example.localens.analysis.repository.MetricStatisticsRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MetricStatsService {
@@ -13,6 +15,7 @@ public class MetricStatsService {
     private final MetricStatisticsRepository metricStatisticsRepository;
 
     public double[] getMinMax(String place, String field) {
+        log.info("Searching for MetricStatistics with place={} and field={}", place, field);
         Optional<MetricStatistics> opt = metricStatisticsRepository.findByPlaceAndField(place, field);
         if (opt.isPresent()) {
             MetricStatistics stats = opt.get();
