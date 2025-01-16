@@ -13,4 +13,5 @@ import lombok.Setter;
 public class RadarDataDTO {
     private DistrictDTO districtInfo;
     private Map<String, Integer> overallData;
+    private Map<String, Object> topTwo;
 }
