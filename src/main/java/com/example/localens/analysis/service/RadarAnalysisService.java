@@ -23,6 +23,12 @@ public class RadarAnalysisService {
     private final MetricStatsService metricStatsService;
     private final InfluxDBClientWrapper influxDBClientWrapper;
 
+    // 시간 범위 상수 정의
+    private static final String CURRENT_RANGE =
+            "start: 2024-05-30T00:00:00Z, stop: 2024-08-31T23:59:59Z";
+    private static final String DATE_COMPARE_RANGE =
+            "start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z";
+
     public RadarDataDTO getRadarData(Integer districtUuid) {
         // 1) 상권정보 조회
         CommercialDistrict district = districtRepository.findById(districtUuid)
@@ -36,55 +42,62 @@ public class RadarAnalysisService {
         // 체류시간 대비 방문자 수 조회
         String stayPerVisitorQuery = String.format("""
             from(bucket: "stay_per_visitor_bucket")
-                |> range(start: -30d)
+                |> range(%s)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "stay_to_visitor")
                 |> last()
-            """, place);
+            """, CURRENT_RANGE, place);
         rawData.put("stayPerVisitor", executeQuery(stayPerVisitorQuery));
 
         // 유동인구 수 조회
         String populationQuery = String.format("""
             from(bucket: "result_bucket")
-                |> range(start: -30d)
+                |> range(%s)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "total_population")
                 |> last()
-            """, place);
+            """, CURRENT_RANGE, place);
         rawData.put("population", executeQuery(populationQuery));
 
         // 체류/방문 비율 조회
         String stayVisitQuery = String.format("""
             from(bucket: "result_stay_visit_bucket")
-                |> range(start: -30d)
+                |> range(%s)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
                 |> last()
-            """, place);
+            """, CURRENT_RANGE, place);
         rawData.put("stayVisit", executeQuery(stayVisitQuery));
 
-        // 혼잡도 변화율 조회
+        // 혼잡도 변화율 조회 (date_compare_range 사용)
         String congestionQuery = String.format("""
             from(bucket: "date_congestion")
-                |> range(start: -30d)
+                |> range(%s)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "congestion_change_rate")
                 |> last()
-            """, place);
+            """, DATE_COMPARE_RANGE, place);
         rawData.put("congestion", executeQuery(congestionQuery));
 
-        // 체류시간 변화율 조회
+        // 체류시간 변화율 조회 (date_compare_range 사용)
         String stayTimeChangeQuery = String.format("""
             from(bucket: "date_stay_duration")
-                |> range(start: -30d)
+                |> range(%s)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "stay_duration_change_rate")
                 |> last()
-            """, place);
+            """, DATE_COMPARE_RANGE, place);
         rawData.put("stayTimeChange", executeQuery(stayTimeChangeQuery));
 
-        // visitConcentration은 혼잡도를 재사용 (실제로는 별도 데이터가 있다면 그것을 사용)
-        rawData.put("visitConcentration", executeQuery(congestionQuery));
+        // 방문 집중도 조회 (date_compare_range 사용)
+        String visitConcentrationQuery = String.format("""
+            from(bucket: "date_stay_visit")
+                |> range(%s)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
+                |> last()
+            """, DATE_COMPARE_RANGE, place);
+        rawData.put("visitConcentration", executeQuery(visitConcentrationQuery));
 
         // 3) 정규화
         Map<String, Integer> normalizedMap = new LinkedHashMap<>();
