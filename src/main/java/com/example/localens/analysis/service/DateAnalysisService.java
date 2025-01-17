@@ -33,20 +33,20 @@ public class DateAnalysisService {
     }
 
     private Map<String, Double> queryInfluxForDate(String place, String date) {
-        // date format: 2024-01-15T00:00
-        String startTime = date;  // start of the day
-        String endTime = date.split("T")[0] + "T23:59:59Z";  // end of the day
+        // InfluxDB timestamp format으로 변환
+        String startTime = date.replace(" ", ""); // 2024-01-15T00:00
+        String endTime = date.split("T")[0] + "T23:59:59Z";
 
         String fluxQuery = String.format(
                 "from(bucket: \"hourly\") " +
-                        "|> range(start: %s, stop: %s) " +  // 특정 날짜 범위로 수정
+                        "|> range(start: %s) " +  // timestamp를 문자열로 처리
                         "|> filter(fn: (r) => r[\"place\"] == \"%s\") " +
-                        "|> filter(fn: (r) => r[\"_measurement\"] == \"visitor_data\") " +  // measurement 필터 추가
+                        "|> filter(fn: (r) => r[\"_measurement\"] == \"visitor_data\") " +
                         "|> keep(columns: [\"_time\", \"_field\", \"_value\"])",
-                startTime, endTime, place
+                startTime, place
         );
 
-        log.info("Executing flux query: {}", fluxQuery);  // 쿼리 로깅 추가
+        log.info("Executing flux query: {}", fluxQuery);
 
         List<FluxTable> tables = influxDBClientWrapper.query(fluxQuery);
         Map<String, Double> rawMap = new LinkedHashMap<>();
