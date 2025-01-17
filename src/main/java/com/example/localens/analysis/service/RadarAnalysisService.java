@@ -30,76 +30,84 @@ public class RadarAnalysisService {
             "start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z";
 
     public RadarDataDTO getRadarData(Integer districtUuid) {
-        // 1) 상권정보 조회
         CommercialDistrict district = districtRepository.findById(districtUuid)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid districtUuid: " + districtUuid));
 
         String place = district.getDistrictName();
+        log.info("Getting radar data for place: {}", place);
 
-        // 2) InfluxDB에서 데이터 조회
+        // InfluxDB에서 데이터 조회
         Map<String, Double> rawData = new LinkedHashMap<>();
 
         // 체류시간 대비 방문자 수 조회
         String stayPerVisitorQuery = String.format("""
             from(bucket: "stay_per_visitor_bucket")
-                |> range(%s)
+                |> range(start: 2024-05-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "stay_to_visitor")
-                |> last()
-            """, CURRENT_RANGE, place);
+                |> mean()
+                |> yield(name: "mean")
+            """, place);
         rawData.put("stayPerVisitor", executeQuery(stayPerVisitorQuery));
 
         // 유동인구 수 조회
         String populationQuery = String.format("""
             from(bucket: "result_bucket")
-                |> range(%s)
+                |> range(start: 2024-05-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "total_population")
-                |> last()
-            """, CURRENT_RANGE, place);
+                |> mean()
+                |> yield(name: "mean")
+            """, place);
         rawData.put("population", executeQuery(populationQuery));
 
         // 체류/방문 비율 조회
         String stayVisitQuery = String.format("""
             from(bucket: "result_stay_visit_bucket")
-                |> range(%s)
+                |> range(start: 2024-05-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
-                |> last()
-            """, CURRENT_RANGE, place);
+                |> mean()
+                |> yield(name: "mean")
+            """, place);
         rawData.put("stayVisit", executeQuery(stayVisitQuery));
 
-        // 혼잡도 변화율 조회 (date_compare_range 사용)
+        // 혼잡도 변화율 조회
         String congestionQuery = String.format("""
             from(bucket: "date_congestion")
-                |> range(%s)
+                |> range(start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "congestion_change_rate")
-                |> last()
-            """, DATE_COMPARE_RANGE, place);
+                |> mean()
+                |> yield(name: "mean")
+            """, place);
         rawData.put("congestion", executeQuery(congestionQuery));
 
-        // 체류시간 변화율 조회 (date_compare_range 사용)
+        // 체류시간 변화율 조회
         String stayTimeChangeQuery = String.format("""
             from(bucket: "date_stay_duration")
-                |> range(%s)
+                |> range(start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "stay_duration_change_rate")
-                |> last()
-            """, DATE_COMPARE_RANGE, place);
+                |> mean()
+                |> yield(name: "mean")
+            """, place);
         rawData.put("stayTimeChange", executeQuery(stayTimeChangeQuery));
 
-        // 방문 집중도 조회 (date_compare_range 사용)
+        // 방문 집중도 조회
         String visitConcentrationQuery = String.format("""
             from(bucket: "date_stay_visit")
-                |> range(%s)
+                |> range(start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
-                |> last()
-            """, DATE_COMPARE_RANGE, place);
+                |> mean()
+                |> yield(name: "mean")
+            """, place);
         rawData.put("visitConcentration", executeQuery(visitConcentrationQuery));
 
-        // 3) 정규화
+        log.info("Raw data for place {}: {}", place, rawData);
+
+        // 정규화
         Map<String, Integer> normalizedMap = new LinkedHashMap<>();
         for (Map.Entry<String, Double> entry : rawData.entrySet()) {
             String finalField = entry.getKey();
@@ -109,7 +117,7 @@ public class RadarAnalysisService {
             normalizedMap.put(finalField, scaled);
         }
 
-        // 4) DistrictDTO 생성
+        // DistrictDTO 생성
         DistrictDTO districtDTO = new DistrictDTO();
         districtDTO.setDistrictName(district.getDistrictName());
         if (district.getLatitude() != null) {
@@ -122,26 +130,31 @@ public class RadarAnalysisService {
             districtDTO.setClusterName(district.getCluster().getClusterName());
         }
 
-        // 5) 상위 2개 추출
         Map<String, Object> topTwoMap = findTopTwo(normalizedMap);
 
-        // 6) RadarDataDTO 생성
-        RadarDataDTO radarDataDTO = new RadarDataDTO();
-        radarDataDTO.setDistrictInfo(districtDTO);
-        radarDataDTO.setOverallData(normalizedMap);
-        radarDataDTO.setTopTwo(topTwoMap);
-
-        return radarDataDTO;
+        return new RadarDataDTO(districtDTO, normalizedMap, topTwoMap);
     }
 
     private double executeQuery(String query) {
         try {
+            log.info("Executing InfluxDB query: {}", query);
             List<FluxTable> tables = influxDBClientWrapper.query(query);
+            log.info("Query result tables: {}", tables);
+
             if (tables.isEmpty() || tables.get(0).getRecords().isEmpty()) {
+                log.warn("No data found for query");
                 return 0.0;
             }
+
             Object value = tables.get(0).getRecords().get(0).getValueByKey("_value");
-            return value != null ? Double.parseDouble(value.toString()) : 0.0;
+            if (value == null) {
+                log.warn("Null value found in query result");
+                return 0.0;
+            }
+
+            double result = Double.parseDouble(value.toString());
+            log.info("Query result value: {}", result);
+            return result;
         } catch (Exception e) {
             log.error("Error executing query: {}", e.getMessage());
             return 0.0;
