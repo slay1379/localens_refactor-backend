@@ -33,16 +33,24 @@ public class DateAnalysisService {
     }
 
     private Map<String, Double> queryInfluxForDate(String place, String date) {
-        String fluxQuery = String.format(
-                "from(bucket: \"hourly\") "
-                        + "|> range(start: -30d) "
-                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\") "
-                        + "|> keep(columns: [\"_time\", \"_field\", \"_value\"])",
-                place
-        );
-        List<FluxTable> tables = influxDBClientWrapper.query(fluxQuery);
+        // date format: 2024-01-15T00:00
+        String startTime = date;  // start of the day
+        String endTime = date.split("T")[0] + "T23:59:59Z";  // end of the day
 
+        String fluxQuery = String.format(
+                "from(bucket: \"hourly\") " +
+                        "|> range(start: %s, stop: %s) " +  // 특정 날짜 범위로 수정
+                        "|> filter(fn: (r) => r[\"place\"] == \"%s\") " +
+                        "|> filter(fn: (r) => r[\"_measurement\"] == \"visitor_data\") " +  // measurement 필터 추가
+                        "|> keep(columns: [\"_time\", \"_field\", \"_value\"])",
+                startTime, endTime, place
+        );
+
+        log.info("Executing flux query: {}", fluxQuery);  // 쿼리 로깅 추가
+
+        List<FluxTable> tables = influxDBClientWrapper.query(fluxQuery);
         Map<String, Double> rawMap = new LinkedHashMap<>();
+
         for (FluxTable table : tables) {
             for (var record : table.getRecords()) {
                 Object fieldObj = record.getValueByKey("_field");
@@ -50,7 +58,6 @@ public class DateAnalysisService {
                     continue;
                 }
                 String fieldName = fieldObj.toString();
-
                 Object valueObj = record.getValueByKey("_value");
                 if (valueObj != null) {
                     double numericValue = Double.parseDouble(valueObj.toString());
@@ -58,6 +65,8 @@ public class DateAnalysisService {
                 }
             }
         }
+
+        log.info("Query results for place: {}, date: {}, results: {}", place, date, rawMap);
         return rawMap;
     }
 }
