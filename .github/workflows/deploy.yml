@@ -19,6 +19,14 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -32,10 +40,10 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t slay1379/localens:latest .
+        run: docker build -t slay1379/localens:${{ github.sha }} .
 
       - name: Push Docker image
-        run: docker push slay1379/localens:latest
+        run: docker push slay1379/localens:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -49,7 +57,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.AWS_SSH_KEY }}
           script: |
-            docker pull slay1379/localens:latest
+            docker pull slay1379/localens:${{ github.sha }}
             docker stop localens || true
             docker rm localens || true
-            docker run -d -p 8080:8080 --name localens slay1379/localens:latest
+            docker run -d -p 8080:8080 --name localens slay1379/localens:${{ github.sha }}
