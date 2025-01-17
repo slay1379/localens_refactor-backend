@@ -5,11 +5,13 @@ import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.stereotype.Service;
 
 /**
  * "옛 PopulationController" API가 필요로 했던
@@ -23,306 +25,173 @@ import java.util.Map;
  *
  * 등을 InfluxDB에서 가져와 Map 형태로 반환.
  */
-@Component
+@Service
 @RequiredArgsConstructor
+@Slf4j
 public class PopulationDetailsInfluxHelper {
 
-    private final CommercialDistrictRepository districtRepository;
     private final InfluxDBClientWrapper influxDBClientWrapper;
+    private final CommercialDistrictRepository commercialDistrictRepository;
 
-    // ----------------------------------------------------
-    // 1) 시간대별 유동인구
-    // ----------------------------------------------------
+    private static final String CURRENT_RANGE = "start: 2024-05-30T00:00:00Z, stop: 2024-08-31T23:59:59Z";
+    private static final String DATE_COMPARE_RANGE = "start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z";
+
     public Map<String, Double> getHourlyFloatingPopulation(Integer districtUuid) {
-        // 1) districtUuid -> place
-        String place = districtRepository.findDistrictNameByDistrictUuid(districtUuid);
-        if (place == null) {
-            throw new IllegalArgumentException("Invalid districtUuid: " + districtUuid);
-        }
+        String place = getDistrictName(districtUuid);
+        String query = String.format("""
+            from(bucket: "result_bucket")
+                |> range(%s)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "total_population")
+                |> pivot(rowKey:["_time"], columnKey: ["tmzn"], valueColumn: "_value")
+            """, CURRENT_RANGE, place);
 
-        // 2) Flux 쿼리 작성 (예시)
-        //    여기서는 bucket="result_bucket" 라고 가정.
-        //    "tmzn" = 시간대(0~23), "_value" = 유동인구 값
-        String fluxQuery = String.format(
-                "from(bucket: \"hourly\") "
-                        + "|> range(start: -30d) "
-                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"total_population\") "
-                        + "|> keep(columns: [\"tmzn\", \"_value\"]) ",
-                place
-        );
-
-        // 3) 쿼리 실행
-        List<FluxTable> tables = influxDBClientWrapper.query(fluxQuery);
-
-        // 4) 결과 파싱: 시간대별로 Map<String, Double> ( "0" -> 1234.0, ...)
-        Map<String, Double> result = new LinkedHashMap<>();
-        for (FluxTable table : tables) {
-            for (FluxRecord record : table.getRecords()) {
-                Object tmznObj = record.getValueByKey("tmzn");
-                Object valObj  = record.getValueByKey("_value");
-
-                if (tmznObj == null || valObj == null) {
-                    continue;
-                }
-                String tmzn = tmznObj.toString();  // "0", "1", "2", ...
-                double numericValue = Double.parseDouble(valObj.toString());
-
-                result.put(tmzn, numericValue);
-            }
-        }
-
-        return result;
+        return executeTimeBasedQuery(query);
     }
 
-    // ----------------------------------------------------
-    // 2) 시간대별 체류/방문 비율
-    // ----------------------------------------------------
     public Map<String, Double> getHourlyStayVisitRatio(Integer districtUuid) {
-        String place = districtRepository.findDistrictNameByDistrictUuid(districtUuid);
-        if (place == null) {
-            throw new IllegalArgumentException("Invalid districtUuid: " + districtUuid);
-        }
+        String place = getDistrictName(districtUuid);
+        String query = String.format("""
+            from(bucket: "result_stay_visit_bucket")
+                |> range(%s)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
+                |> pivot(rowKey:["_time"], columnKey: ["tmzn"], valueColumn: "_value")
+            """, CURRENT_RANGE, place);
 
-        String fluxQuery = String.format(
-                "from(bucket: \"hourly\") "
-                        + "|> range(start: -30d) "
-                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"stay_visit_ratio\") "
-                        + "|> keep(columns: [\"tmzn\", \"_value\"]) ",
-                place
-        );
-
-        List<FluxTable> tables = influxDBClientWrapper.query(fluxQuery);
-
-        Map<String, Double> result = new LinkedHashMap<>();
-        for (FluxTable table : tables) {
-            for (FluxRecord record : table.getRecords()) {
-                Object tmznObj = record.getValueByKey("tmzn");
-                Object valObj  = record.getValueByKey("_value");
-
-                if (tmznObj == null || valObj == null) {
-                    continue;
-                }
-                String tmzn = tmznObj.toString();
-                double numericValue = Double.parseDouble(valObj.toString());
-
-                result.put(tmzn, numericValue);
-            }
-        }
-
-        return result;
+        return executeTimeBasedQuery(query);
     }
 
-    // ----------------------------------------------------
-    // 3) 시간대별 혼잡도 변화율
-    // ----------------------------------------------------
     public Map<String, Double> getHourlyCongestionRateChange(Integer districtUuid) {
-        String place = districtRepository.findDistrictNameByDistrictUuid(districtUuid);
-        if (place == null) {
-            throw new IllegalArgumentException("Invalid districtUuid: " + districtUuid);
-        }
+        String place = getDistrictName(districtUuid);
+        String query = String.format("""
+            from(bucket: "date_congestion")
+                |> range(%s)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "congestion_change_rate")
+                |> pivot(rowKey:["_time"], columnKey: ["tmzn"], valueColumn: "_value")
+            """, DATE_COMPARE_RANGE, place);
 
-        String fluxQuery = String.format(
-                "from(bucket: \"hourly\") "
-                        + "|> range(start: -30d) "
-                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"congestion_rate\") "
-                        + "|> keep(columns: [\"tmzn\", \"_value\"]) ",
-                place
-        );
-
-        List<FluxTable> tables = influxDBClientWrapper.query(fluxQuery);
-
-        Map<String, Double> result = new LinkedHashMap<>();
-        for (FluxTable table : tables) {
-            for (FluxRecord record : table.getRecords()) {
-                Object tmznObj = record.getValueByKey("tmzn");
-                Object valObj  = record.getValueByKey("_value");
-
-                if (tmznObj == null || valObj == null) {
-                    continue;
-                }
-                String tmzn = tmznObj.toString();
-                double numericValue = Double.parseDouble(valObj.toString());
-
-                result.put(tmzn, numericValue);
-            }
-        }
-
-        return result;
+        return executeTimeBasedQuery(query);
     }
 
-    // ----------------------------------------------------
-    // 4) 체류시간 대비 방문자 수
-    // ----------------------------------------------------
     public Map<String, Double> getStayPerVisitorDuration(Integer districtUuid) {
-        String place = districtRepository.findDistrictNameByDistrictUuid(districtUuid);
-        if (place == null) {
-            throw new IllegalArgumentException("Invalid districtUuid: " + districtUuid);
-        }
+        String place = getDistrictName(districtUuid);
+        String query = String.format("""
+            from(bucket: "stay_per_visitor_bucket")
+                |> range(%s)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "stay_to_visitor")
+                |> pivot(rowKey:["_time"], columnKey: ["tmzn"], valueColumn: "_value")
+            """, CURRENT_RANGE, place);
 
-        // 예시 bucket: "stay_per_visitor_bucket", field: "stayPerVisitor"
-        String fluxQuery = String.format(
-                "from(bucket: \"hourly\") "
-                        + "|> range(start: -30d) "
-                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"stay_per_visitor\") "
-                        + "|> keep(columns: [\"tmzn\", \"_value\"]) ",
-                place
-        );
-
-        List<FluxTable> tables = influxDBClientWrapper.query(fluxQuery);
-
-        Map<String, Double> result = new LinkedHashMap<>();
-        for (FluxTable table : tables) {
-            for (FluxRecord record : table.getRecords()) {
-                Object tmznObj = record.getValueByKey("tmzn");
-                Object valObj  = record.getValueByKey("_value");
-
-                if (tmznObj == null || valObj == null) {
-                    continue;
-                }
-                String tmzn = tmznObj.toString();
-                double numericValue = Double.parseDouble(valObj.toString());
-
-                result.put(tmzn, numericValue);
-            }
-        }
-
-        return result;
+        return executeTimeBasedQuery(query);
     }
 
-    // ----------------------------------------------------
-    // 5) 시간대별 평균 체류시간 변화율
-    // ----------------------------------------------------
     public Map<String, Double> getHourlyAvgStayDurationChange(Integer districtUuid) {
-        String place = districtRepository.findDistrictNameByDistrictUuid(districtUuid);
-        if (place == null) {
-            throw new IllegalArgumentException("Invalid districtUuid: " + districtUuid);
-        }
+        String place = getDistrictName(districtUuid);
+        String query = String.format("""
+            from(bucket: "date_stay_duration")
+                |> range(%s)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "stay_duration_change_rate")
+                |> pivot(rowKey:["_time"], columnKey: ["tmzn"], valueColumn: "_value")
+            """, DATE_COMPARE_RANGE, place);
 
-        // 예: bucket: "date_stay_duration", field: "stayTimeChange"
-        String fluxQuery = String.format(
-                "from(bucket: \"hourly\") "
-                        + "|> range(start: -30d) "
-                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\" and r[\"_field\"] == \"stayTimeChange\") "
-                        + "|> keep(columns: [\"tmzn\", \"_value\"]) ",
-                place
-        );
-
-        List<FluxTable> tables = influxDBClientWrapper.query(fluxQuery);
-
-        Map<String, Double> result = new LinkedHashMap<>();
-        for (FluxTable table : tables) {
-            for (FluxRecord record : table.getRecords()) {
-                Object tmznObj = record.getValueByKey("tmzn");
-                Object valObj  = record.getValueByKey("_value");
-
-                if (tmznObj == null || valObj == null) {
-                    continue;
-                }
-                String tmzn = tmznObj.toString();
-                double numericValue = Double.parseDouble(valObj.toString());
-
-                result.put(tmzn, numericValue);
-            }
-        }
-
-        return result;
+        return executeTimeBasedQuery(query);
     }
 
-    // ----------------------------------------------------
-    // 6) 연령대별 체류 패턴
-    // ----------------------------------------------------
     public Map<String, Map<String, Double>> getAgeGroupStayPattern(Integer districtUuid) {
-        String place = districtRepository.findDistrictNameByDistrictUuid(districtUuid);
-        if (place == null) {
-            throw new IllegalArgumentException("Invalid districtUuid: " + districtUuid);
-        }
+        String place = getDistrictName(districtUuid);
+        String query = String.format("""
+            from(bucket: "age_gender_bucket")
+                |> range(%s)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "total_population")
+                |> pivot(rowKey:["age_group"], columnKey: ["sex"], valueColumn: "_value")
+                |> last()
+            """, CURRENT_RANGE, place);
 
-        // 예시 bucket: "age_gender_bucket"
-        // field: (가능하다면) "visitDuration" or "population"
-        // columns: age_group, sex, _value
-        String fluxQuery = String.format(
-                "from(bucket: \"hourly\") "
-                        + "|> range(start: -30d) "
-                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\") "
-                        + "|> keep(columns: [\"age_group\", \"sex\", \"_value\"]) ",
-                place
-        );
-
-        List<FluxTable> tables = influxDBClientWrapper.query(fluxQuery);
-
-        // Map<연령대, Map<성별, 값>>
         Map<String, Map<String, Double>> result = new LinkedHashMap<>();
+        try {
+            List<FluxTable> tables = influxDBClientWrapper.query(query);
+            for (FluxTable table : tables) {
+                for (FluxRecord record : table.getRecords()) {
+                    String ageGroup = record.getValueByKey("age_group").toString();
+                    Map<String, Double> genderData = new LinkedHashMap<>();
 
-        for (FluxTable table : tables) {
-            for (FluxRecord record : table.getRecords()) {
-                Object ageObj = record.getValueByKey("age_group");
-                Object sexObj = record.getValueByKey("sex");
-                Object valObj = record.getValueByKey("_value");
+                    Object maleValue = record.getValueByKey("M");
+                    Object femaleValue = record.getValueByKey("F");
 
-                if (ageObj == null || sexObj == null || valObj == null) {
-                    continue;
+                    if (maleValue != null) {
+                        genderData.put("male", Double.parseDouble(maleValue.toString()));
+                    }
+                    if (femaleValue != null) {
+                        genderData.put("female", Double.parseDouble(femaleValue.toString()));
+                    }
+
+                    result.put(ageGroup, genderData);
                 }
-                String ageGroup = ageObj.toString(); // "10대", "20대", ...
-                String sex      = sexObj.toString(); // "M", "F"
-                double numericValue = Double.parseDouble(valObj.toString());
-
-                // 누적 or 평균일 수도 있으니, 여기선 단순 합산 예시
-                // (실제로는 groupBy + mean 등 Influx에서 해도 됨)
-                result.computeIfAbsent(ageGroup, k -> new LinkedHashMap<>())
-                        .merge(sex, numericValue, Double::sum);
             }
+        } catch (Exception e) {
+            log.error("Error querying age group stay pattern: {}", e.getMessage());
         }
-
         return result;
     }
 
-    // ----------------------------------------------------
-    // 7) 국적별 체류 패턴
-    // ----------------------------------------------------
     public Map<String, Double> getNationalityStayPattern(Integer districtUuid) {
-        String place = districtRepository.findDistrictNameByDistrictUuid(districtUuid);
-        if (place == null) {
-            throw new IllegalArgumentException("Invalid districtUuid: " + districtUuid);
-        }
-
-        // 예: bucket: "nationality_bucket"
-        // columns: nationality, _value
-        String fluxQuery = String.format(
-                "from(bucket: \"hourly\") "
-                        + "|> range(start: -30d) "
-                        + "|> filter(fn: (r) => r[\"place\"] == \"%s\") "
-                        + "|> keep(columns: [\"nationality\", \"_value\"]) ",
-                place
-        );
-
-        List<FluxTable> tables = influxDBClientWrapper.query(fluxQuery);
+        String place = getDistrictName(districtUuid);
+        String query = String.format("""
+            from(bucket: "nationality_bucket")
+                |> range(%s)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "total_population")
+                |> pivot(rowKey:["_time"], columnKey: ["nationality"], valueColumn: "_value")
+                |> last()
+            """, CURRENT_RANGE, place);
 
         Map<String, Double> result = new LinkedHashMap<>();
-        double total = 0.0;
-
-        for (FluxTable table : tables) {
-            for (FluxRecord record : table.getRecords()) {
-                Object natObj = record.getValueByKey("nationality");
-                Object valObj = record.getValueByKey("_value");
-
-                if (natObj == null || valObj == null) {
-                    continue;
+        try {
+            List<FluxTable> tables = influxDBClientWrapper.query(query);
+            if (!tables.isEmpty() && !tables.get(0).getRecords().isEmpty()) {
+                FluxRecord record = tables.get(0).getRecords().get(0);
+                for (String key : record.getValues().keySet()) {
+                    if (!key.startsWith("_") && !key.equals("result") && !key.equals("table")) {
+                        Object value = record.getValueByKey(key);
+                        if (value != null) {
+                            result.put(key, Double.parseDouble(value.toString()));
+                        }
+                    }
                 }
-                String nationality = natObj.toString(); // "내국인", "장기체류외국인" ...
-                double numericValue = Double.parseDouble(valObj.toString());
-
-                result.merge(nationality, numericValue, Double::sum);
-                total += numericValue;
             }
+        } catch (Exception e) {
+            log.error("Error querying nationality stay pattern: {}", e.getMessage());
         }
-
-        if (total > 0) {
-            for (Map.Entry<String, Double> e : result.entrySet()) {
-                double ratio = (e.getValue() / total) * 100.0;
-                e.setValue(Math.round(ratio * 10.0) / 10.0); // 소수점 첫째 자리
-            }
-        }
-
         return result;
+    }
+
+    private Map<String, Double> executeTimeBasedQuery(String query) {
+        Map<String, Double> result = new LinkedHashMap<>();
+        try {
+            List<FluxTable> tables = influxDBClientWrapper.query(query);
+            if (!tables.isEmpty() && !tables.get(0).getRecords().isEmpty()) {
+                FluxRecord record = tables.get(0).getRecords().get(0);
+                for (String key : record.getValues().keySet()) {
+                    if (key.matches("\\d+")) {  // 시간대를 나타내는 숫자 키만 처리
+                        Object value = record.getValueByKey(key);
+                        if (value != null) {
+                            result.put(key, Double.parseDouble(value.toString()));
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error executing time based query: {}", e.getMessage());
+        }
+        return result;
+    }
+
+    private String getDistrictName(Integer districtUuid) {
+        return commercialDistrictRepository.findDistrictNameByDistrictUuid(districtUuid);
     }
 }
