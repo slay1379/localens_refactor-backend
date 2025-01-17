@@ -8,7 +8,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
@@ -40,15 +39,16 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t slay1379/localens:${{ github.sha }} .
+        run: docker build -t slay1379/localens:latest -t slay1379/localens:${{ github.sha }} .
 
       - name: Push Docker image
-        run: docker push slay1379/localens:${{ github.sha }}
+        run: |
+          docker push slay1379/localens:latest
+          docker push slay1379/localens:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
-
     steps:
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v0.1.5
@@ -60,4 +60,10 @@ jobs:
             docker pull slay1379/localens:${{ github.sha }}
             docker stop localens || true
             docker rm localens || true
-            docker run -d -p 8080:8080 --name localens slay1379/localens:${{ github.sha }}
+            docker run -d \
+              -p 8080:8080 \
+              -e SPRING_PROFILES_ACTIVE=prod \
+              --name localens \
+              --restart unless-stopped \
+              slay1379/localens:${{ github.sha }}
+            docker system prune -f
