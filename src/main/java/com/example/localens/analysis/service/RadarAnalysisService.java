@@ -42,7 +42,7 @@ public class RadarAnalysisService {
         // 체류시간 대비 방문자 수 조회
         String stayPerVisitorQuery = String.format("""
             from(bucket: "stay_per_visitor_bucket")
-                |> range(start: 2024-05-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
+                |> range(start: 2024-05-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "stay_to_visitor")
                 |> mean()
@@ -53,7 +53,7 @@ public class RadarAnalysisService {
         // 유동인구 수 조회
         String populationQuery = String.format("""
             from(bucket: "result_bucket")
-                |> range(start: 2024-05-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
+                |> range(start: 2024-05-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "total_population")
                 |> mean()
@@ -64,7 +64,7 @@ public class RadarAnalysisService {
         // 체류/방문 비율 조회
         String stayVisitQuery = String.format("""
             from(bucket: "result_stay_visit_bucket")
-                |> range(start: 2024-05-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
+                |> range(start: 2024-05-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
                 |> mean()
@@ -75,7 +75,7 @@ public class RadarAnalysisService {
         // 혼잡도 변화율 조회
         String congestionQuery = String.format("""
             from(bucket: "date_congestion")
-                |> range(start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
+                |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "congestion_change_rate")
                 |> mean()
@@ -86,7 +86,7 @@ public class RadarAnalysisService {
         // 체류시간 변화율 조회
         String stayTimeChangeQuery = String.format("""
             from(bucket: "date_stay_duration")
-                |> range(start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
+                |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "stay_duration_change_rate")
                 |> mean()
@@ -97,7 +97,7 @@ public class RadarAnalysisService {
         // 방문 집중도 조회
         String visitConcentrationQuery = String.format("""
             from(bucket: "date_stay_visit")
-                |> range(start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
+                |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
                 |> mean()
