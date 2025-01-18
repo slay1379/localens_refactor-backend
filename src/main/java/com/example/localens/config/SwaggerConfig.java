@@ -3,6 +3,7 @@ package com.example.localens.config;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.context.annotation.Bean;
@@ -23,9 +24,14 @@ public class SwaggerConfig{
                 .scheme("bearer")
                 .bearerFormat("JWT")
         );
+
+        Server server = new Server()
+                .url("https://localens.duckdns.org")
+                .description("Production Server");
+
         return new OpenAPI()
-                .components(new Components())
                 .info(apiInfo())
+                .addServersItem(server)
                 .addSecurityItem(securityRequirement)
                 .components(components);
     }
