@@ -45,8 +45,8 @@ public class RadarAnalysisService {
             |> range(start: 2024-05-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
             |> filter(fn: (r) => r["place"] == "%s")
             |> filter(fn: (r) => r["_field"] == "stay_to_visitor")
-            |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-            |> last()
+            |> mean()
+            |> yield(name: "mean")
         """, place);
         rawData.put("stayPerVisitor", executeQuery(stayPerVisitorQuery));
 
@@ -56,8 +56,8 @@ public class RadarAnalysisService {
             |> range(start: 2024-05-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
             |> filter(fn: (r) => r["place"] == "%s")
             |> filter(fn: (r) => r["_field"] == "total_population")
-            |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-            |> last()
+            |> mean()
+            |> yield(name: "mean")
         """, place);
         rawData.put("population", executeQuery(populationQuery));
 
@@ -67,8 +67,8 @@ public class RadarAnalysisService {
             |> range(start: 2024-05-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
             |> filter(fn: (r) => r["place"] == "%s")
             |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
-            |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-            |> last()
+            |> mean()
+            |> yield(name: "mean")
         """, place);
         rawData.put("stayVisit", executeQuery(stayVisitQuery));
 
@@ -78,8 +78,8 @@ public class RadarAnalysisService {
             |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
             |> filter(fn: (r) => r["place"] == "%s")
             |> filter(fn: (r) => r["_field"] == "congestion_change_rate")
-            |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-            |> last()
+            |> mean()
+            |> yield(name: "mean")
         """, place);
         rawData.put("congestion", executeQuery(congestionQuery));
 
@@ -89,8 +89,8 @@ public class RadarAnalysisService {
             |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
             |> filter(fn: (r) => r["place"] == "%s")
             |> filter(fn: (r) => r["_field"] == "stay_duration_change_rate")
-            |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-            |> last()
+            |> mean()
+            |> yield(name: "mean")
         """, place);
         rawData.put("stayTimeChange", executeQuery(stayTimeChangeQuery));
 
@@ -100,8 +100,8 @@ public class RadarAnalysisService {
             |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
             |> filter(fn: (r) => r["place"] == "%s")
             |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
-            |> pivot(rowKey:["_time"], columnKey: ["_field"], valueColumn: "_value")
-            |> last()
+            |> mean()
+            |> yield(name: "mean")
         """, place);
         rawData.put("visitConcentration", executeQuery(visitConcentrationQuery));
 
