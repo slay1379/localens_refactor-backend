@@ -16,7 +16,11 @@ public class CorsConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
 
-        config.setAllowedOrigins(Arrays.asList("http://localhost:3000","http://localhost:8080","http://13.125.95.219:8080"));
+        config.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
+                "http://localhost:8080",
+                "http://3.228.160.217:8080",
+                "https://capstone-front-iota.vercel.app"));
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
 
