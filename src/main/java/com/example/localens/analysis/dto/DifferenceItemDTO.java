@@ -13,5 +13,4 @@ public class DifferenceItemDTO {
     private String name;
     private int value1;
     private int value2;
-    private double difference;
 }
