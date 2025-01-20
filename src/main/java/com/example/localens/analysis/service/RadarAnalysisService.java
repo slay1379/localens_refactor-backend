@@ -3,6 +3,7 @@ package com.example.localens.analysis.service;
 import com.example.localens.analysis.domain.CommercialDistrict;
 import com.example.localens.analysis.dto.DistrictDTO;
 import com.example.localens.analysis.dto.RadarDataDTO;
+import com.example.localens.analysis.dto.RadarDistrictInfoDTO;
 import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
@@ -41,68 +42,68 @@ public class RadarAnalysisService {
 
         // 체류시간 대비 방문자 수 조회
         String stayPerVisitorQuery = String.format("""
-        from(bucket: "stay_per_visitor_bucket")
-            |> range(start: 2024-05-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
-            |> filter(fn: (r) => r["place"] == "%s")
-            |> filter(fn: (r) => r["_field"] == "stay_to_visitor")
-            |> mean()
-            |> yield(name: "mean")
-        """, place);
+   from(bucket: "stay_per_visitor_bucket")
+       |> range(start: 2024-05-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
+       |> filter(fn: (r) => r["place"] == "%s")
+       |> filter(fn: (r) => r["_field"] == "stay_to_visitor")
+       |> mean()
+       |> yield(name: "mean")
+   """, place);
         rawData.put("stayPerVisitor", executeQuery(stayPerVisitorQuery));
 
         // 유동인구 수 조회
         String populationQuery = String.format("""
-        from(bucket: "result_bucket")
-            |> range(start: 2024-05-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
-            |> filter(fn: (r) => r["place"] == "%s")
-            |> filter(fn: (r) => r["_field"] == "total_population")
-            |> mean()
-            |> yield(name: "mean")
-        """, place);
+   from(bucket: "result_bucket")
+       |> range(start: 2024-05-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
+       |> filter(fn: (r) => r["place"] == "%s")
+       |> filter(fn: (r) => r["_field"] == "total_population")
+       |> mean()
+       |> yield(name: "mean")
+   """, place);
         rawData.put("population", executeQuery(populationQuery));
 
         // 체류/방문 비율 조회
         String stayVisitQuery = String.format("""
-        from(bucket: "result_stay_visit_bucket")
-            |> range(start: 2024-05-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
-            |> filter(fn: (r) => r["place"] == "%s")
-            |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
-            |> mean()
-            |> yield(name: "mean")
-        """, place);
+   from(bucket: "result_stay_visit_bucket")
+       |> range(start: 2024-05-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
+       |> filter(fn: (r) => r["place"] == "%s")
+       |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
+       |> mean()
+       |> yield(name: "mean")
+   """, place);
         rawData.put("stayVisit", executeQuery(stayVisitQuery));
 
         // 혼잡도 변화율 조회
         String congestionQuery = String.format("""
-        from(bucket: "date_congestion")
-            |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
-            |> filter(fn: (r) => r["place"] == "%s")
-            |> filter(fn: (r) => r["_field"] == "congestion_change_rate")
-            |> mean()
-            |> yield(name: "mean")
-        """, place);
+   from(bucket: "date_congestion")
+       |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
+       |> filter(fn: (r) => r["place"] == "%s")
+       |> filter(fn: (r) => r["_field"] == "congestion_change_rate")
+       |> mean()
+       |> yield(name: "mean")
+   """, place);
         rawData.put("congestion", executeQuery(congestionQuery));
 
         // 체류시간 변화율 조회
         String stayTimeChangeQuery = String.format("""
-        from(bucket: "date_stay_duration")
-            |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
-            |> filter(fn: (r) => r["place"] == "%s")
-            |> filter(fn: (r) => r["_field"] == "stay_duration_change_rate")
-            |> mean()
-            |> yield(name: "mean")
-        """, place);
+   from(bucket: "date_stay_duration")
+       |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
+       |> filter(fn: (r) => r["place"] == "%s")
+       |> filter(fn: (r) => r["_field"] == "stay_duration_change_rate")
+       |> mean()
+       |> yield(name: "mean")
+   """, place);
         rawData.put("stayTimeChange", executeQuery(stayTimeChangeQuery));
 
         // 방문 집중도 조회
         String visitConcentrationQuery = String.format("""
-        from(bucket: "date_stay_visit")
-            |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
-            |> filter(fn: (r) => r["place"] == "%s")
-            |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
-            |> mean()
-            |> yield(name: "mean")
-        """, place);
+   from(bucket: "date_stay_visit")
+       |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-17T23:59:59Z)
+       |> filter(fn: (r) => r["place"] == "%s")
+       |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
+       |> mean()
+       |> yield(name: "mean")
+   """, place);
         rawData.put("visitConcentration", executeQuery(visitConcentrationQuery));
 
         log.info("Raw data for place {}: {}", place, rawData);
@@ -117,22 +118,21 @@ public class RadarAnalysisService {
             normalizedMap.put(finalField, scaled);
         }
 
-        // DistrictDTO 생성
-        DistrictDTO districtDTO = new DistrictDTO();
-        districtDTO.setDistrictName(district.getDistrictName());
-        if (district.getLatitude() != null) {
-            districtDTO.setLatitude(district.getLatitude().doubleValue());
-        }
-        if (district.getLongitude() != null) {
-            districtDTO.setLongitude(district.getLongitude().doubleValue());
-        }
+        // RadarDistrictInfoDTO 생성
+        RadarDistrictInfoDTO radarDistrictInfo = new RadarDistrictInfoDTO();
+        radarDistrictInfo.setDistrictName(district.getDistrictName());
         if (district.getCluster() != null) {
-            districtDTO.setClusterName(district.getCluster().getClusterName());
+            radarDistrictInfo.setClusterName(district.getCluster().getClusterName());
         }
 
         Map<String, Object> topTwoMap = findTopTwo(normalizedMap);
 
-        return new RadarDataDTO(districtDTO, normalizedMap, topTwoMap);
+        RadarDataDTO radarDataDTO = new RadarDataDTO();
+        radarDataDTO.setDistrictInfo(radarDistrictInfo);
+        radarDataDTO.setOverallData(normalizedMap);
+        radarDataDTO.setTopTwo(topTwoMap);
+
+        return radarDataDTO;
     }
 
     private double executeQuery(String query) {
