@@ -53,7 +53,7 @@ public class StatsBatchService {
                 try {
                     String minQuery = String.format("""
                     from(bucket: "%s")
-                        |> range(start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
+                        |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-15T23:59:59Z)
                         |> filter(fn: (r) => r["place"] == "%s")
                         |> filter(fn: (r) => r["_field"] == "%s")
                         |> min()
@@ -62,7 +62,7 @@ public class StatsBatchService {
 
                     String maxQuery = String.format("""
                     from(bucket: "%s")
-                        |> range(start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
+                        |> range(start: 2023-08-30T00:00:00Z, stop: 2025-01-15T23:59:59Z)
                         |> filter(fn: (r) => r["place"] == "%s")
                         |> filter(fn: (r) => r["_field"] == "%s")
                         |> max()
