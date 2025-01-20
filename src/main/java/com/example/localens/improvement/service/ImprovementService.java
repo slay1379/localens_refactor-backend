@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -45,6 +46,7 @@ public class ImprovementService {
     private final EventRepository eventRepository;
 
     public CommercialDistrictComparisonDTO compareDistricts(Integer districtUuid1, Integer districtUuid2) {
+        log.info("Comparing districts {} and {}", districtUuid1, districtUuid2);
         // 1. 각 상권의 데이터 조회
         Map<String, Object> district1Data = populationDetailsService.getDetailsByDistrictUuid(districtUuid1);
         Map<String, Object> district2Data = populationDetailsService.getDetailsByDistrictUuid(districtUuid2);
@@ -52,12 +54,16 @@ public class ImprovementService {
         // 2. 데이터 정규화 및 비교
         Map<String, Integer> metrics1 = normalizeMetrics(district1Data);
         Map<String, Integer> metrics2 = normalizeMetrics(district2Data);
+        log.info("Normalized metrics - District 1: {}", metrics1);
+        log.info("Normalized metrics - District 2: {}", metrics2);
 
         // 3. 주요 차이점 식별
         List<MetricDifference> significantDifferences = findSignificantDifferences(metrics1, metrics2);
+        log.info("Significant differences found: {}", significantDifferences);
 
         // 4. 관련 이벤트 조회
         List<Event> recommendedEvents = findRelevantEvents(significantDifferences);
+        log.info("Found {} recommended events", recommendedEvents.size());
 
         // 5. 응답 데이터 구성
         return buildComparisonResponse(
@@ -71,6 +77,7 @@ public class ImprovementService {
     }
 
     @Getter
+    @ToString
     @AllArgsConstructor
     private static class MetricDifference {
         private String metricName;
@@ -117,9 +124,27 @@ public class ImprovementService {
                 .collect(Collectors.toList());
     }
 
+    private String convertMetricNameToDbName(String metricName) {
+        Map<String, String> metricMapping = Map.of(
+                "stayVisit", "STAY_VISIT_RATIO",
+                "stayPerVisitor", "STAY_PER_VISITOR",
+                "population", "TOTAL_POPULATION",
+                "congestion", "CONGESTION_RATE",
+                "visitConcentration", "VISIT_CONCENTRATION",
+                "stayTimeChange", "STAY_TIME_CHANGE"
+        );
+        return metricMapping.getOrDefault(metricName, metricName);
+    }
+
     private List<Event> findRelevantEvents(List<MetricDifference> differences) {
         List<String> metricUuids = differences.stream()
-                .map(diff -> metricRepository.findMetricsUuidByMetricsName(diff.getMetricName()))
+                .map(diff -> {
+                    String dbMetricName = convertMetricNameToDbName(diff.getMetricName());
+                    String uuid = metricRepository.findMetricsUuidByMetricsName(dbMetricName);
+                    log.info("Metric mapping: {} -> {} (UUID: {})",
+                            diff.getMetricName(), dbMetricName, uuid);
+                    return uuid;
+                })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
