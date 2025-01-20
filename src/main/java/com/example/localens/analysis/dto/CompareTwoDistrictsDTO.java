@@ -14,6 +14,5 @@ public class CompareTwoDistrictsDTO {
 
     private RadarDataDTO district1;
     private RadarDataDTO district2;
-
-    private List<DifferenceItemDTO> topDifferences;
+    private TopDifferencesDTO topDifferences;
 }
