@@ -69,8 +69,10 @@ public class DateController {
                     districtUuid);
 
             // 서비스 호출
-            Map<String, Integer> result1 = dateAnalysisService.analyzeDate(place, parsedDate1.toString());
-            Map<String, Integer> result2 = dateAnalysisService.analyzeDate(place, parsedDate2.toString());
+            Map<String, Object> result1 = dateAnalysisService.analyzeDateWithTopMetrics(place,
+                    parsedDate1.toString());
+            Map<String, Object> result2 = dateAnalysisService.analyzeDateWithTopMetrics(place,
+                    parsedDate2.toString());
 
             // 응답 데이터 준비
             response.put("date1", result1);
