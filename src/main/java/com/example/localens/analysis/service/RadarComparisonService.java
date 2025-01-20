@@ -77,7 +77,7 @@ public class RadarComparisonService {
 
         CompareTwoDistrictsDTO result = new CompareTwoDistrictsDTO();
         result.setDistrict1(district1Radar);
-        result.setDistrict1(district2Radar);
+        result.setDistrict2(district2Radar);
         result.setTopDifferences(topDifferences);
         
         return result;

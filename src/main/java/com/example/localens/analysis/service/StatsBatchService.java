@@ -25,12 +25,13 @@ public class StatsBatchService {
     private final MetricStatisticsRepository metricStatisticsRepository;
     private final CommercialDistrictRepository commercialDistrictRepository;
 
-
+/*
     @PostConstruct
     public void initializeStats() {
         log.info("Initializing statistics...");
         updateMinMaxStatistics();
     }
+    */
 
     public void updateMinMaxStatistics() {
         List<String> placeList = commercialDistrictRepository.findAllPlaces();
