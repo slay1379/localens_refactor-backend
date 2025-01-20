@@ -33,68 +33,72 @@ public class StatsBatchService {
     }
 
     public void updateMinMaxStatistics() {
-        log.info("=== StatsBatchService: updateMinMaxStatistics() START ===");
-
         List<String> placeList = commercialDistrictRepository.findAllPlaces();
         log.info("Found places from DB: {}", placeList);
 
-        // 각 지표별로 min/max 계산
-        Map<String, String> fieldBuckets = Map.of(
-                "total_population", "result_bucket",
-                "stay_visit_ratio", "result_stay_visit_bucket",
-                "congestion_change_rate", "date_congestion",
-                "stay_to_visitor", "stay_per_visitor_bucket",
-                "stay_duration_change_rate", "date_stay_duration"
+        // 지표-버킷 매핑 수정
+        Map<String, BucketFieldMapping> fieldMappings = Map.of(
+                "total_population", new BucketFieldMapping("result_bucket", "total_population"),
+                "stay_visit_ratio", new BucketFieldMapping("result_stay_visit_bucket", "stay_visit_ratio"),
+                "visit_concentration", new BucketFieldMapping("date_stay_visit", "visit_concentration"),
+                "congestion_change_rate", new BucketFieldMapping("date_congestion", "congestion_change_rate"),
+                "stay_to_visitor", new BucketFieldMapping("stay_per_visitor_bucket", "stay_to_visitor"),
+                "stay_duration_change_rate", new BucketFieldMapping("date_stay_duration", "stay_duration_change_rate")
         );
 
         for (String place : placeList) {
-            for (Entry<String, String> entry : fieldBuckets.entrySet()) {
+            for (Map.Entry<String, BucketFieldMapping> entry : fieldMappings.entrySet()) {
                 String field = entry.getKey();
+                BucketFieldMapping mapping = entry.getValue();
                 try {
                     String minQuery = String.format("""
-                        from(bucket: "hourly")
-                            |> range(start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
-                            |> filter(fn: (r) => r["place"] == "%s")
-                            |> filter(fn: (r) => r["_field"] == "%s")
-                            |> min()
-                            |> yield(name: "min")
-                        """, place, field);
+                    from(bucket: "%s")
+                        |> range(start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
+                        |> filter(fn: (r) => r["place"] == "%s")
+                        |> filter(fn: (r) => r["_field"] == "%s")
+                        |> min()
+                        |> yield(name: "min")
+                    """, mapping.bucket(), place, mapping.fieldName());
 
                     String maxQuery = String.format("""
-                        from(bucket: "hourly")
-                            |> range(start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
-                            |> filter(fn: (r) => r["place"] == "%s")
-                            |> filter(fn: (r) => r["_field"] == "%s")
-                            |> max()
-                            |> yield(name: "max")
-                        """, place, field);
+                    from(bucket: "%s")
+                        |> range(start: 2023-08-30T00:00:00Z, stop: 2024-08-31T23:59:59Z)
+                        |> filter(fn: (r) => r["place"] == "%s")
+                        |> filter(fn: (r) => r["_field"] == "%s")
+                        |> max()
+                        |> yield(name: "max")
+                    """, mapping.bucket(), place, mapping.fieldName());
 
                     double minVal = executeQuery(minQuery);
                     double maxVal = executeQuery(maxQuery);
 
                     log.info("Stats for {}.{}: min={}, max={}", place, field, minVal, maxVal);
 
-                    MetricStatistics stats = metricStatisticsRepository
-                            .findByPlaceAndField(place, field)
-                            .orElse(MetricStatistics.builder()
-                                    .place(place)
-                                    .field(field)
-                                    .build());
-
-                    stats.setMinValue(minVal);
-                    stats.setMaxValue(maxVal);
-                    stats.setLastUpdated(LocalDateTime.now());
-
-                    metricStatisticsRepository.save(stats);
-                    log.info("Saved stats for {}.{}", place, field);
-
+                    saveMetricStatistics(place, field, minVal, maxVal);
                 } catch (Exception e) {
                     log.error("Error processing stats for {}.{}: {}", place, field, e.getMessage());
                 }
             }
         }
+    }
 
-        log.info("=== StatsBatchService: updateMinMaxStatistics() END ===");
+    // 버킷과 필드 이름을 함께 관리하기 위한 레코드
+    private record BucketFieldMapping(String bucket, String fieldName) {}
+
+    private void saveMetricStatistics(String place, String field, double minVal, double maxVal) {
+        MetricStatistics stats = metricStatisticsRepository
+                .findByPlaceAndField(place, field)
+                .orElse(MetricStatistics.builder()
+                        .place(place)
+                        .field(field)
+                        .build());
+
+        stats.setMinValue(minVal);
+        stats.setMaxValue(maxVal);
+        stats.setLastUpdated(LocalDateTime.now());
+
+        metricStatisticsRepository.save(stats);
+        log.info("Saved stats for {}.{}", place, field);
     }
 
     private double executeQuery(String query) {
