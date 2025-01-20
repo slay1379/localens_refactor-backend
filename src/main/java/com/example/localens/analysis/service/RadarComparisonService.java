@@ -28,6 +28,9 @@ public class RadarComparisonService {
         RadarDataDTO district1Radar = radarAnalysisService.getRadarData(districtUuid1);
         RadarDataDTO district2Radar = radarAnalysisService.getRadarData(districtUuid2);
 
+        district1Radar.setDistrictInfo(district1Radar.getDistrictInfo());
+        district2Radar.setDistrictInfo(district2Radar.getDistrictInfo());
+
         Map<String, Integer> district1Overall = district1Radar.getOverallData();
         Map<String, Integer> district2Overall = district2Radar.getOverallData();
 
