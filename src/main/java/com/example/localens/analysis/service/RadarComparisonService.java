@@ -3,6 +3,7 @@ package com.example.localens.analysis.service;
 import com.example.localens.analysis.dto.CompareTwoDistrictsDTO;
 import com.example.localens.analysis.dto.DifferenceItemDTO;
 import com.example.localens.analysis.dto.RadarDataDTO;
+import com.example.localens.analysis.dto.RadarDistrictInfoDTO;
 import com.example.localens.analysis.dto.TopDifferencesDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -28,8 +29,20 @@ public class RadarComparisonService {
         RadarDataDTO district1Radar = radarAnalysisService.getRadarData(districtUuid1);
         RadarDataDTO district2Radar = radarAnalysisService.getRadarData(districtUuid2);
 
-        district1Radar.setDistrictInfo(district1Radar.getDistrictInfo());
-        district2Radar.setDistrictInfo(district2Radar.getDistrictInfo());
+        // DistrictDTO를 RadarDistrictInfoDTO로 변환하는 로직
+        if (district1Radar != null && district1Radar.getDistrictInfo() != null) {
+            RadarDistrictInfoDTO infoDTO = new RadarDistrictInfoDTO();
+            infoDTO.setDistrictName(district1Radar.getDistrictInfo().getDistrictName());
+            infoDTO.setClusterName(district1Radar.getDistrictInfo().getClusterName());
+            district1Radar.setDistrictInfo(infoDTO);
+        }
+
+        if (district2Radar != null && district2Radar.getDistrictInfo() != null) {
+            RadarDistrictInfoDTO infoDTO = new RadarDistrictInfoDTO();
+            infoDTO.setDistrictName(district2Radar.getDistrictInfo().getDistrictName());
+            infoDTO.setClusterName(district2Radar.getDistrictInfo().getClusterName());
+            district2Radar.setDistrictInfo(infoDTO);
+        }
 
         Map<String, Integer> district1Overall = district1Radar.getOverallData();
         Map<String, Integer> district2Overall = district2Radar.getOverallData();
