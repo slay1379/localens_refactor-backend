@@ -14,4 +14,11 @@ public class RadarDataDTO {
     private DistrictDTO districtInfo;
     private Map<String, Integer> overallData;
     private Map<String, Object> topTwo;
+
+    public void setDistrictInfo(DistrictDTO originalDTO) {
+        DistrictDTO filteredDTO = new DistrictDTO();
+        filteredDTO.setDistrictName(originalDTO.getDistrictName());
+        filteredDTO.setClusterName(originalDTO.getClusterName());
+        this.districtInfo = filteredDTO;
+    }
 }
