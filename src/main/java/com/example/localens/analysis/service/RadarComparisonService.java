@@ -3,6 +3,7 @@ package com.example.localens.analysis.service;
 import com.example.localens.analysis.dto.CompareTwoDistrictsDTO;
 import com.example.localens.analysis.dto.DifferenceItemDTO;
 import com.example.localens.analysis.dto.RadarDataDTO;
+import com.example.localens.analysis.dto.TopDifferencesDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -39,27 +40,52 @@ public class RadarComparisonService {
         List<Map.Entry<String, Double>> sortedDiffs = new ArrayList<>(differences.entrySet());
         sortedDiffs.sort((a, b) -> Double.compare(b.getValue(), a.getValue()));
 
-        List<DifferenceItemDTO> topDifferences = new ArrayList<>();
-        int limit = Math.min(3, sortedDiffs.size());
-        for (int i = 0; i < limit; i++) {
-            String key = sortedDiffs.get(i).getKey();
-            Double val = sortedDiffs.get(i).getValue();
+        TopDifferencesDTO topDifferences = new TopDifferencesDTO();
 
-            DifferenceItemDTO item = new DifferenceItemDTO();
-            item.setName(keyToKoreanMap.getOrDefault(key, key));
-            item.setValue1(district1Overall.get(key));
-            item.setValue2(district2Overall.get(key));
-            item.setDifference(val);
+        if (sortedDiffs.size() >= 1) {
+            String key = sortedDiffs.get(0).getKey();
+            topDifferences.setKey1(createDifferenceItem(
+                    key,
+                    district1Overall.get(key),
+                    district2Overall.get(key),
+                    keyToKoreanMap
+            ));
+        }
 
-            topDifferences.add(item);
+        if (sortedDiffs.size() >= 2) {
+            String key = sortedDiffs.get(1).getKey();
+            topDifferences.setKey2(createDifferenceItem(
+                    key,
+                    district1Overall.get(key),
+                    district2Overall.get(key),
+                    keyToKoreanMap
+            ));
+        }
+
+        if (sortedDiffs.size() >= 3) {
+            String key = sortedDiffs.get(2).getKey();
+            topDifferences.setKey3(createDifferenceItem(
+                    key,
+                    district1Overall.get(key),
+                    district2Overall.get(key),
+                    keyToKoreanMap
+            ));
         }
 
         CompareTwoDistrictsDTO result = new CompareTwoDistrictsDTO();
         result.setDistrict1(district1Radar);
-        result.setDistrict2(district2Radar);
+        result.setDistrict1(district2Radar);
         result.setTopDifferences(topDifferences);
-
+        
         return result;
+    }
+
+    private DifferenceItemDTO createDifferenceItem(String key, Integer value1, Integer value2, Map<String, String> keyToKoreanMap) {
+        DifferenceItemDTO item = new DifferenceItemDTO();
+        item.setName(keyToKoreanMap.getOrDefault(key, key));
+        item.setValue1(value1);
+        item.setValue2(value2);
+        return item;
     }
 
     public Map<String, Map<String, Object>> findTopDifferences(Map<String, Integer> district1Overall, Map<String, Integer> district2Overall) {
