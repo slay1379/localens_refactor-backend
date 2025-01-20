@@ -9,6 +9,8 @@ import com.influxdb.query.FluxTable;
 import jakarta.annotation.PostConstruct;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,13 +25,12 @@ public class StatsBatchService {
     private final MetricStatisticsRepository metricStatisticsRepository;
     private final CommercialDistrictRepository commercialDistrictRepository;
 
-    /*
+
     @PostConstruct
     public void initializeStats() {
         log.info("Initializing statistics...");
         updateMinMaxStatistics();
     }
-    */
 
     public void updateMinMaxStatistics() {
         log.info("=== StatsBatchService: updateMinMaxStatistics() START ===");
@@ -38,16 +39,17 @@ public class StatsBatchService {
         log.info("Found places from DB: {}", placeList);
 
         // 각 지표별로 min/max 계산
-        String[] fields = {
-                "total_population",
-                "stay_visit_ratio",
-                "congestion_change_rate",
-                "stay_to_visitor",
-                "stay_duration_change_rate"
-        };
+        Map<String, String> fieldBuckets = Map.of(
+                "total_population", "result_bucket",
+                "stay_visit_ratio", "result_stay_visit_bucket",
+                "congestion_change_rate", "date_congestion",
+                "stay_to_visitor", "stay_per_visitor_bucket",
+                "stay_duration_change_rate", "date_stay_duration"
+        );
 
         for (String place : placeList) {
-            for (String field : fields) {
+            for (Entry<String, String> entry : fieldBuckets.entrySet()) {
+                String field = entry.getKey();
                 try {
                     String minQuery = String.format("""
                         from(bucket: "hourly")
@@ -55,6 +57,7 @@ public class StatsBatchService {
                             |> filter(fn: (r) => r["place"] == "%s")
                             |> filter(fn: (r) => r["_field"] == "%s")
                             |> min()
+                            |> yield(name: "min")
                         """, place, field);
 
                     String maxQuery = String.format("""
@@ -63,6 +66,7 @@ public class StatsBatchService {
                             |> filter(fn: (r) => r["place"] == "%s")
                             |> filter(fn: (r) => r["_field"] == "%s")
                             |> max()
+                            |> yield(name: "max")
                         """, place, field);
 
                     double minVal = executeQuery(minQuery);
@@ -95,10 +99,16 @@ public class StatsBatchService {
 
     private double executeQuery(String query) {
         List<FluxTable> tables = influxDBClientWrapper.query(query);
+        log.debug("Query result tables: {}", tables);
+
         if (tables.isEmpty() || tables.get(0).getRecords().isEmpty()) {
+            log.warn("No data found for query: {}", query);
             return 0.0;
         }
+
         Object value = tables.get(0).getRecords().get(0).getValueByKey("_value");
-        return value != null ? Double.parseDouble(value.toString()) : 0.0;
+        double result = value != null ? Double.parseDouble(value.toString()) : 0.0;
+        log.info("Query value: {}", result);
+        return result;
     }
 }
