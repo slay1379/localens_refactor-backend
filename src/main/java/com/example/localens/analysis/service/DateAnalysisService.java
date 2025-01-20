@@ -34,6 +34,38 @@ public class DateAnalysisService {
         return normalizedMap;
     }
 
+    public Map<String, Object> analyzeDateWithTopMetrics(String place, String date) {
+        Map<String, Double> rawValues = queryInfluxForDate(place, date);
+        Map<String, Integer> normalizedValues = new LinkedHashMap<>();
+
+        for (Entry<String, Double> entry : rawValues.entrySet()) {
+            String field = entry.getKey();
+            Double rawValue = entry.getValue();
+            double normalized = metricStatsService.normalizeValue(place, field, rawValue);
+            normalizedValues.put(field, (int) Math.round(normalized * 100));
+        }
+
+        List<Entry<String, Integer>> sortedMetrics = normalizedValues.entrySet()
+                .stream()
+                .sorted(Entry.<String, Integer>comparingByValue().reversed())
+                .limit(2)
+                .toList();
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("values", normalizedValues);
+
+        Map<String, String> topTwo = new LinkedHashMap<>();
+        if (!sortedMetrics.isEmpty()) {
+            topTwo.put("first", sortedMetrics.get(0).getKey());
+            if (sortedMetrics.size() > 1) {
+                topTwo.put("second", sortedMetrics.get(1).getKey());
+            }
+        }
+        result.put("topTwo", topTwo);
+
+        return result;
+    }
+
     private Map<String, Double> queryInfluxForDate(String place, String date) {
         // InfluxDB timestamp format으로 변환
         String startTime = date.split("T")[0] + "T00:00:00Z";
