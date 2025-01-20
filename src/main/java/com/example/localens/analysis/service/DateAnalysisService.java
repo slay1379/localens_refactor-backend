@@ -61,6 +61,16 @@ public class DateAnalysisService {
             """, startTime, endTime, place);
         rawMap.put("stayVisit", executeQuery("stayVisit", stayVisitQuery));
 
+        String visitConcentrationQuery = String.format("""
+        from(bucket: "date_stay_visit")
+            |> range(start: %s, stop: %s)
+            |> filter(fn: (r) => r["place"] == "%s")
+            |> filter(fn: (r) => r["_field"] == "visit_concentration")
+            |> mean()
+        """, startTime, endTime, place);
+        rawMap.put("visitConcentration", executeQuery("visitConcentration", visitConcentrationQuery));
+
+
         // 3. 혼잡도 변화율 조회
         String congestionQuery = String.format("""
             from(bucket: "date_congestion")
