@@ -182,10 +182,8 @@ public class PopulationDetailsInfluxHelper {
     private Map<String, Map<String, Double>> executeAgeGroupQuery(String query) {
         Map<String, Map<String, Double>> result = new LinkedHashMap<>();
 
-        // 기본 연령대 구조 초기화
-        String[] ageGroups = {
-                "10대 미만", "10대", "20대", "30대", "40대", "50대", "60대", "70대 이상"
-        };
+        // 기본 초기화
+        String[] ageGroups = {"10대 미만", "10대", "20대", "30대", "40대", "50대", "60대", "70대 이상"};
         for (String ageGroup : ageGroups) {
             result.put(ageGroup, new LinkedHashMap<>());
         }
@@ -193,36 +191,32 @@ public class PopulationDetailsInfluxHelper {
         try {
             log.info("Executing age group query: {}", query);
             List<FluxTable> tables = influxDBClientWrapper.query(query);
-            log.debug("Query returned {} tables", tables.size());
 
             for (FluxTable table : tables) {
-                log.debug("Processing table with {} records", table.getRecords().size());
                 for (FluxRecord record : table.getRecords()) {
-                    try {
-                        log.debug("Record values: {}", record.getValues());
+                    String ageGroup = sanitizeAgeGroupKey(record.getValueByKey("age_group").toString());
+                    String sex = record.getValueByKey("sex").toString();
+                    Double value = record.getValueByKey("_value") != null ?
+                            Double.parseDouble(record.getValueByKey("_value").toString()) : 0.0;
 
-                        String ageGroup = record.getValueByKey("age_group").toString();
-                        String sex = record.getValueByKey("sex").toString();
-                        Double value = Double.parseDouble(record.getValueByKey("_value").toString());
-
-                        if (!result.containsKey(ageGroup)) {
-                            log.warn("Unknown age group: {}", ageGroup);
-                            continue;
-                        }
-
-                        String genderKey = "M".equals(sex) ? "male" : "female";
-                        result.get(ageGroup).put(genderKey, value);
-                        log.debug("Added value {} for age group {} and gender {}", value, ageGroup, genderKey);
-
-                    } catch (Exception e) {
-                        log.error("Error processing record: {} - {}", record.getValues(), e.getMessage());
+                    if (!result.containsKey(ageGroup)) {
+                        log.warn("Unknown age group: {}", ageGroup);
+                        continue;
                     }
+
+                    String genderKey = "M".equalsIgnoreCase(sex) ? "male" : "female";
+                    result.get(ageGroup).put(genderKey, value);
+
+                    log.debug("Mapped age group: {}, gender: {}, value: {}", ageGroup, genderKey, value);
                 }
             }
+
+            log.info("Final age group result: {}", result);
+
         } catch (Exception e) {
             log.error("Error executing age group query: {}", e.getMessage());
-            log.error("Query: {}", query);
         }
+
         return result;
     }
 
@@ -281,5 +275,9 @@ public class PopulationDetailsInfluxHelper {
             log.error("Error executing time based query: {} - {}", query, e.getMessage());
         }
         return result;
+    }
+
+    private String sanitizeAgeGroupKey(String ageGroup) {
+        return ageGroup.trim().replace(" ", ""); // 공백 제거
     }
 }
