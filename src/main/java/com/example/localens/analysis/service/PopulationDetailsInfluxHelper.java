@@ -98,15 +98,18 @@ public class PopulationDetailsInfluxHelper {
 
     public Map<String, Map<String, Double>> getAgeGroupStayPattern(PopulationDetailsDTO details) {
         String query = String.format("""
-           from(bucket: "age_gender_bucket")
-               |> range(%s)
-               |> filter(fn: (r) => r["place"] == "%s")
-               |> filter(fn: (r) => r["_field"] == "total_population")
-               |> pivot(rowKey:["age_group"], columnKey: ["sex"], valueColumn: "_value")
-               |> mean()
-           """, CURRENT_RANGE, details.getDistrictName());
+        from(bucket: "age_gender_bucket")
+            |> range(%s)
+            |> filter(fn: (r) => r["place"] == "%s")
+            |> filter(fn: (r) => r["_field"] == "total_population")
+            |> pivot(rowKey:["age_group"], columnKey: ["sex"], valueColumn: "_value")
+            |> filter(fn: (r) => r["_value"] > 0)
+            |> last()
+        """, CURRENT_RANGE, details.getDistrictName());
 
-        return executeAgeGroupQuery(query);
+        Map<String, Map<String, Double>> result = executeAgeGroupQuery(query);
+        log.info("Age group query result: {}", result);
+        return result;
     }
 
     public Map<String, Double> getNationalityStayPattern(PopulationDetailsDTO details) {
@@ -125,36 +128,63 @@ public class PopulationDetailsInfluxHelper {
     private Map<String, Map<String, Double>> executeAgeGroupQuery(String query) {
         Map<String, Map<String, Double>> result = new LinkedHashMap<>();
         try {
+            log.info("Executing age group query: {}", query);
             List<FluxTable> tables = influxDBClientWrapper.query(query);
-            log.debug("Age group query result tables: {}", tables);
+            log.info("Age group query returned {} tables", tables.size());
+
+            if (tables.isEmpty()) {
+                log.warn("No tables returned from age group query");
+                return result;
+            }
 
             for (FluxTable table : tables) {
+                log.info("Processing table with {} records", table.getRecords().size());
                 for (FluxRecord record : table.getRecords()) {
                     try {
+                        log.debug("Processing record: {}", record.getValues());
+                        if (record.getValueByKey("age_group") == null) {
+                            log.warn("Record missing age_group key: {}", record.getValues());
+                            continue;
+                        }
+
                         String ageGroup = record.getValueByKey("age_group").toString();
                         Map<String, Double> genderData = new LinkedHashMap<>();
+
+                        // M과 F 값을 직접 가져오지 않고 모든 값을 로깅
+                        record.getValues().forEach((key, value) -> {
+                            log.debug("Record key: {}, value: {}", key, value);
+                        });
 
                         Object maleValue = record.getValueByKey("M");
                         Object femaleValue = record.getValueByKey("F");
 
                         if (maleValue != null) {
-                            genderData.put("male", Double.parseDouble(maleValue.toString()));
+                            double maleCount = Double.parseDouble(maleValue.toString());
+                            if (maleCount > 0) {
+                                genderData.put("male", maleCount);
+                            }
                         }
+
                         if (femaleValue != null) {
-                            genderData.put("female", Double.parseDouble(femaleValue.toString()));
+                            double femaleCount = Double.parseDouble(femaleValue.toString());
+                            if (femaleCount > 0) {
+                                genderData.put("female", femaleCount);
+                            }
                         }
 
                         if (!genderData.isEmpty()) {
                             result.put(ageGroup, genderData);
+                            log.info("Added age group {} with gender data: {}", ageGroup, genderData);
                         }
                     } catch (Exception e) {
-                        log.error("Error processing age group record: {}", e.getMessage());
+                        log.error("Error processing record: {} - {}", record.getValues(), e.getMessage());
                     }
                 }
             }
         } catch (Exception e) {
             log.error("Error executing age group query: {} - {}", query, e.getMessage());
         }
+
         return result;
     }
 
