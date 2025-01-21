@@ -1,6 +1,8 @@
 package com.example.localens.analysis.service;
 
+import com.example.localens.analysis.dto.AnalysisRadarDistrictInfoDTO;
 import com.example.localens.analysis.dto.CompareTwoDistrictsDTO;
+import com.example.localens.analysis.dto.ComparisonRadarDistrictInfoDTO;
 import com.example.localens.analysis.dto.DifferenceItemDTO;
 import com.example.localens.analysis.dto.RadarDataDTO;
 import com.example.localens.analysis.dto.RadarDistrictInfoDTO;
@@ -26,27 +28,26 @@ public class RadarComparisonService {
     }};
 
     public CompareTwoDistrictsDTO compareTwoDistricts(Integer districtUuid1, Integer districtUuid2) {
-        RadarDataDTO district1Radar = radarAnalysisService.getRadarData(districtUuid1);
-        RadarDataDTO district2Radar = radarAnalysisService.getRadarData(districtUuid2);
-
-        // DistrictDTO를 RadarDistrictInfoDTO로 변환하는 로직
-        if (district1Radar != null && district1Radar.getDistrictInfo() != null) {
-            RadarDistrictInfoDTO infoDTO = new RadarDistrictInfoDTO();
-            infoDTO.setDistrictName(district1Radar.getDistrictInfo().getDistrictName());
-            infoDTO.setClusterName(district1Radar.getDistrictInfo().getClusterName());
-            district1Radar.setDistrictInfo(infoDTO);
-        }
-
-        if (district2Radar != null && district2Radar.getDistrictInfo() != null) {
-            RadarDistrictInfoDTO infoDTO = new RadarDistrictInfoDTO();
-            infoDTO.setDistrictName(district2Radar.getDistrictInfo().getDistrictName());
-            infoDTO.setClusterName(district2Radar.getDistrictInfo().getClusterName());
-            district2Radar.setDistrictInfo(infoDTO);
-        }
+        RadarDataDTO<ComparisonRadarDistrictInfoDTO> district1Radar = convertToComparisonDTO(
+                radarAnalysisService.getRadarData(districtUuid1));
+        RadarDataDTO<ComparisonRadarDistrictInfoDTO> district2Radar = convertToComparisonDTO(
+                radarAnalysisService.getRadarData(districtUuid2));
 
         Map<String, Integer> district1Overall = district1Radar.getOverallData();
         Map<String, Integer> district2Overall = district2Radar.getOverallData();
 
+        TopDifferencesDTO topDifferences = calculateTopDifferences(district1Overall, district2Overall);
+
+        CompareTwoDistrictsDTO result = new CompareTwoDistrictsDTO();
+        result.setDistrict1(district1Radar);
+        result.setDistrict2(district2Radar);
+        result.setTopDifferences(topDifferences);
+
+        return result;
+    }
+
+    private TopDifferencesDTO calculateTopDifferences(Map<String, Integer> district1Overall,
+                                                      Map<String, Integer> district2Overall) {
         Map<String, Double> differences = new HashMap<>();
         for (String key : district1Overall.keySet()) {
             double diff = Math.abs(district1Overall.get(key) - district2Overall.get(key));
@@ -88,15 +89,11 @@ public class RadarComparisonService {
             ));
         }
 
-        CompareTwoDistrictsDTO result = new CompareTwoDistrictsDTO();
-        result.setDistrict1(district1Radar);
-        result.setDistrict2(district2Radar);
-        result.setTopDifferences(topDifferences);
-        
-        return result;
+        return topDifferences;
     }
 
-    private DifferenceItemDTO createDifferenceItem(String key, Integer value1, Integer value2, Map<String, String> keyToKoreanMap) {
+    private DifferenceItemDTO createDifferenceItem(String key, Integer value1, Integer value2,
+                                                   Map<String, String> keyToKoreanMap) {
         DifferenceItemDTO item = new DifferenceItemDTO();
         item.setName(keyToKoreanMap.getOrDefault(key, key));
         item.setValue1(value1);
@@ -104,78 +101,31 @@ public class RadarComparisonService {
         return item;
     }
 
-    public Map<String, Map<String, Object>> findTopDifferences(Map<String, Integer> district1Overall, Map<String, Integer> district2Overall) {
-        // 차이를 계산
-        Map<String, Double> differences = new HashMap<>();
-        for (String key : district1Overall.keySet()) {
-            double diff = Math.abs(district1Overall.get(key) - district2Overall.get(key));
-            differences.put(key, diff);
-        }
+    private RadarDataDTO<ComparisonRadarDistrictInfoDTO> convertToComparisonDTO(
+            RadarDataDTO<AnalysisRadarDistrictInfoDTO> analysisDTO) {
+        RadarDataDTO<ComparisonRadarDistrictInfoDTO> comparisonDTO = new RadarDataDTO<>();
 
-        // 차이를 기준으로 내림차순 정렬, 값이 같으면 keyToKoreanMap의 순서를 기준으로 정렬
-        List<Map.Entry<String, Double>> sortedDifferences = new ArrayList<>(differences.entrySet());
-        sortedDifferences.sort((a, b) -> {
-            int compareDiff = Double.compare(b.getValue(), a.getValue());
-            if (compareDiff != 0) {
-                return compareDiff; // 차이가 다르면 내림차순 정렬
-            }
-            // 차이가 같으면 keyToKoreanMap의 순서에 따라 정렬
-            List<String> keyOrder = new ArrayList<>(keyToKoreanMap.keySet());
-            return Integer.compare(keyOrder.indexOf(a.getKey()), keyOrder.indexOf(b.getKey()));
-        });
+        ComparisonRadarDistrictInfoDTO districtInfo = new ComparisonRadarDistrictInfoDTO();
+        districtInfo.setDistrictName(analysisDTO.getDistrictInfo().getDistrictName());
+        districtInfo.setClusterName(analysisDTO.getDistrictInfo().getClusterName());
 
-        Map<String, Map<String, Object>> result = new LinkedHashMap<>();
-        for (int i = 0; i < 3 && i < sortedDifferences.size(); i++) {
-            Map.Entry<String, Double> entry = sortedDifferences.get(i);
-            String key = entry.getKey();
+        comparisonDTO.setDistrictInfo(districtInfo);
+        comparisonDTO.setOverallData(analysisDTO.getOverallData());
+        comparisonDTO.setTopTwo(analysisDTO.getTopTwo());
 
-            Map<String, Object> differenceMap = new LinkedHashMap<>();
-            differenceMap.put("name", keyToKoreanMap.getOrDefault(key, key));
-            differenceMap.put("value1", district1Overall.get(key));
-            differenceMap.put("value2", district2Overall.get(key));
-
-            result.put("key" + (i + 1), differenceMap);
-        }
-
-//        // 상위 3개의 차이를 keyToKoreanMap에서 한글로 변환하여 반환
-//        Map<String, String> result = new LinkedHashMap<>();
-//        result.put("first", keyToKoreanMap.getOrDefault(sortedDifferences.get(0).getKey(), sortedDifferences.get(0).getKey()));
-//        result.put("second", keyToKoreanMap.getOrDefault(sortedDifferences.get(1).getKey(), sortedDifferences.get(1).getKey()));
-//        result.put("third", keyToKoreanMap.getOrDefault(sortedDifferences.get(2).getKey(), sortedDifferences.get(2).getKey()));
-
-        return result;
+        return comparisonDTO;
     }
 
-    public Map<String, Object> findTopTwo(Map<String, Integer> overallData) {
-        // 데이터를 차이값 기준으로 정렬
-        List<Map.Entry<String, Integer>> sortedEntries = new ArrayList<>(overallData.entrySet());
-        sortedEntries.sort((a, b) -> Integer.compare(b.getValue(), a.getValue()));
-
-        // 상위 2개의 데이터를 keyToKoreanMap으로 변환
-        Map<String, Object> topTwo = new LinkedHashMap<>();
-        topTwo.put("first", Map.of(
-                "name", keyToKoreanMap.getOrDefault(sortedEntries.get(0).getKey(), sortedEntries.get(0).getKey()),
-                "value", sortedEntries.get(0).getValue()
-        ));
-        topTwo.put("second", Map.of(
-                "name", keyToKoreanMap.getOrDefault(sortedEntries.get(1).getKey(), sortedEntries.get(1).getKey()),
-                "value", sortedEntries.get(1).getValue()
-        ));
-
-        return topTwo;
-    }
-
-    public Map<String, Map<String, Integer>> calculateArrangedData(Map<String, Integer> district1Overall, Map<String, Integer> district2Overall) {
-        // 각 키별로 차이를 계산하여 정렬
+    public Map<String, Map<String, Integer>> calculateArrangedData(Map<String, Integer> district1Overall,
+                                                                   Map<String, Integer> district2Overall) {
         List<String> sortedKeys = district1Overall.keySet().stream()
                 .sorted((key1, key2) -> {
                     int diff1 = district1Overall.get(key1) - district2Overall.get(key1);
                     int diff2 = district1Overall.get(key2) - district2Overall.get(key2);
-                    return Integer.compare(diff2, diff1); // 차이값 기준으로 내림차순 정렬
+                    return Integer.compare(diff2, diff1);
                 })
                 .toList();
 
-        // 정렬된 데이터를 사용해 arrangedData 생성
         Map<String, Integer> district1ArrangedData = new LinkedHashMap<>();
         Map<String, Integer> district2ArrangedData = new LinkedHashMap<>();
         for (String key : sortedKeys) {
@@ -183,7 +133,6 @@ public class RadarComparisonService {
             district2ArrangedData.put(key, district2Overall.get(key));
         }
 
-        // 두 상권의 arrangedData를 반환
         Map<String, Map<String, Integer>> arrangedData = new HashMap<>();
         arrangedData.put("district1", district1ArrangedData);
         arrangedData.put("district2", district2ArrangedData);
