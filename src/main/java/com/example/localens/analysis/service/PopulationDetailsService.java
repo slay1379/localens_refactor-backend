@@ -75,10 +75,9 @@ public class PopulationDetailsService {
     public PopulationDetailsTransformedDTO getTransformedDetailsByDistrictUuid(Integer districtUuid) {
         Map<String, Object> raw = getDetailsByDistrictUuid(districtUuid);
 
-        // 이제 raw에서 필요한 키를 뽑아, 우리가 만든 DTO로 매핑
         PopulationDetailsTransformedDTO dto = new PopulationDetailsTransformedDTO();
 
-        // 각각 캐스팅해서 변환
+        // 시간대별 데이터 변환
         dto.setHourlyFloatingPopulation(
                 PopulationHourlyDataDTO.from(
                         castMapDouble(raw.get("hourlyFloatingPopulation"))
@@ -105,14 +104,14 @@ public class PopulationDetailsService {
                 )
         );
 
-        // age group
+        // 연령대별 체류 패턴 변환
         dto.setAgeGroupStayPattern(
                 AgeGroupStayPatternDTO.from(
                         castMapMapDouble(raw.get("ageGroupStayPattern"))
                 )
         );
 
-        // nationality
+        // 국적별 체류 패턴 변환
         dto.setNationalityStayPattern(
                 NationalityPatternDTO.from(
                         castMapDouble(raw.get("nationalityStayPattern"))
@@ -121,6 +120,7 @@ public class PopulationDetailsService {
 
         return dto;
     }
+
 
     // 안전 캐스팅: Object -> Map<String,Double>
     @SuppressWarnings("unchecked")
