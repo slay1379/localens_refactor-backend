@@ -1,5 +1,6 @@
 package com.example.localens.analysis.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,12 +13,24 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AgeGroupStayPatternDTO {
-    private GenderDataDTO Teenagers;   // 10대 미만 + 10대
-    private GenderDataDTO Twenties;   // 20대
-    private GenderDataDTO Thirties;   // 30대
-    private GenderDataDTO Forties;    // 40대
-    private GenderDataDTO Fifties;    // 50대
-    private GenderDataDTO Sixties;    // 60대 + 70대 이상
+    @JsonProperty("Teenagers")
+    private GenderDataDTO Teenagers;
+
+    @JsonProperty("Twenties")
+    private GenderDataDTO Twenties;
+
+    @JsonProperty("Thirties")
+    private GenderDataDTO Thirties;
+
+    @JsonProperty("Forties")
+    private GenderDataDTO Forties;
+
+    @JsonProperty("Fifties")
+    private GenderDataDTO Fifties;
+
+    @JsonProperty("Sixties")
+    private GenderDataDTO Sixties;
+
 
     public static AgeGroupStayPatternDTO from(Map<String, Map<String, Double>> ageMap) {
         if (ageMap == null) ageMap = Map.of();

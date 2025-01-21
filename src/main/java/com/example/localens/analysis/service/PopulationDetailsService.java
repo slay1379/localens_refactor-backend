@@ -62,7 +62,7 @@ public class PopulationDetailsService {
             result.put("ageGroupStayPattern", ageGroupMap);
 
             // 국적별 체류 패턴
-            Map<String, Double> nationalityMap = influxHelper.getNationalityStayPattern(districtUuid);
+            Map<String, Double> nationalityMap = NationalityPatternDTO.from(influxHelper.getNationalityStayPattern(districtUuid)).toOrderedMap();
             result.put("nationalityStayPattern", nationalityMap);
 
             return result;
