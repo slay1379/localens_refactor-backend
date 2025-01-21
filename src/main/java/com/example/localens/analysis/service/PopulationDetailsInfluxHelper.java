@@ -198,19 +198,24 @@ public class PopulationDetailsInfluxHelper {
             for (FluxTable table : tables) {
                 for (FluxRecord record : table.getRecords()) {
                     String ageGroup = sanitizeAgeGroupKey(record.getValueByKey("age_group").toString());
-                    String sex = record.getValueByKey("sex").toString();
+                    String sex = record.getValueByKey("sex").toString().trim();
                     Double value = record.getValueByKey("_value") != null ?
                             Double.parseDouble(record.getValueByKey("_value").toString()) : 0.0;
+
+                    log.debug("Processing record: age_group={}, sex={}, value={}", ageGroup, sex, value);
 
                     if (!result.containsKey(ageGroup)) {
                         log.warn("Unknown age group: {}", ageGroup);
                         continue;
                     }
 
-                    String genderKey = "M".equalsIgnoreCase(sex) ? "male" : "female";
-                    result.get(ageGroup).put(genderKey, value);
-
-                    log.debug("Mapped age group: {}, gender: {}, value: {}", ageGroup, genderKey, value);
+                    if ("M".equalsIgnoreCase(sex) || "MALE".equalsIgnoreCase(sex)) {
+                        result.get(ageGroup).put("male", result.get(ageGroup).get("male") + value);
+                    } else if ("F".equalsIgnoreCase(sex) || "FEMALE".equalsIgnoreCase(sex)) {
+                        result.get(ageGroup).put("female", result.get(ageGroup).get("female") + value);
+                    } else {
+                        log.warn("Unknown sex: {}", sex);
+                    }
                 }
             }
 
@@ -281,6 +286,8 @@ public class PopulationDetailsInfluxHelper {
     }
 
     private String sanitizeAgeGroupKey(String ageGroup) {
-        return ageGroup.trim().replace(" ", ""); // 공백 제거
+        if (ageGroup == null) return "";
+        return ageGroup.trim().replaceAll("\\s+", ""); // 공백 제거 및 정리
     }
+
 }
