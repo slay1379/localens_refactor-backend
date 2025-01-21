@@ -1,5 +1,8 @@
 package com.example.localens.analysis.service;
 
+import com.example.localens.analysis.domain.CommercialDistrict;
+import com.example.localens.analysis.repository.CommercialDistrictRepository;
+import jakarta.persistence.EntityNotFoundException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -8,10 +11,13 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class PopulationDetailsService {
-
+    private final CommercialDistrictRepository commercialDistrictRepository;
     private final PopulationDetailsInfluxHelper influxHelper;
 
     public Map<String, Object> getDetailsByDistrictUuid(Integer districtUuid) {
+
+        CommercialDistrict district = commercialDistrictRepository.findByDistrictUuid(districtUuid)
+                .orElseThrow(() -> new EntityNotFoundException("District not found"));
 
         Map<String, Object> result = new LinkedHashMap<>();
 
