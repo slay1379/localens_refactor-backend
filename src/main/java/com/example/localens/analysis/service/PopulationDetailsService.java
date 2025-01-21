@@ -1,10 +1,13 @@
 package com.example.localens.analysis.service;
 
 import com.example.localens.analysis.domain.CommercialDistrict;
+import com.example.localens.analysis.dto.PopulationDetailsDTO;
 import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,17 +24,18 @@ public class PopulationDetailsService {
         CommercialDistrict district = commercialDistrictRepository.findByDistrictUuid(districtUuid)
                 .orElseThrow(() -> new EntityNotFoundException("District not found"));
 
-        String districtName = district.getDistrictName();
+        // Helper 클래스 내부에서 중복 쿼리가 발생하지 않도록 district를 전달
+        PopulationDetailsDTO details = new PopulationDetailsDTO(district);
         Map<String, Object> result = new LinkedHashMap<>();
 
-        // district 객체를 재사용
-        result.put("hourlyFloatingPopulation", influxHelper.getHourlyFloatingPopulation(districtUuid));
-        result.put("hourlyStayVisitRatio", influxHelper.getHourlyStayVisitRatio(districtUuid));
-        result.put("hourlyCongestionRateChange", influxHelper.getHourlyCongestionRateChange(districtUuid));
-        result.put("stayPerVisitorDuration", influxHelper.getStayPerVisitorDuration(districtUuid));
-        result.put("hourlyAvgStayDurationChange", influxHelper.getHourlyAvgStayDurationChange(districtUuid));
-        result.put("ageGroupStayPattern", influxHelper.getAgeGroupStayPattern(districtUuid));
-        result.put("nationalityStayPattern", influxHelper.getNationalityStayPattern(districtUuid));
+        // 모든 쿼리에 district 객체 전달
+        result.put("hourlyFloatingPopulation", influxHelper.getHourlyFloatingPopulation(details));
+        result.put("hourlyStayVisitRatio", influxHelper.getHourlyStayVisitRatio(details));
+        result.put("hourlyCongestionRateChange", influxHelper.getHourlyCongestionRateChange(details));
+        result.put("stayPerVisitorDuration", influxHelper.getStayPerVisitorDuration(details));
+        result.put("hourlyAvgStayDurationChange", influxHelper.getHourlyAvgStayDurationChange(details));
+        result.put("ageGroupStayPattern", influxHelper.getAgeGroupStayPattern(details));
+        result.put("nationalityStayPattern", influxHelper.getNationalityStayPattern(details));
 
         return result;
     }
