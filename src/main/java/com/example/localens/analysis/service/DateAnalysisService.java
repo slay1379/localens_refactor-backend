@@ -75,62 +75,70 @@ public class DateAnalysisService {
 
         // 1. 유동인구 수 조회
         String populationQuery = String.format("""
-            from(bucket: "result_bucket")
-                |> range(start: %s, stop: %s)
-                |> filter(fn: (r) => r["place"] == "%s")
-                |> filter(fn: (r) => r["_field"] == "total_population")
-                |> mean()
-            """, startTime, endTime, place);
+                from(bucket: "result_bucket")
+                    |> range(start: %s, stop: %s)
+                    |> filter(fn: (r) => r["place"] == "%s")
+                    |> filter(fn: (r) => r["_field"] == "total_population")
+                    |> mean()
+                """, startTime, endTime, place);
         rawMap.put("population", executeQuery("population", populationQuery));
 
         // 2. 체류/방문 비율 조회
         String stayVisitQuery = String.format("""
-            from(bucket: "result_stay_visit_bucket")
-                |> range(start: %s, stop: %s)
-                |> filter(fn: (r) => r["place"] == "%s")
-                |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
-                |> mean()
-            """, startTime, endTime, place);
+                from(bucket: "result_stay_visit_bucket")
+                    |> range(start: %s, stop: %s)
+                    |> filter(fn: (r) => r["place"] == "%s")
+                    |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
+                    |> mean()
+                """, startTime, endTime, place);
         rawMap.put("stayVisit", executeQuery("stayVisit", stayVisitQuery));
 
         String visitConcentrationQuery = String.format("""
-        from(bucket: "date_stay_visit")
-            |> range(start: %s, stop: %s)
-            |> filter(fn: (r) => r["place"] == "%s")
-            |> filter(fn: (r) => r["_field"] == "visit_concentration")
-            |> mean()
-        """, startTime, endTime, place);
+                from(bucket: "date_stay_visit")
+                    |> range(start: %s, stop: %s)
+                    |> filter(fn: (r) => r["place"] == "%s")
+                    |> filter(fn: (r) => r["_field"] == "visit_concentration")
+                    |> mean()
+                """, startTime, endTime, place);
         rawMap.put("visitConcentration", executeQuery("visitConcentration", visitConcentrationQuery));
 
 
         // 3. 혼잡도 변화율 조회
         String congestionQuery = String.format("""
-            from(bucket: "date_congestion")
-                |> range(start: %s, stop: %s)
-                |> filter(fn: (r) => r["place"] == "%s")
-                |> filter(fn: (r) => r["_field"] == "congestion_change_rate")
-                |> mean()
-            """, startTime, endTime, place);
+                from(bucket: "date_congestion")
+                    |> range(start: %s, stop: %s)
+                    |> filter(fn: (r) => r["place"] == "%s")
+                    |> filter(fn: (r) => r["_measurement"] == "visitor_data")
+                    |> filter(fn: (r) => r["_field"] == "congestion_change_rate")
+                    |> group(columns: ["place", "day_of_week", "p_yyyymm", "tmzn"])
+                    |> sort(columns: ["_time"])
+                    |> difference()
+                    |> mean()
+                """, startTime, endTime, place);
         rawMap.put("congestion", executeQuery("congestion", congestionQuery));
 
         // 4. 체류시간 대비 방문자 수 조회
         String stayPerVisitorQuery = String.format("""
-            from(bucket: "stay_per_visitor_bucket")
-                |> range(start: %s, stop: %s)
-                |> filter(fn: (r) => r["place"] == "%s")
-                |> filter(fn: (r) => r["_field"] == "stay_to_visitor")
-                |> mean()
-            """, startTime, endTime, place);
+                from(bucket: "stay_per_visitor_bucket")
+                    |> range(start: %s, stop: %s)
+                    |> filter(fn: (r) => r["place"] == "%s")
+                    |> filter(fn: (r) => r["_field"] == "stay_to_visitor")
+                    |> mean()
+                """, startTime, endTime, place);
         rawMap.put("stayPerVisitor", executeQuery("stayPerVisitor", stayPerVisitorQuery));
 
         // 5. 체류시간 변화율 조회
         String stayTimeChangeQuery = String.format("""
-            from(bucket: "date_stay_duration")
-                |> range(start: %s, stop: %s)
-                |> filter(fn: (r) => r["place"] == "%s")
-                |> filter(fn: (r) => r["_field"] == "stay_duration_change_rate")
-                |> mean()
-            """, startTime, endTime, place);
+                from(bucket: "date_stay_duration")
+                    |> range(start: %s, stop: %s)
+                    |> filter(fn: (r) => r["place"] == "%s")
+                    |> filter(fn: (r) => r["_measurement"] == "visitor_data")
+                    |> filter(fn: (r) => r["_field"] == "stay_duration_change_rate")
+                    |> group(columns: ["place", "day_of_week", "p_yyyymm", "tmzn"])
+                    |> sort(columns: ["_time"])
+                    |> difference()
+                    |> mean()
+                """, startTime, endTime, place);
         rawMap.put("stayTimeChange", executeQuery("stayTimeChange", stayTimeChangeQuery));
 
         log.info("Query results for place: {}, date: {}, results: {}", place, date, rawMap);
