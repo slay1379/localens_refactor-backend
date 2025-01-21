@@ -1,10 +1,12 @@
 package com.example.localens.analysis.service;
 
+import com.example.localens.analysis.domain.CommercialDistrict;
 import com.example.localens.analysis.dto.PopulationDetailsDTO;
 import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -36,67 +38,97 @@ public class PopulationDetailsInfluxHelper {
 
     private static final String CURRENT_RANGE = "start: 2023-08-01T00:00:00Z, stop: 2025-01-18T23:59:59Z";
 
-    public Map<String, Double> getHourlyFloatingPopulation(PopulationDetailsDTO details) {
+    /**
+     * 시간대별 유동인구
+     */
+    public Map<String, Double> getHourlyFloatingPopulation(Integer districtUuid) {
+        String districtName = getDistrictName(districtUuid);
+
         String query = String.format("""
            from(bucket: "result_bucket")
                |> range(%s)
                |> filter(fn: (r) => r["place"] == "%s")
                |> filter(fn: (r) => r["_field"] == "total_population")
                |> pivot(rowKey:["_time"], columnKey: ["tmzn"], valueColumn: "_value")
-           """, CURRENT_RANGE, details.getDistrictName());
+           """, CURRENT_RANGE, districtName);
 
         return executeTimeBasedQuery(query);
     }
 
-    public Map<String, Double> getHourlyStayVisitRatio(PopulationDetailsDTO details) {
+    /**
+     * 시간대별 체류/방문 비율
+     */
+    public Map<String, Double> getHourlyStayVisitRatio(Integer districtUuid) {
+        String districtName = getDistrictName(districtUuid);
+
         String query = String.format("""
            from(bucket: "result_stay_visit_bucket")
                |> range(%s)
                |> filter(fn: (r) => r["place"] == "%s")
                |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
                |> pivot(rowKey:["_time"], columnKey: ["tmzn"], valueColumn: "_value")
-           """, CURRENT_RANGE, details.getDistrictName());
+           """, CURRENT_RANGE, districtName);
 
         return executeTimeBasedQuery(query);
     }
 
-    public Map<String, Double> getHourlyCongestionRateChange(PopulationDetailsDTO details) {
+    /**
+     * 시간대별 혼잡도 변화율
+     */
+    public Map<String, Double> getHourlyCongestionRateChange(Integer districtUuid) {
+        String districtName = getDistrictName(districtUuid);
+
         String query = String.format("""
            from(bucket: "date_congestion")
                |> range(%s)
                |> filter(fn: (r) => r["place"] == "%s")
                |> filter(fn: (r) => r["_field"] == "congestion_change_rate")
                |> pivot(rowKey:["_time"], columnKey: ["tmzn"], valueColumn: "_value")
-           """, CURRENT_RANGE, details.getDistrictName());
+           """, CURRENT_RANGE, districtName);
 
         return executeTimeBasedQuery(query);
     }
 
-    public Map<String, Double> getStayPerVisitorDuration(PopulationDetailsDTO details) {
+    /**
+     * 체류시간 대비 방문자 수
+     */
+    public Map<String, Double> getStayPerVisitorDuration(Integer districtUuid) {
+        String districtName = getDistrictName(districtUuid);
+
         String query = String.format("""
            from(bucket: "stay_per_visitor_bucket")
                |> range(%s)
                |> filter(fn: (r) => r["place"] == "%s")
                |> filter(fn: (r) => r["_field"] == "stay_to_visitor")
                |> pivot(rowKey:["_time"], columnKey: ["tmzn"], valueColumn: "_value")
-           """, CURRENT_RANGE, details.getDistrictName());
+           """, CURRENT_RANGE, districtName);
 
         return executeTimeBasedQuery(query);
     }
 
-    public Map<String, Double> getHourlyAvgStayDurationChange(PopulationDetailsDTO details) {
+    /**
+     * 시간대별 평균 체류시간 변화율
+     */
+    public Map<String, Double> getHourlyAvgStayDurationChange(Integer districtUuid) {
+        String districtName = getDistrictName(districtUuid);
+
         String query = String.format("""
            from(bucket: "date_stay_duration")
                |> range(%s)
                |> filter(fn: (r) => r["place"] == "%s")
                |> filter(fn: (r) => r["_field"] == "stay_duration_change_rate")
                |> pivot(rowKey:["_time"], columnKey: ["tmzn"], valueColumn: "_value")
-           """, CURRENT_RANGE, details.getDistrictName());
+           """, CURRENT_RANGE, districtName);
 
         return executeTimeBasedQuery(query);
     }
 
-    public Map<String, Map<String, Double>> getAgeGroupStayPattern(PopulationDetailsDTO details) {
+    /**
+     * 연령대별 체류 패턴
+     */
+    public Map<String, Map<String, Double>> getAgeGroupStayPattern(Integer districtUuid) {
+        String districtName = getDistrictName(districtUuid);
+
         String query = String.format("""
         from(bucket: "age_gender_bucket")
             |> range(%s)
@@ -104,15 +136,19 @@ public class PopulationDetailsInfluxHelper {
             |> filter(fn: (r) => r["_field"] == "total_population")
             |> group(columns: ["age_group", "sex"])
             |> sum()
-        """, CURRENT_RANGE, details.getDistrictName());
+        """, CURRENT_RANGE, districtName);
 
         Map<String, Map<String, Double>> result = executeAgeGroupQuery(query);
         log.info("Age group query result: {}", result);
         return result;
     }
 
+    /**
+     * 국적별 체류 패턴
+     */
+    public Map<String, Double> getNationalityStayPattern(Integer districtUuid) {
+        String districtName = getDistrictName(districtUuid);
 
-    public Map<String, Double> getNationalityStayPattern(PopulationDetailsDTO details) {
         String query = String.format("""
            from(bucket: "nationality_bucket")
                |> range(%s)
@@ -120,11 +156,29 @@ public class PopulationDetailsInfluxHelper {
                |> filter(fn: (r) => r["_field"] == "total_population")
                |> group(columns: ["nationality"])
                |> mean()
-           """, CURRENT_RANGE, details.getDistrictName());
+           """, CURRENT_RANGE, districtName);
 
         return executeNationalityQuery(query);
     }
 
+    // -------------------------------------
+    // 아래는 내부 메서드들 (query 실행/파싱)
+    // -------------------------------------
+
+    /**
+     * 상권 UUID로 districtName 찾아오기
+     */
+    private String getDistrictName(Integer districtUuid) {
+        CommercialDistrict district = commercialDistrictRepository
+                .findByDistrictUuid(districtUuid)
+                .orElseThrow(() -> new EntityNotFoundException("District not found: " + districtUuid));
+
+        return district.getDistrictName();
+    }
+
+    /**
+     * [연령대별] 쿼리 결과 처리
+     */
     private Map<String, Map<String, Double>> executeAgeGroupQuery(String query) {
         Map<String, Map<String, Double>> result = new LinkedHashMap<>();
 
@@ -169,10 +223,12 @@ public class PopulationDetailsInfluxHelper {
             log.error("Error executing age group query: {}", e.getMessage());
             log.error("Query: {}", query);
         }
-
         return result;
     }
 
+    /**
+     * [국적별] 쿼리 결과 처리
+     */
     private Map<String, Double> executeNationalityQuery(String query) {
         Map<String, Double> result = new LinkedHashMap<>();
         try {
@@ -199,6 +255,9 @@ public class PopulationDetailsInfluxHelper {
         return result;
     }
 
+    /**
+     * [시간대별] 쿼리 결과 처리 (Pivot 된 테이블에서 "0"~"23" 컬럼 추출)
+     */
     private Map<String, Double> executeTimeBasedQuery(String query) {
         Map<String, Double> result = new LinkedHashMap<>();
         try {
@@ -206,7 +265,9 @@ public class PopulationDetailsInfluxHelper {
             log.debug("Time based query result tables: {}", tables);
 
             if (!tables.isEmpty() && !tables.get(0).getRecords().isEmpty()) {
+                // 첫 테이블의 첫 레코드만 pivot 결과로 보고, 0~23 컬럼을 뽑아옴
                 FluxRecord record = tables.get(0).getRecords().get(0);
+
                 for (String key : record.getValues().keySet()) {
                     if (key.matches("\\d+")) {
                         Object value = record.getValueByKey(key);
