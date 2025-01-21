@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GenderDataDTO {
-    private double female;
-    private double male;
+    private double FEMALE;
+    private double MALE;
 }

@@ -7,8 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter
-@Setter
+@Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class PopulationHourlyDataDTO {
@@ -37,32 +36,37 @@ public class PopulationHourlyDataDTO {
     private double twentyTwo;
     private double twentyThree;
 
-    public static PopulationHourlyDataDTO from(Map<String, Double> hourlyData) {
+    // Map<String, Double> 형태 ( "0" -> 123.4, "1" -> 45.6, ... ) 를
+    // 이 DTO로 변환하는 팩토리 메서드
+    public static PopulationHourlyDataDTO from(Map<String, Double> rawMap) {
+        if (rawMap == null) rawMap = Map.of(); // 안전 처리
+
         PopulationHourlyDataDTO dto = new PopulationHourlyDataDTO();
-        dto.setZero(hourlyData.getOrDefault("0", 0.0));
-        dto.setOne(hourlyData.getOrDefault("1", 0.0));
-        dto.setTwo(hourlyData.getOrDefault("2", 0.0));
-        dto.setThree(hourlyData.getOrDefault("3", 0.0));
-        dto.setFour(hourlyData.getOrDefault("4", 0.0));
-        dto.setFive(hourlyData.getOrDefault("5", 0.0));
-        dto.setSix(hourlyData.getOrDefault("6", 0.0));
-        dto.setSeven(hourlyData.getOrDefault("7", 0.0));
-        dto.setEight(hourlyData.getOrDefault("8", 0.0));
-        dto.setNine(hourlyData.getOrDefault("9", 0.0));
-        dto.setTen(hourlyData.getOrDefault("10", 0.0));
-        dto.setEleven(hourlyData.getOrDefault("11", 0.0));
-        dto.setTwelve(hourlyData.getOrDefault("12", 0.0));
-        dto.setThirteen(hourlyData.getOrDefault("13", 0.0));
-        dto.setFourteen(hourlyData.getOrDefault("14", 0.0));
-        dto.setFifteen(hourlyData.getOrDefault("15", 0.0));
-        dto.setSixteen(hourlyData.getOrDefault("16", 0.0));
-        dto.setSeventeen(hourlyData.getOrDefault("17", 0.0));
-        dto.setEighteen(hourlyData.getOrDefault("18", 0.0));
-        dto.setNineteen(hourlyData.getOrDefault("19", 0.0));
-        dto.setTwenty(hourlyData.getOrDefault("20", 0.0));
-        dto.setTwentyOne(hourlyData.getOrDefault("21", 0.0));
-        dto.setTwentyTwo(hourlyData.getOrDefault("22", 0.0));
-        dto.setTwentyThree(hourlyData.getOrDefault("23", 0.0));
+        dto.setZero(rawMap.getOrDefault("0", 0.0));
+        dto.setOne(rawMap.getOrDefault("1", 0.0));
+        dto.setTwo(rawMap.getOrDefault("2", 0.0));
+        dto.setThree(rawMap.getOrDefault("3", 0.0));
+        dto.setFour(rawMap.getOrDefault("4", 0.0));
+        dto.setFive(rawMap.getOrDefault("5", 0.0));
+        dto.setSix(rawMap.getOrDefault("6", 0.0));
+        dto.setSeven(rawMap.getOrDefault("7", 0.0));
+        dto.setEight(rawMap.getOrDefault("8", 0.0));
+        dto.setNine(rawMap.getOrDefault("9", 0.0));
+        dto.setTen(rawMap.getOrDefault("10", 0.0));
+        dto.setEleven(rawMap.getOrDefault("11", 0.0));
+        dto.setTwelve(rawMap.getOrDefault("12", 0.0));
+        dto.setThirteen(rawMap.getOrDefault("13", 0.0));
+        dto.setFourteen(rawMap.getOrDefault("14", 0.0));
+        dto.setFifteen(rawMap.getOrDefault("15", 0.0));
+        dto.setSixteen(rawMap.getOrDefault("16", 0.0));
+        dto.setSeventeen(rawMap.getOrDefault("17", 0.0));
+        dto.setEighteen(rawMap.getOrDefault("18", 0.0));
+        dto.setNineteen(rawMap.getOrDefault("19", 0.0));
+        dto.setTwenty(rawMap.getOrDefault("20", 0.0));
+        dto.setTwentyOne(rawMap.getOrDefault("21", 0.0));
+        dto.setTwentyTwo(rawMap.getOrDefault("22", 0.0));
+        dto.setTwentyThree(rawMap.getOrDefault("23", 0.0));
+
         return dto;
     }
 }

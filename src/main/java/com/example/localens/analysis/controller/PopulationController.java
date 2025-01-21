@@ -1,5 +1,6 @@
 package com.example.localens.analysis.controller;
 
+import com.example.localens.analysis.dto.PopulationDetailsTransformedDTO;
 import com.example.localens.analysis.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +19,10 @@ public class PopulationController {
     private final PopulationDetailsService populationDetailsService;
 
     @GetMapping("/details/{districtUuid}")
-    public ResponseEntity<Map<String, Object>> getAllRatiosByDistrictUuid(@PathVariable Integer districtUuid) {
-        Map<String, Object> results = populationDetailsService.getDetailsByDistrictUuid(districtUuid);
+    public ResponseEntity<PopulationDetailsTransformedDTO> getTransformedDetails(@PathVariable Integer districtUuid) {
+        PopulationDetailsTransformedDTO dto =
+                populationDetailsService.getTransformedDetailsByDistrictUuid(districtUuid);
 
-        return ResponseEntity.ok(results);
+        return ResponseEntity.ok(dto);
     }
 }
