@@ -20,7 +20,7 @@ public class AgeGroupStayPatternDTO {
     private GenderDataDTO Sixties;    // 60대 + 70대 이상
 
     public static AgeGroupStayPatternDTO from(Map<String, Map<String, Double>> ageMap) {
-        if (ageMap == null) ageMap = Map.of(); // 안전 처리
+        if (ageMap == null) ageMap = Map.of();
 
         AgeGroupStayPatternDTO dto = new AgeGroupStayPatternDTO();
 
@@ -63,7 +63,6 @@ public class AgeGroupStayPatternDTO {
         return dto;
     }
 
-    // GenderDataDTO 병합
     private static GenderDataDTO mergeGenderData(GenderDataDTO data1, GenderDataDTO data2) {
         return new GenderDataDTO(
                 data1.getFEMALE() + data2.getFEMALE(),
@@ -71,7 +70,6 @@ public class AgeGroupStayPatternDTO {
         );
     }
 
-    // "female" -> FEMALE, "male" -> MALE
     private static GenderDataDTO convertToGenderData(Map<String, Double> rawGender) {
         if (rawGender == null) rawGender = Map.of();
 
