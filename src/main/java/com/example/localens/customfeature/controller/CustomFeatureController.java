@@ -99,17 +99,15 @@ public class CustomFeatureController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity<ApiResponse<List<CustomFeatureDTO>>> listCustomFeatures(
+    public List<CustomFeatureDTO> listCustomFeatures(
             @RequestHeader("Authorization") String authorizationHeader) {
 
         UUID userUuid = tokenValidator.validateAndGetUserUuid(authorizationHeader);
 
-        List<CustomFeatureDTO> features = customFeatureService.getFeaturesByUser(userUuid)
+        return customFeatureService.getFeaturesByUser(userUuid)
                 .stream()
                 .map(feature -> customFeatureMapper.toDTO(feature, FIELD_MAPPING))
                 .toList();
-
-        return ResponseEntity.ok(ApiResponse.success(features));
     }
 
     @DeleteMapping("/{customFeatureId}")
