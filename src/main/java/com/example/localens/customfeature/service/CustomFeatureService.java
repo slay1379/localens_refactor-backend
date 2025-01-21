@@ -1,78 +1,172 @@
 package com.example.localens.customfeature.service;
 
+import com.example.localens.analysis.service.PopulationDetailsService;
+import com.example.localens.customfeature.DTO.CustomFeatureValueDTO;
+import com.example.localens.customfeature.DTO.DistrictResponseDTO;
 import com.example.localens.customfeature.domain.CustomFeature;
+import com.example.localens.customfeature.domain.CustomFeatureCalculationResult;
+import com.example.localens.customfeature.domain.DistrictComparisonResult;
+import com.example.localens.customfeature.exception.NotFoundException;
+import com.example.localens.customfeature.exception.UnauthorizedException;
 import com.example.localens.customfeature.repository.CustomFeatureRepository;
+import com.example.localens.customfeature.util.FormulaEvaluator;
 import com.example.localens.influx.InfluxDBService;
 import com.example.localens.member.domain.Member;
 import com.example.localens.member.repository.MemberRepository;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import retrofit2.Response;
 
 @Service
+@RequiredArgsConstructor
 public class CustomFeatureService {
-
     private final CustomFeatureRepository customFeatureRepository;
     private final MemberRepository memberRepository;
-    private final InfluxDBService influxDBService;
+    private final FormulaEvaluator formulaEvaluator;
+    private final PopulationDetailsService populationDetailsService;
 
-    @Autowired
-    public CustomFeatureService(CustomFeatureRepository customFeatureRepository,
-                                MemberRepository memberRepository,
-                                InfluxDBService influxDBService) {
-        this.customFeatureRepository = customFeatureRepository;
-        this.memberRepository = memberRepository;
-        this.influxDBService = influxDBService;
+    public CustomFeatureCalculationResult calculateFeature(
+            String formula,
+            Integer districtUuid1,
+            Integer districtUuid2,
+            UUID userUuid,
+            String featureName) {
+
+        Member member = getMemberOrThrow(userUuid);
+
+        Map<String, Object> data1 = getDistrictData(districtUuid1);
+        Map<String, Object> data2 = getDistrictData(districtUuid2);
+
+        double result1 = formulaEvaluator.evaluate(formula, data1);
+        double result2 = formulaEvaluator.evaluate(formula, data2);
+
+        saveCustomFeature(formula, featureName, member);
+
+        return new CustomFeatureCalculationResult(result1, result2);
     }
 
-    public CustomFeature saveCustomFeature(CustomFeature customFeature, UUID userUuid) {
-        Member member = memberRepository.findById(userUuid).orElse(null);
-        if (member == null) {
-            throw new IllegalArgumentException("Invalid user UUID");
-        }
-        customFeature.setMember(member);
-        return customFeatureRepository.save(customFeature);
+    public DistrictComparisonResult compareDistricts(
+            String customFeatureUuid,
+            Integer districtUuid1,
+            Integer districtUuid2) {
+
+        CustomFeature feature = getFeatureOrThrow(customFeatureUuid);
+
+        Map<String, Object> data1 = getDistrictData(districtUuid1);
+        Map<String, Object> data2 = getDistrictData(districtUuid2);
+
+        double result1 = formulaEvaluator.evaluate(feature.getFormula(), data1);
+        double result2 = formulaEvaluator.evaluate(feature.getFormula(), data2);
+
+        List<Integer> normalizedResults = normalizeResults((int)result1, (int)result2);
+
+        return new DistrictComparisonResult(
+                buildDistrictResponse(districtUuid1, data1, feature, normalizedResults.get(0)),
+                buildDistrictResponse(districtUuid2, data2, feature, normalizedResults.get(1))
+        );
     }
 
-    public List<CustomFeature> getCustomFeaturesByUserUuid(UUID userUuid) {
-        Member member = memberRepository.findById(userUuid).orElse(null);
-        if (member == null) {
-            return List.of();
-        }
+    public List<CustomFeature> getFeaturesByUser(UUID userUuid) {
+        Member member = getMemberOrThrow(userUuid);
         return customFeatureRepository.findByMember(member);
     }
 
-    public CustomFeature getCustomFeatureById(String customFeatureId) {
-        return customFeatureRepository.findById(customFeatureId).orElse(null);
-    }
-
-    public void deleteFeature(String customFeatureId) {
-        customFeatureRepository.deleteById(customFeatureId);
-    }
-
-    public double calculateCustomFeatureValue(CustomFeature customFeature, Integer districtUuid) {
-        String formula = customFeature.getFormula();
-        Map<String, Double> variables = influxDBService.getLatestMetricsByDistrictUuid(
-                String.valueOf(districtUuid));
-
-        try {
-            Expression e = new ExpressionBuilder(formula)
-                    .variables(variables.keySet())
-                    .build();
-
-            for (Map.Entry<String, Double> entry : variables.entrySet()) {
-                e.setVariable(entry.getKey(), entry.getValue());
-            }
-
-            return e.evaluate();
-        } catch (Exception e) {
-            System.err.println("커스텀 피처를 계산하는 데 오류 발생" + districtUuid + ": " + e.getMessage());
-            return 0.0;
+    public Response<?> deleteFeatureIfOwner(String featureId, UUID userUuid) {
+        CustomFeature feature = getFeatureOrThrow(featureId);
+        if (!feature.getMember().getMemberUuid().equals(userUuid)) {
+            throw new UnauthorizedException("Not authorized to delete this feature");
         }
+        customFeatureRepository.deleteById(featureId);
+        return Response.success("Feature deleted successfully");
+    }
+
+    private Member getMemberOrThrow(UUID userUuid) {
+        return memberRepository.findById(userUuid)
+                .orElseThrow(() -> new NotFoundException("Member not found"));
+    }
+
+    private CustomFeature getFeatureOrThrow(String featureId) {
+        return customFeatureRepository.findById(featureId)
+                .orElseThrow(() -> new NotFoundException("Custom feature not found"));
+    }
+
+    private Map<String, Object> getDistrictData(Integer districtUuid) {
+        Map<String, Object> details = populationDetailsService.getDetailsByDistrictUuid(districtUuid);
+        return buildOverallData(details);
+    }
+
+    private Map<String, Object> buildOverallData(Map<String, Object> details) {
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        result.put("population", calculateMetric(details, "hourlyFloatingPopulation"));
+        result.put("stayVisit", calculateMetric(details, "hourlyStayVisitRatio"));
+        result.put("congestion", calculateMetric(details, "hourlyCongestionRateChange"));
+        result.put("stayPerVisitor", calculateMetric(details, "stayPerVisitorDuration"));
+        result.put("visitConcentration", calculateMetric(details, "visitConcentration"));
+        result.put("stayTimeChange", calculateMetric(details, "hourlyAvgStayDurationChange"));
+
+        return result;
+    }
+
+    private int calculateMetric(Map<String, Object> details, String key) {
+        @SuppressWarnings("unchecked")
+        Map<String, Double> hourlyData = (Map<String, Double>) details.get(key);
+        double average = hourlyData == null ? 0.0 :
+                hourlyData.values().stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+        return (int)(average * 100);
+    }
+
+    private CustomFeature saveCustomFeature(String formula, String featureName, Member member) {
+        CustomFeature customFeature = new CustomFeature();
+        customFeature.setFormula(formula);
+        customFeature.setFeatureName(featureName);
+        customFeature.setMember(member);
+
+        return customFeatureRepository.save(customFeature);
+    }
+
+    private List<Integer> normalizeResults(int result1, int result2) {
+        List<Integer> results = new ArrayList<>();
+
+        // 최대값 계산
+        int max = Math.max(result1, result2);
+
+        // 최대값이 100보다 큰 경우 값을 비례적으로 나눠 정규화
+        if (max > 100) {
+            double scaleFactor = 100.0 / max;
+            result1 = (int) (result1 * scaleFactor);
+            result2 = (int) (result2 * scaleFactor);
+        }
+
+        results.add(result1);
+        results.add(result2);
+        return results;
+    }
+
+    private DistrictResponseDTO buildDistrictResponse(
+            Integer districtUuid,
+            Map<String, Object> data,
+            CustomFeature feature,
+            int normalizedResult) {
+
+        return new DistrictResponseDTO(
+                // TODO: 실제 상권 이름을 가져오는 로직 구현 필요
+                "상권 " + districtUuid,
+                "클러스터 " + districtUuid,
+                data,
+                new CustomFeatureValueDTO(
+                        feature.getFeatureName(),
+                        normalizedResult
+                )
+        );
     }
 }
