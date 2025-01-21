@@ -115,26 +115,38 @@ public class PopulationDetailsInfluxHelper {
         Map<String, Map<String, Double>> result = new LinkedHashMap<>();
         try {
             List<FluxTable> tables = influxDBClientWrapper.query(query);
-            for (FluxTable table : tables) {
-                for (FluxRecord record : table.getRecords()) {
-                    String ageGroup = record.getValueByKey("age_group").toString();
-                    Map<String, Double> genderData = new LinkedHashMap<>();
+            if (!tables.isEmpty()) {  // null 체크 추가
+                for (FluxTable table : tables) {
+                    for (FluxRecord record : table.getRecords()) {
+                        if (record != null && record.getValues() != null) {  // null 체크 추가
+                            String ageGroup = record.getValueByKey("age_group").toString();
+                            Map<String, Double> genderData = new LinkedHashMap<>();
 
-                    Object maleValue = record.getValueByKey("M");
-                    Object femaleValue = record.getValueByKey("F");
+                            // null 체크 개선
+                            try {
+                                Object maleValue = record.getValueByKey("M");
+                                Object femaleValue = record.getValueByKey("F");
 
-                    if (maleValue != null) {
-                        genderData.put("male", Double.parseDouble(maleValue.toString()));
+                                if (maleValue != null) {
+                                    genderData.put("male", Double.parseDouble(maleValue.toString()));
+                                }
+                                if (femaleValue != null) {
+                                    genderData.put("female", Double.parseDouble(femaleValue.toString()));
+                                }
+
+                                if (!genderData.isEmpty()) {  // 데이터가 있는 경우만 추가
+                                    result.put(ageGroup, genderData);
+                                }
+                            } catch (NumberFormatException e) {
+                                log.error("Error parsing gender values for age group {}: {}", ageGroup, e.getMessage());
+                            }
+                        }
                     }
-                    if (femaleValue != null) {
-                        genderData.put("female", Double.parseDouble(femaleValue.toString()));
-                    }
-
-                    result.put(ageGroup, genderData);
                 }
             }
         } catch (Exception e) {
             log.error("Error querying age group stay pattern: {}", e.getMessage());
+            log.debug("Query used: {}", query);  // 디버깅을 위한 쿼리 로깅 추가
         }
         return result;
     }
@@ -146,26 +158,31 @@ public class PopulationDetailsInfluxHelper {
                 |> range(%s)
                 |> filter(fn: (r) => r["place"] == "%s")
                 |> filter(fn: (r) => r["_field"] == "total_population")
-                |> pivot(rowKey:["_time"], columnKey: ["nationality"], valueColumn: "_value")
+                |> pivot(rowKey:["nationality"], columnKey: ["_time"], valueColumn: "_value")  // pivot 수정
                 |> last()
             """, CURRENT_RANGE, place);
 
         Map<String, Double> result = new LinkedHashMap<>();
         try {
             List<FluxTable> tables = influxDBClientWrapper.query(query);
-            if (!tables.isEmpty() && !tables.get(0).getRecords().isEmpty()) {
-                FluxRecord record = tables.get(0).getRecords().get(0);
-                for (String key : record.getValues().keySet()) {
-                    if (!key.startsWith("_") && !key.equals("result") && !key.equals("table")) {
-                        Object value = record.getValueByKey(key);
+            if (!tables.isEmpty()) {
+                for (FluxRecord record : tables.get(0).getRecords()) {
+                    if (record != null && record.getValues() != null) {
+                        String nationality = record.getValueByKey("nationality").toString();
+                        Object value = record.getValueByKey("_value");
                         if (value != null) {
-                            result.put(key, Double.parseDouble(value.toString()));
+                            try {
+                                result.put(nationality, Double.parseDouble(value.toString()));
+                            } catch (NumberFormatException e) {
+                                log.error("Error parsing value for nationality {}: {}", nationality, e.getMessage());
+                            }
                         }
                     }
                 }
             }
         } catch (Exception e) {
             log.error("Error querying nationality stay pattern: {}", e.getMessage());
+            log.debug("Query used: {}", query);
         }
         return result;
     }
