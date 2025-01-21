@@ -233,29 +233,44 @@ public class PopulationDetailsInfluxHelper {
      */
     private Map<String, Double> executeNationalityQuery(String query) {
         Map<String, Double> result = new LinkedHashMap<>();
+        result.put("local", 0.0);
+        result.put("foreigner", 0.0); // 초기화
+
         try {
+            log.info("Executing nationality query: {}", query);
             List<FluxTable> tables = influxDBClientWrapper.query(query);
-            log.debug("Nationality query result tables: {}", tables);
 
             for (FluxTable table : tables) {
                 for (FluxRecord record : table.getRecords()) {
                     try {
-                        String nationality = record.getValueByKey("nationality").toString();
-                        Object value = record.getValueByKey("_value");
+                        String nationality = record.getValueByKey("nationality").toString().trim();
+                        Double value = record.getValueByKey("_value") != null ?
+                                Double.parseDouble(record.getValueByKey("_value").toString()) : 0.0;
 
-                        if (value != null) {
-                            result.put(nationality, Double.parseDouble(value.toString()));
+                        log.debug("Processing record: nationality={}, value={}", nationality, value);
+
+                        if ("내국인".equalsIgnoreCase(nationality)) {
+                            result.put("local", result.get("local") + value);
+                        } else if ("장기체류외국인".equalsIgnoreCase(nationality)) {
+                            result.put("foreigner", result.get("foreigner") + value);
+                        } else {
+                            log.warn("Unknown nationality: {}", nationality);
                         }
                     } catch (Exception e) {
                         log.error("Error processing nationality record: {}", e.getMessage());
                     }
                 }
             }
+
+            log.info("Final nationality result: {}", result);
+
         } catch (Exception e) {
-            log.error("Error executing nationality query: {} - {}", query, e.getMessage());
+            log.error("Error executing nationality query: {}", e.getMessage());
         }
+
         return result;
     }
+
 
     /**
      * [시간대별] 쿼리 결과 처리 (Pivot 된 테이블에서 "0"~"23" 컬럼 추출)
