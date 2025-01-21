@@ -16,10 +16,11 @@ public interface CommercialDistrictRepository extends JpaRepository<CommercialDi
     @Query("SELECT DISTINCT c.districtName FROM CommercialDistrict c")
     List<String> findAllPlaces();
 
-    Optional<CommercialDistrict> findByDistrictUuid(Integer districtUuid);
-
     @Query("SELECT c FROM CommercialDistrict c WHERE c.districtUuid = :districtUuid")
     Optional<CommercialDistrict> findCompleteDistrictByUuid(@Param("districtUuid") Integer districtUuid);
+
+    @Query("SELECT c FROM CommercialDistrict c LEFT JOIN FETCH c.cluster WHERE c.districtUuid = :districtUuid")
+    Optional<CommercialDistrict> findByDistrictUuid(@Param("districtUuid") Integer districtUuid);
 }
 
 
