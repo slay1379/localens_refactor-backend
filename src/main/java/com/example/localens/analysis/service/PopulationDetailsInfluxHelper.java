@@ -102,9 +102,8 @@ public class PopulationDetailsInfluxHelper {
             |> range(%s)
             |> filter(fn: (r) => r["place"] == "%s")
             |> filter(fn: (r) => r["_field"] == "total_population")
-            |> pivot(rowKey:["age_group"], columnKey: ["sex"], valueColumn: "_value")
-            |> filter(fn: (r) => r["_value"] > 0)
-            |> mean()
+            |> group(columns: ["age_group", "sex"])
+            |> sum()
         """, CURRENT_RANGE, details.getDistrictName());
 
         Map<String, Map<String, Double>> result = executeAgeGroupQuery(query);
@@ -140,25 +139,27 @@ public class PopulationDetailsInfluxHelper {
         try {
             log.info("Executing age group query: {}", query);
             List<FluxTable> tables = influxDBClientWrapper.query(query);
+            log.debug("Query returned {} tables", tables.size());
 
             for (FluxTable table : tables) {
+                log.debug("Processing table with {} records", table.getRecords().size());
                 for (FluxRecord record : table.getRecords()) {
                     try {
+                        log.debug("Record values: {}", record.getValues());
+
                         String ageGroup = record.getValueByKey("age_group").toString();
-                        Map<String, Object> values = record.getValues();
+                        String sex = record.getValueByKey("sex").toString();
+                        Double value = Double.parseDouble(record.getValueByKey("_value").toString());
 
-                        // 디버깅을 위한 레코드 값 출력
-                        log.debug("Record values: {}", values);
-
-                        Object maleValue = record.getValueByKey("M");
-                        Object femaleValue = record.getValueByKey("F");
-
-                        if (maleValue != null) {
-                            result.get(ageGroup).put("male", Double.parseDouble(maleValue.toString()));
+                        if (!result.containsKey(ageGroup)) {
+                            log.warn("Unknown age group: {}", ageGroup);
+                            continue;
                         }
-                        if (femaleValue != null) {
-                            result.get(ageGroup).put("female", Double.parseDouble(femaleValue.toString()));
-                        }
+
+                        String genderKey = "M".equals(sex) ? "male" : "female";
+                        result.get(ageGroup).put(genderKey, value);
+                        log.debug("Added value {} for age group {} and gender {}", value, ageGroup, genderKey);
+
                     } catch (Exception e) {
                         log.error("Error processing record: {} - {}", record.getValues(), e.getMessage());
                     }
