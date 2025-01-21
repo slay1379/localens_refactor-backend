@@ -37,10 +37,12 @@ public class TokenProvider {
 
         long now = (new Date()).getTime();
 
+        String userUuid = authentication.getName();
+
         // Access Token 생성
         Date accessTokenExpiresIn = new Date(now + ACCESS_TOKEN_EXPIRE_TIME);
         String accessToken = Jwts.builder()
-                .setSubject(authentication.getName())       // payload "sub": "name"
+                .setSubject(userUuid)       // payload "sub": "name"
                 .setExpiration(accessTokenExpiresIn)        // payload "exp": 151621022 (ex)
                 .signWith(key, SignatureAlgorithm.HS512)    // header "alg": "HS512"
                 .compact();
@@ -86,8 +88,13 @@ public class TokenProvider {
     }
 
     public UUID getCurrentUuid(String accessToken) {
-        Claims claims = parseClaims(accessToken);
-        return UUID.fromString(claims.getSubject());
+        try {
+            Claims claims = parseClaims(accessToken);
+            return UUID.fromString(claims.getSubject());
+        } catch (IllegalArgumentException e) {
+            log.error("Invalid UUID format in token subject: {}", e.getMessage());
+            return null;
+        }
     }
 
     public String extractToken(String authorizationHeader) {

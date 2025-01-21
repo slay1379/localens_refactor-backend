@@ -13,13 +13,17 @@ public class TokenValidator {
 
     public UUID validateAndGetUserUuid(String authorizationHeader) {
         String token = tokenProvider.extractToken(authorizationHeader);
-        if (token == null || !tokenProvider.validateToken(token)) {
-            throw new UnauthorizedException("Invalid token");
+        if (token == null) {
+            throw new UnauthorizedException("Authorization header is missing or invalid");
+        }
+
+        if (!tokenProvider.validateToken(token)) {
+            throw new UnauthorizedException("Token validation failed");
         }
 
         UUID userUuid = tokenProvider.getCurrentUuid(token);
         if (userUuid == null) {
-            throw new UnauthorizedException("USer not found");
+            throw new UnauthorizedException("Invalid user UUID in token");
         }
 
         return userUuid;
