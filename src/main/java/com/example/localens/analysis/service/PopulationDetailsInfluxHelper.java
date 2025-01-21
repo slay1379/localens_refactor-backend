@@ -102,13 +102,16 @@ public class PopulationDetailsInfluxHelper {
             |> range(%s)
             |> filter(fn: (r) => r["place"] == "%s")
             |> filter(fn: (r) => r["_field"] == "total_population")
-            |> last()
+            |> pivot(rowKey:["age_group"], columnKey: ["sex"], valueColumn: "_value")
+            |> filter(fn: (r) => r["_value"] > 0)
+            |> mean()
         """, CURRENT_RANGE, details.getDistrictName());
 
         Map<String, Map<String, Double>> result = executeAgeGroupQuery(query);
         log.info("Age group query result: {}", result);
         return result;
     }
+
 
     public Map<String, Double> getNationalityStayPattern(PopulationDetailsDTO details) {
         String query = String.format("""
@@ -125,35 +128,45 @@ public class PopulationDetailsInfluxHelper {
 
     private Map<String, Map<String, Double>> executeAgeGroupQuery(String query) {
         Map<String, Map<String, Double>> result = new LinkedHashMap<>();
+
+        // 기본 연령대 구조 초기화
+        String[] ageGroups = {
+                "10대 미만", "10대", "20대", "30대", "40대", "50대", "60대", "70대 이상"
+        };
+        for (String ageGroup : ageGroups) {
+            result.put(ageGroup, new LinkedHashMap<>());
+        }
+
         try {
             log.info("Executing age group query: {}", query);
             List<FluxTable> tables = influxDBClientWrapper.query(query);
-            log.info("Age group tables: {}", tables);
 
             for (FluxTable table : tables) {
                 for (FluxRecord record : table.getRecords()) {
                     try {
                         String ageGroup = record.getValueByKey("age_group").toString();
-                        String sex = record.getValueByKey("sex").toString();
-                        Double value = Double.parseDouble(record.getValueByKey("_value").toString());
+                        Map<String, Object> values = record.getValues();
 
-                        result.computeIfAbsent(ageGroup, k -> new LinkedHashMap<>());
-                        if ("M".equals(sex)) {
-                            result.get(ageGroup).put("male", value);
-                        } else if ("F".equals(sex)) {
-                            result.get(ageGroup).put("female", value);
+                        // 디버깅을 위한 레코드 값 출력
+                        log.debug("Record values: {}", values);
+
+                        Object maleValue = record.getValueByKey("M");
+                        Object femaleValue = record.getValueByKey("F");
+
+                        if (maleValue != null) {
+                            result.get(ageGroup).put("male", Double.parseDouble(maleValue.toString()));
                         }
-
-                        log.debug("Processed record - ageGroup: {}, sex: {}, value: {}",
-                                ageGroup, sex, value);
+                        if (femaleValue != null) {
+                            result.get(ageGroup).put("female", Double.parseDouble(femaleValue.toString()));
+                        }
                     } catch (Exception e) {
-                        log.error("Error processing record: {} - {}",
-                                record.getValues(), e.getMessage(), e);
+                        log.error("Error processing record: {} - {}", record.getValues(), e.getMessage());
                     }
                 }
             }
         } catch (Exception e) {
-            log.error("Error executing age group query: {} - {}", query, e.getMessage(), e);
+            log.error("Error executing age group query: {}", e.getMessage());
+            log.error("Query: {}", query);
         }
 
         return result;
