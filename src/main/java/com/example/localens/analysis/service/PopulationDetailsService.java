@@ -129,17 +129,41 @@ public class PopulationDetailsService {
     @SuppressWarnings("unchecked")
     private Map<String, Double> castMapDouble(Object obj) {
         if (obj instanceof Map) {
-            return (Map<String, Double>) obj;
+            // 원래 Map<String, Double>을 안전하게 캐스팅
+            Map<String, Double> originalMap = (Map<String, Double>) obj;
+
+            // 키를 소문자로 변환한 새로운 Map 생성
+            Map<String, Double> lowerCaseMap = new LinkedHashMap<>();
+            for (Map.Entry<String, Double> entry : originalMap.entrySet()) {
+                // 키를 소문자로 변환하여 추가
+                lowerCaseMap.put(entry.getKey().toLowerCase(), entry.getValue());
+            }
+
+            return lowerCaseMap;
         }
-        return null;
+        return Map.of(); // null 대신 빈 Map 반환
     }
 
     // 안전 캐스팅: Object -> Map<String,Map<String,Double>>
     @SuppressWarnings("unchecked")
     private Map<String, Map<String, Double>> castMapMapDouble(Object obj) {
         if (obj instanceof Map) {
-            return (Map<String, Map<String, Double>>) obj;
+            // 원래 Map<String, Map<String, Double>>을 안전하게 캐스팅
+            Map<String, Map<String, Double>> originalMap = (Map<String, Map<String, Double>>) obj;
+
+            // 키를 소문자로 변환한 새로운 Map 생성
+            Map<String, Map<String, Double>> lowerCaseOuterMap = new LinkedHashMap<>();
+            for (Map.Entry<String, Map<String, Double>> outerEntry : originalMap.entrySet()) {
+                // 내부 Map의 키도 소문자로 변환
+                Map<String, Double> lowerCaseInnerMap = new LinkedHashMap<>();
+                for (Map.Entry<String, Double> innerEntry : outerEntry.getValue().entrySet()) {
+                    lowerCaseInnerMap.put(innerEntry.getKey().toLowerCase(), innerEntry.getValue());
+                }
+                lowerCaseOuterMap.put(outerEntry.getKey().toLowerCase(), lowerCaseInnerMap);
+            }
+
+            return lowerCaseOuterMap;
         }
-        return null;
+        return Map.of(); // null 대신 빈 Map 반환
     }
 }
