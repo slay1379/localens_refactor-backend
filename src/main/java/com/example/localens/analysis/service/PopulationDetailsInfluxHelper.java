@@ -182,10 +182,13 @@ public class PopulationDetailsInfluxHelper {
     private Map<String, Map<String, Double>> executeAgeGroupQuery(String query) {
         Map<String, Map<String, Double>> result = new LinkedHashMap<>();
 
-        // 기본 초기화
+        // 기본 연령대 구조 초기화
         String[] ageGroups = {"10대 미만", "10대", "20대", "30대", "40대", "50대", "60대", "70대 이상"};
         for (String ageGroup : ageGroups) {
-            result.put(ageGroup, new LinkedHashMap<>());
+            Map<String, Double> genderData = new LinkedHashMap<>();
+            genderData.put("male", 0.0);
+            genderData.put("female", 0.0);
+            result.put(ageGroup, genderData);
         }
 
         try {
