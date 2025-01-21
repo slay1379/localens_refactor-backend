@@ -6,8 +6,10 @@ import java.util.Map;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
+@Slf4j
 @NoArgsConstructor
 @AllArgsConstructor
 public class NationalityPatternDTO {
@@ -18,10 +20,15 @@ public class NationalityPatternDTO {
     private double Local;
 
     public static NationalityPatternDTO from(Map<String, Double> rawNat) {
-        if (rawNat == null) rawNat = Map.of();
+        if (rawNat == null) rawNat = Map.of(); // null 방어 코드
+
+        // 정확히 값이 매핑되는지 디버깅 로그 추가
+        log.info("Mapping nationality data: {}", rawNat);
 
         double foreigner = rawNat.getOrDefault("foreigner", 0.0);
         double local = rawNat.getOrDefault("local", 0.0);
+
+        log.info("Foreigner: {}, Local: {}", foreigner, local);
 
         return new NationalityPatternDTO(foreigner, local);
     }

@@ -111,6 +111,9 @@ public class PopulationDetailsService {
                 )
         );
 
+        Map<String, Double> nationalityMap = castMapDouble(raw.get("nationalityStayPattern"));
+        log.info("Raw nationality data: {}", nationalityMap); // 디버깅 로그 추가
+
         // 국적별 체류 패턴 변환
         dto.setNationalityStayPattern(
                 NationalityPatternDTO.from(
