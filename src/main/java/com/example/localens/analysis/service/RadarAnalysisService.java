@@ -10,6 +10,7 @@ import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -84,20 +85,21 @@ public class RadarAnalysisService {
 
     private String createQuery(String bucket, String place, String field, String timeRange) {
         return String.format("""
-            from(bucket: "%s")
-                |> range(%s)
-                |> filter(fn: (r) => r["place"] == "%s")
-                |> filter(fn: (r) => r["_field"] == "%s")
-                |> mean()
-                |> yield(name: "mean")
-            """, bucket, timeRange, place, field);
+                from(bucket: "%s")
+                    |> range(%s)
+                    |> filter(fn: (r) => r["place"] == "%s")
+                    |> filter(fn: (r) => r["_field"] == "%s")
+                    |> mean()
+                    |> yield(name: "mean")
+                """, bucket, timeRange, place, field);
     }
 
     // 날짜 범위 생성 메서드
     private String createDateRange(LocalDateTime date) {
-        return String.format("start: %s, stop: %s",
-                date.format(DateTimeFormatter.ISO_INSTANT),
-                date.plusDays(1).format(DateTimeFormatter.ISO_INSTANT));
+        String formattedStart = date.atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+        String formattedEnd = date.plusDays(1).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
+
+        return String.format("start: %s, stop: %s", formattedStart, formattedEnd);
     }
 
     private RadarDataDTO<AnalysisRadarDistrictInfoDTO> buildRadarDataDTO(
