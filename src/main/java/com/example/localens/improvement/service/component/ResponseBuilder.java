@@ -1,5 +1,7 @@
 package com.example.localens.improvement.service.component;
 
+import com.example.localens.analysis.dto.AnalysisRadarDistrictInfoDTO;
+import com.example.localens.analysis.dto.RadarDataDTO;
 import com.example.localens.improvement.constant.ImprovementConstants;
 import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO;
 import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO.ComparisonData;
@@ -22,8 +24,8 @@ import org.springframework.stereotype.Component;
 public class ResponseBuilder {
 
     public CommercialDistrictComparisonDTO buildResponse(
-            Map<String, Object> district1Data,
-            Map<String, Object> district2Data,
+            RadarDataDTO<AnalysisRadarDistrictInfoDTO> radar1Data,
+            RadarDataDTO<AnalysisRadarDistrictInfoDTO> radar2Data,
             Map<String, Integer> metrics1,
             Map<String, Integer> metrics2,
             List<MetricDifference> differences,
@@ -34,8 +36,8 @@ public class ResponseBuilder {
                         .map(this::convertToRecommendedEvent)
                         .toList())
                 .comparisonData(buildComparisonData(
-                        district1Data,
-                        district2Data,
+                        radar1Data,
+                        radar2Data,
                         metrics1,
                         metrics2,
                         differences))
@@ -60,15 +62,15 @@ public class ResponseBuilder {
     }
 
     private ComparisonData buildComparisonData(
-            Map<String, Object> district1Data,
-            Map<String, Object> district2Data,
+            RadarDataDTO<AnalysisRadarDistrictInfoDTO> radar1Data,
+            RadarDataDTO<AnalysisRadarDistrictInfoDTO> radar2Data,
             Map<String, Integer> metrics1,
             Map<String, Integer> metrics2,
             List<MetricDifference> differences) {
 
         return ComparisonData.builder()
-                .before(buildDistrictSnapshot(district1Data, metrics1))
-                .after(buildDistrictSnapshot(district2Data, metrics2))
+                .before(buildDistrictSnapshot(radar1Data, metrics1))
+                .after(buildDistrictSnapshot(radar2Data, metrics2))
                 .changes(differences.stream()
                         .map(diff -> MetricChange.builder()
                                 .name(diff.getMetricName())
@@ -79,7 +81,7 @@ public class ResponseBuilder {
     }
 
     private DistrictSnapshot buildDistrictSnapshot(
-            Map<String, Object> districtData,
+            RadarDataDTO<AnalysisRadarDistrictInfoDTO> radarData,
             Map<String, Integer> metrics) {
 
         var metricsData = MetricsData.builder()

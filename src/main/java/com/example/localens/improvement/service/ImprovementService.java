@@ -1,6 +1,9 @@
 package com.example.localens.improvement.service;
 
+import com.example.localens.analysis.dto.AnalysisRadarDistrictInfoDTO;
+import com.example.localens.analysis.dto.RadarDataDTO;
 import com.example.localens.analysis.service.PopulationDetailsService;
+import com.example.localens.analysis.service.RadarAnalysisService;
 import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO;
 import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO.ComparisonData;
 import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO.DistrictSnapshot;
@@ -45,6 +48,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @RequiredArgsConstructor
 public class ImprovementService {
+    private final RadarAnalysisService radarAnalysisService;
     private final PopulationDetailsService populationDetailsService;
     private final MetricRepository metricRepository;
     private final EventMetricsRepository eventMetricsRepository;
@@ -57,12 +61,11 @@ public class ImprovementService {
     public CommercialDistrictComparisonDTO compareDistricts(Integer districtUuid1, Integer districtUuid2) {
         log.info("Comparing districts {} and {}", districtUuid1, districtUuid2);
         // 1. 각 상권의 데이터 조회
-        Map<String, Object> district1Data = populationDetailsService.getDetailsByDistrictUuid(districtUuid1);
-        Map<String, Object> district2Data = populationDetailsService.getDetailsByDistrictUuid(districtUuid2);
+        RadarDataDTO<AnalysisRadarDistrictInfoDTO> radar1Data = radarAnalysisService.getRadarData(districtUuid1);
+        RadarDataDTO<AnalysisRadarDistrictInfoDTO> radar2Data = radarAnalysisService.getRadarData(districtUuid2);
 
-        // 2. 데이터 정규화 및 비교
-        Map<String, Integer> metrics1 = metricsNormalizer.normalizeMetrics(district1Data);
-        Map<String, Integer> metrics2 = metricsNormalizer.normalizeMetrics(district2Data);
+        Map<String, Integer> metrics1 = radar1Data.getOverallData();
+        Map<String, Integer> metrics2 = radar2Data.getOverallData();
 
         log.info("Normalized metrics - District 1: {}", metrics1);
         log.info("Normalized metrics - District 2: {}", metrics2);
@@ -75,8 +78,8 @@ public class ImprovementService {
         log.info("Found {} recommended events", recommendedEvents.size());
 
         return responseBuilder.buildResponse(
-                district1Data,
-                district2Data,
+                radar1Data,
+                radar2Data,
                 metrics1,
                 metrics2,
                 differences,
