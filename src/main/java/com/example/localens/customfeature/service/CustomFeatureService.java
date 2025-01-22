@@ -1,6 +1,9 @@
 package com.example.localens.customfeature.service;
 
+import com.example.localens.analysis.dto.AnalysisRadarDistrictInfoDTO;
+import com.example.localens.analysis.dto.RadarDataDTO;
 import com.example.localens.analysis.service.PopulationDetailsService;
+import com.example.localens.analysis.service.RadarAnalysisService;
 import com.example.localens.customfeature.DTO.CustomFeatureValueDTO;
 import com.example.localens.customfeature.DTO.DistrictResponseDTO;
 import com.example.localens.customfeature.domain.CustomFeature;
@@ -14,6 +17,7 @@ import com.example.localens.influx.InfluxDBService;
 import com.example.localens.member.domain.Member;
 import com.example.localens.member.repository.MemberRepository;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +38,7 @@ public class CustomFeatureService {
     private final CustomFeatureRepository customFeatureRepository;
     private final MemberRepository memberRepository;
     private final FormulaEvaluator formulaEvaluator;
+    private final RadarAnalysisService radarAnalysisService;
     private final PopulationDetailsService populationDetailsService;
 
     public CustomFeatureCalculationResult calculateFeature(
@@ -102,39 +107,32 @@ public class CustomFeatureService {
     }
 
     private Map<String, Object> getDistrictData(Integer districtUuid) {
-        Map<String, Object> details = populationDetailsService.getDetailsByDistrictUuid(districtUuid);
-        return buildOverallData(details);
+        RadarDataDTO<AnalysisRadarDistrictInfoDTO> radarData = radarAnalysisService.getRadarData(districtUuid);
+        if (radarData == null) {
+            throw new IllegalArgumentException("Failed to get radar data for district: " + districtUuid);
+        }
+
+        Map<String, Integer> overallData = radarData.getOverallData();
+        if (overallData == null) {
+            log.error("Overall data is null for district {}", districtUuid);
+            overallData = new HashMap<>();
+        }
+
+        return buildOverallData(overallData);
     }
 
-    private Map<String, Object> buildOverallData(Map<String, Object> details) {
+    private Map<String, Object> buildOverallData(Map<String, Integer> overallData) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         try{
-            log.info("Building overall data from details: {}", details);
+            log.info("Building overall data from details: {}", overallData);
 
-            double population = calculateMetric(details, "hourlyFloatingPopulation");
-            log.info("Calculated population: {}", population);
-            result.put("population", population);
-
-            double stayVisit = calculateMetric(details, "hourlyStayVisitRatio");
-            log.info("Calculated stayVisit: {}", stayVisit);
-            result.put("stayVisit", stayVisit);
-
-            double congestion = calculateMetric(details, "hourlyCongestionRateChange");
-            log.info("Calculated congestion: {}", congestion);
-            result.put("congestion", congestion);
-
-            double stayPerVisitor = calculateMetric(details, "stayPerVisitorDuration");
-            log.info("Calculated stayPerVisitor: {}", stayPerVisitor);
-            result.put("stayPerVisitor", stayPerVisitor);
-
-            double visitConcentration = calculateMetric(details, "visitConcentration");
-            log.info("Calculated visitConcentration: {}", visitConcentration);
-            result.put("visitConcentration", visitConcentration);
-
-            double stayTimeChange = calculateMetric(details, "hourlyAvgStayDurationChange");
-            log.info("Calculated stayTimeChange: {}", stayTimeChange);
-            result.put("stayTimeChange", stayTimeChange);
+            result.put("population", overallData.getOrDefault("population", 0));
+            result.put("stayVisit", overallData.getOrDefault("stayVisit", 0));
+            result.put("congestion", overallData.getOrDefault("congestion", 0));
+            result.put("stayPerVisitor", overallData.getOrDefault("stayPerVisitor", 0));
+            result.put("visitConcentration", overallData.getOrDefault("visitConcentration", 0));
+            result.put("stayTimeChange", overallData.getOrDefault("stayTimeChange", 0));
 
         }catch (Exception e){
             log.error("Error building overall data: {}", e.getMessage());
