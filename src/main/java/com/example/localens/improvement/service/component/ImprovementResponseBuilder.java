@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class ResponseBuilder {
+public class ImprovementResponseBuilder {
 
     public CommercialDistrictComparisonDTO buildResponse(
             RadarDataDTO<AnalysisRadarDistrictInfoDTO> radar1Data,
