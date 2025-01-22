@@ -15,7 +15,7 @@ import lombok.Setter;
 public class Event {
 
     @Id
-    @Column(name = "event_uuid", columnDefinition = "BINARY(16)")
+    @Column(name = "event_uuid", columnDefinition = "BINARY(36)")
     private UUID eventUuid;
 
     @Column(name = "event_name", length = 255, nullable = false)
