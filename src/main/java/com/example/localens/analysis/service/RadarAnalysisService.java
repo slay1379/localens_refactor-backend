@@ -9,6 +9,8 @@ import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,15 +49,61 @@ public class RadarAnalysisService {
         log.info("Getting radar data for place: {}", place);
 
         Map<String, Double> rawData = new LinkedHashMap<>();
-        rawData.put("stayPerVisitor", executeQuery(getStayPerVisitorQuery(place)));
-        rawData.put("population", executeQuery(getPopulationQuery(place)));
-        rawData.put("stayVisit", executeQuery(getStayVisitQuery(place)));
-        rawData.put("congestion", executeQuery(getCongestionQuery(place)));
-        rawData.put("stayTimeChange", executeQuery(getStayTimeChangeQuery(place)));
-        rawData.put("visitConcentration", executeQuery(getVisitConcentrationQuery(place)));
+        rawData.put("stayPerVisitor", executeQuery(createQuery("stay_per_visitor_bucket", place, "stay_to_visitor", CURRENT_RANGE)));
+        rawData.put("population", executeQuery(createQuery("result_bucket", place, "total_population", CURRENT_RANGE)));
+        rawData.put("stayVisit", executeQuery(createQuery("result_stay_visit_bucket", place, "stay_visit_ratio", CURRENT_RANGE)));
+        rawData.put("congestion", executeQuery(createQuery("date_congestion", place, "congestion_change_rate", DATE_COMPARE_RANGE)));
+        rawData.put("stayTimeChange", executeQuery(createQuery("date_stay_duration", place, "stay_duration_change_rate", DATE_COMPARE_RANGE)));
+        rawData.put("visitConcentration", executeQuery(createQuery("date_stay_visit", place, "stay_visit_ratio", DATE_COMPARE_RANGE)));
 
         log.info("Raw data for place {}: {}", place, rawData);
 
+        return buildRadarDataDTO(district, place, rawData);
+    }
+
+    public RadarDataDTO<AnalysisRadarDistrictInfoDTO> getRadarDataByDate(Integer districtUuid, LocalDateTime date) {
+        CommercialDistrict district = districtRepository.findById(districtUuid)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid districtUuid: " + districtUuid));
+
+        String place = district.getDistrictName();
+        String dateRange = createDateRange(date);
+        log.info("Getting radar data for place: {} at date: {}", place, date);
+
+        Map<String, Double> rawData = new LinkedHashMap<>();
+        rawData.put("stayPerVisitor", executeQuery(createQuery("stay_per_visitor_bucket", place, "stay_to_visitor", dateRange)));
+        rawData.put("population", executeQuery(createQuery("result_bucket", place, "total_population", dateRange)));
+        rawData.put("stayVisit", executeQuery(createQuery("result_stay_visit_bucket", place, "stay_visit_ratio", dateRange)));
+        rawData.put("congestion", executeQuery(createQuery("date_congestion", place, "congestion_change_rate", dateRange)));
+        rawData.put("stayTimeChange", executeQuery(createQuery("date_stay_duration", place, "stay_duration_change_rate", dateRange)));
+        rawData.put("visitConcentration", executeQuery(createQuery("date_stay_visit", place, "stay_visit_ratio", dateRange)));
+
+        log.info("Raw data for place {} at date {}: {}", place, date, rawData);
+
+        return buildRadarDataDTO(district, place, rawData);
+    }
+
+    private String createQuery(String bucket, String place, String field, String timeRange) {
+        return String.format("""
+            from(bucket: "%s")
+                |> range(%s)
+                |> filter(fn: (r) => r["place"] == "%s")
+                |> filter(fn: (r) => r["_field"] == "%s")
+                |> mean()
+                |> yield(name: "mean")
+            """, bucket, timeRange, place, field);
+    }
+
+    // 날짜 범위 생성 메서드
+    private String createDateRange(LocalDateTime date) {
+        return String.format("start: %s, stop: %s",
+                date.format(DateTimeFormatter.ISO_INSTANT),
+                date.plusDays(1).format(DateTimeFormatter.ISO_INSTANT));
+    }
+
+    private RadarDataDTO<AnalysisRadarDistrictInfoDTO> buildRadarDataDTO(
+            CommercialDistrict district,
+            String place,
+            Map<String, Double> rawData) {
         Map<String, Integer> normalizedMap = normalizeData(place, rawData);
 
         RadarDataDTO<AnalysisRadarDistrictInfoDTO> radarDataDTO = new RadarDataDTO<>();
@@ -64,72 +112,6 @@ public class RadarAnalysisService {
         radarDataDTO.setTopTwo(findTopTwo(normalizedMap));
 
         return radarDataDTO;
-    }
-
-    private String getStayPerVisitorQuery(String place) {
-        return String.format("""
-           from(bucket: "stay_per_visitor_bucket")
-               |> range(%s)
-               |> filter(fn: (r) => r["place"] == "%s")
-               |> filter(fn: (r) => r["_field"] == "stay_to_visitor")
-               |> mean()
-               |> yield(name: "mean")
-           """, CURRENT_RANGE, place);
-    }
-
-    private String getPopulationQuery(String place) {
-        return String.format("""
-           from(bucket: "result_bucket")
-               |> range(%s)
-               |> filter(fn: (r) => r["place"] == "%s")
-               |> filter(fn: (r) => r["_field"] == "total_population")
-               |> mean()
-               |> yield(name: "mean")
-           """, CURRENT_RANGE, place);
-    }
-
-    private String getStayVisitQuery(String place) {
-        return String.format("""
-           from(bucket: "result_stay_visit_bucket")
-               |> range(%s)
-               |> filter(fn: (r) => r["place"] == "%s")
-               |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
-               |> mean()
-               |> yield(name: "mean")
-           """, CURRENT_RANGE, place);
-    }
-
-    private String getCongestionQuery(String place) {
-        return String.format("""
-           from(bucket: "date_congestion")
-               |> range(%s)
-               |> filter(fn: (r) => r["place"] == "%s")
-               |> filter(fn: (r) => r["_field"] == "congestion_change_rate")
-               |> mean()
-               |> yield(name: "mean")
-           """, DATE_COMPARE_RANGE, place);
-    }
-
-    private String getStayTimeChangeQuery(String place) {
-        return String.format("""
-           from(bucket: "date_stay_duration")
-               |> range(%s)
-               |> filter(fn: (r) => r["place"] == "%s")
-               |> filter(fn: (r) => r["_field"] == "stay_duration_change_rate")
-               |> mean()
-               |> yield(name: "mean")
-           """, DATE_COMPARE_RANGE, place);
-    }
-
-    private String getVisitConcentrationQuery(String place) {
-        return String.format("""
-           from(bucket: "date_stay_visit")
-               |> range(%s)
-               |> filter(fn: (r) => r["place"] == "%s")
-               |> filter(fn: (r) => r["_field"] == "stay_visit_ratio")
-               |> mean()
-               |> yield(name: "mean")
-           """, DATE_COMPARE_RANGE, place);
     }
 
     private double executeQuery(String query) {
