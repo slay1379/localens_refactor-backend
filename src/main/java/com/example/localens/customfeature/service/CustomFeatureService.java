@@ -20,12 +20,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import net.objecthunter.exp4j.Expression;
 import net.objecthunter.exp4j.ExpressionBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import retrofit2.Response;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CustomFeatureService {
@@ -107,22 +109,58 @@ public class CustomFeatureService {
     private Map<String, Object> buildOverallData(Map<String, Object> details) {
         Map<String, Object> result = new LinkedHashMap<>();
 
-        result.put("population", calculateMetric(details, "hourlyFloatingPopulation"));
-        result.put("stayVisit", calculateMetric(details, "hourlyStayVisitRatio"));
-        result.put("congestion", calculateMetric(details, "hourlyCongestionRateChange"));
-        result.put("stayPerVisitor", calculateMetric(details, "stayPerVisitorDuration"));
-        result.put("visitConcentration", calculateMetric(details, "visitConcentration"));
-        result.put("stayTimeChange", calculateMetric(details, "hourlyAvgStayDurationChange"));
+        try{
+            log.info("Building overall data from details: {}", details);
+
+            double population = calculateMetric(details, "hourlyFloatingPopulation");
+            log.info("Calculated population: {}", population);
+            result.put("population", population);
+
+            double stayVisit = calculateMetric(details, "hourlyStayVisitRatio");
+            log.info("Calculated stayVisit: {}", stayVisit);
+            result.put("stayVisit", stayVisit);
+
+            double congestion = calculateMetric(details, "hourlyCongestionRateChange");
+            log.info("Calculated congestion: {}", congestion);
+            result.put("congestion", congestion);
+
+            double stayPerVisitor = calculateMetric(details, "stayPerVisitorDuration");
+            log.info("Calculated stayPerVisitor: {}", stayPerVisitor);
+            result.put("stayPerVisitor", stayPerVisitor);
+
+            double visitConcentration = calculateMetric(details, "visitConcentration");
+            log.info("Calculated visitConcentration: {}", visitConcentration);
+            result.put("visitConcentration", visitConcentration);
+
+            double stayTimeChange = calculateMetric(details, "hourlyAvgStayDurationChange");
+            log.info("Calculated stayTimeChange: {}", stayTimeChange);
+            result.put("stayTimeChange", stayTimeChange);
+
+        }catch (Exception e){
+            log.error("Error building overall data: {}", e.getMessage());
+            throw e;
+        }
 
         return result;
     }
 
-    private int calculateMetric(Map<String, Object> details, String key) {
-        @SuppressWarnings("unchecked")
-        Map<String, Double> hourlyData = (Map<String, Double>) details.get(key);
-        double average = hourlyData == null ? 0.0 :
-                hourlyData.values().stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
-        return (int)(average * 100);
+    private double calculateMetric(Map<String, Object> details, String key) {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Double> hourlyData = (Map<String, Double>) details.get(key);
+            if (hourlyData == null || hourlyData.isEmpty()) {
+                log.warn("No data found for metric: {}", key);
+                return 0.0;
+            }
+            double average = hourlyData.values().stream()
+                    .mapToDouble(Double::doubleValue)
+                    .average()
+                    .orElse(0.0);
+            return average * 100;
+        } catch (Exception e) {
+            log.error("Error calculating metric {}: {}", key, e.getMessage());
+            return 0.0;
+        }
     }
 
     private CustomFeature saveCustomFeature(String formula, String featureName, Member member) {
