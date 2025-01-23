@@ -146,7 +146,7 @@ public class RadarAnalysisService {
         for (Map.Entry<String, Double> entry : rawData.entrySet()) {
             String field = entry.getKey();
             double rawValue = entry.getValue();
-            double normalized = metricStatsService.normalizeValue(place,field, rawValue);
+            double normalized = metricStatsService.normalizeValue(place, rawValue);
             normalizedMap.put(field, (int) Math.round(normalized * 100));
         }
         return normalizedMap;
