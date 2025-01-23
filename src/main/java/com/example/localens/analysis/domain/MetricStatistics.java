@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "metric_statistics")
+@Table(name = "global_metric_statistics")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,18 +26,16 @@ public class MetricStatistics {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "place", nullable = false)
-    private String place;
-
     @Column(name = "field", nullable = false)
-    private String field;
+    private String field; // 필드 이름 (예: stay_visit_ratio, total_population 등)
 
-    @Column(name = "min_value")
-    private double minValue;
+    @Column(name = "min_value", nullable = false)
+    private double minValue; // 모든 지역에서의 최소값
 
-    @Column(name = "max_value")
-    private double maxValue;
+    @Column(name = "max_value", nullable = false)
+    private double maxValue; // 모든 지역에서의 최대값
 
-    @Column(name = "last_updated")
-    private LocalDateTime lastUpdated;
+    @Column(name = "last_updated", nullable = false)
+    private LocalDateTime lastUpdated; // 마지막 업데이트 시간
 }
+
