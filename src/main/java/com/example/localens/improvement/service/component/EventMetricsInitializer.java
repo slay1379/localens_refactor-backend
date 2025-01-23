@@ -28,12 +28,14 @@ public class EventMetricsInitializer implements CommandLineRunner {
     private final MetricRepository metricRepository;
     private final RadarAnalysisService radarAnalysisService;
 
+
     @Override
     public void run(String... args) {
         log.info("Starting event metrics initialization...");
         initializeEventMetrics();
         log.info("Event metrics intialization completed");
     }
+
 
     private void initializeEventMetrics() {
         List<Event> events = eventRepository.findAll();

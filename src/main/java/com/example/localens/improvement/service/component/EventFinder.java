@@ -9,6 +9,8 @@ import com.example.localens.improvement.repository.MetricRepository;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -42,10 +44,15 @@ public class EventFinder {
             return Collections.emptyList();
         }
 
-        List<String> eventUuids = eventMetricsRepository.findEventUuidByMetricsUuidIn(metricUuids);
-        log.info("Found event UUIDs: {}", eventUuids);
+        List<String> eventUuidStrings = eventMetricsRepository.findEventUuidByMetricsUuidIn(metricUuids);
+        log.info("Found event UUID strings: {}", eventUuidStrings);
 
-        return eventRepository.findAllById(eventUuids);
+        List<UUID> eventUuids = eventUuidStrings.stream()
+                .map(UUID::fromString)
+                .distinct() // 중복 제거
+                .collect(Collectors.toList());
+
+        return eventRepository.findAllByEventUuidIn(eventUuids);
     }
 
     private String convertMetricNameToDbName(String metricName) {
