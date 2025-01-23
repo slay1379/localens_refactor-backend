@@ -6,7 +6,6 @@ import com.example.localens.improvement.domain.model.MetricDifference;
 import com.example.localens.improvement.repository.EventMetricsRepository;
 import com.example.localens.improvement.repository.EventRepository;
 import com.example.localens.improvement.repository.MetricRepository;
-import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -45,41 +44,10 @@ public class EventFinder {
             return Collections.emptyList();
         }
 
-        List<String> eventUuidStrings = eventMetricsRepository.findEventUuidByMetricsUuidIn(metricUuids);
-        log.info("Found event UUID strings (before conversion): {}", eventUuidStrings);
+        List<String> eventUuids = eventMetricsRepository.findEventUuidByMetricsUuidIn(metricUuids);
+        log.info("Found event UUIDs: {}", eventUuids);
 
-        List<String> convertedUuids = eventUuidStrings.stream()
-                .map(this::convertAsciiToHexUuid)
-                .distinct()
-                .toList();
-        log.info("Converted UUIDs: {}", convertedUuids);
-
-        return eventRepository.findAllById(convertedUuids);
-    }
-
-    private String convertAsciiToHexUuid(String asciiUuid) {
-        try {
-            // ASCII 문자열을 바이트 배열로 변환
-            byte[] bytes = asciiUuid.getBytes(StandardCharsets.US_ASCII);
-
-            // 바이트를 16진수 문자열로 변환
-            StringBuilder hexString = new StringBuilder();
-            for (byte b : bytes) {
-                hexString.append(String.format("%02x", b));
-            }
-
-            // "be39ea0e-d8c1-11ef-b2ac-0ef5022d4f7b" 형식으로 변환
-            String result = hexString.substring(0, 32);
-            return String.format("%s-%s-%s-%s-%s",
-                    result.substring(0, 8),
-                    result.substring(8, 12),
-                    result.substring(12, 16),
-                    result.substring(16, 20),
-                    result.substring(20, 32));
-        } catch (Exception e) {
-            log.error("Error converting UUID: {} - {}", asciiUuid, e.getMessage());
-            return asciiUuid;
-        }
+        return eventRepository.findAllById(eventUuids);
     }
 
     private String convertMetricNameToDbName(String metricName) {
