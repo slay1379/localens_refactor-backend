@@ -36,30 +36,32 @@ public class MetricStatsService {
             return normalizeWithoutStats(value);
         }
 
-        // 기본 정규화 (0.1 ~ 1.0 범위로)
-        double normalized = ((value - min) / (max - min)) * 0.9 + 0.1;
+        // 기본 정규화 (0 ~ 100 범위로)
+        double normalized = ((value - min) / (max - min)) * 100;
 
         // 범위를 벗어나는 경우 처리
-        if (normalized < 0.1) normalized = 0.1;
-        if (normalized > 1.0) normalized = 1.0;
+        if (normalized < 0) normalized = 0;
+        if (normalized > 100) normalized = 100;
 
         log.info("Normalized {} to {} (min={}, max={})", value, normalized, min, max);
         return normalized;
     }
 
     private double normalizeWithoutStats(double value) {
-        // 매우 작은 값을 위한 로그 스케일 정규화
+        // 매우 작은 값 처리
         if (value < 0.0001) {
-            return 0.1;  // 최소값
+            return 0; // 최소값
         }
 
         if (value > 1000000) {
-            return 1.0;  // 최대값
+            return 100; // 최대값
         }
 
         // 로그 스케일 정규화
-        double normalized = (Math.log10(value * 100 + 1) / Math.log10(1000000)) * 0.9 + 0.1;
+        double normalized = (Math.log10(value * 100 + 1) / Math.log10(1000000)) * 100;
+
         log.info("Normalized without stats {} to {}", value, normalized);
         return normalized;
     }
+
 }
