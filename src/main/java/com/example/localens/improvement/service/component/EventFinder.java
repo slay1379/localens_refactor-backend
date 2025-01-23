@@ -26,9 +26,11 @@ public class EventFinder {
 
         List<String> metricUuids = differences.stream()
                 .map(diff -> {
-                    String metricUuid = metricRepository.findMetricsUuidByMetricsName(diff.getMetricName());
-                    log.info("Found UUID {} for metric {}", metricUuid, diff.getMetricName());
-                    return metricUuid;
+                    String dbMetricName = convertMetricNameToDbName(diff.getMetricName());
+                    String uuid = metricRepository.findMetricsUuidByMetricsName(dbMetricName);
+                    log.info("Converting {} -> {} (UUID: {})",
+                            diff.getMetricName(), dbMetricName, uuid);
+                    return uuid;
                 })
                 .filter(Objects::nonNull)
                 .toList();
@@ -46,17 +48,15 @@ public class EventFinder {
         return eventRepository.findAllById(eventUuids);
     }
 
-    private List<String> findMetricUuids(List<MetricDifference> differences) {
-        return differences.stream()
-                .map(diff -> {
-                    var dbMetricName = ImprovementConstants.METRIC_DB_MAPPING
-                            .getOrDefault(diff.getMetricName(), diff.getMetricName());
-                    var uuid = metricRepository.findMetricsUuidByMetricsName(dbMetricName);
-                    log.debug("Metric mapping: {} -> {} (UUID: {})",
-                            diff.getMetricName(), dbMetricName, uuid);
-                    return uuid;
-                })
-                .filter(Objects::nonNull)
-                .toList();
+    private String convertMetricNameToDbName(String metricName) {
+        return switch (metricName) {
+            case "stayVisit" -> "STAY_VISIT_RATIO";
+            case "stayPerVisitor" -> "STAY_PER_VISITOR";
+            case "population" -> "TOTAL_POPULATION";
+            case "congestion" -> "CONGESTION_RATE";
+            case "visitConcentration" -> "VISIT_CONCENTRATION";
+            case "stayTimeChange" -> "STAY_TIME_CHANGE";
+            default -> metricName;
+        };
     }
 }
