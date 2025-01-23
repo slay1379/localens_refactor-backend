@@ -13,19 +13,19 @@ import org.springframework.stereotype.Service;
 public class MetricStatsService {
     private final MetricStatisticsRepository metricStatisticsRepository;
 
-    public double normalizeValue(String place, String field, double value) {
-        log.info("Normalizing value for place: {}, field: {}, value: {}", place, field, value);
+    public double normalizeValue(String field, double value) {
+        log.info("Normalizing global value for field: {}, value: {}", field, value);
 
         MetricStatistics stats = metricStatisticsRepository
-                .findByPlaceAndField(place, field)
+                .findByPlaceAndField("GLOBAL", field)
                 .orElse(null);
 
         if (stats == null) {
-            log.warn("No statistics found for {}.{}, using raw value", place, field);
+            log.warn("No global statistics found for {}, using raw value", field);
             return normalizeWithoutStats(value);
         }
 
-        log.info("Found stats - min: {}, max: {}", stats.getMinValue(), stats.getMaxValue());
+        log.info("Found global stats - min: {}, max: {}", stats.getMinValue(), stats.getMaxValue());
         return normalize(value, stats.getMinValue(), stats.getMaxValue());
     }
 

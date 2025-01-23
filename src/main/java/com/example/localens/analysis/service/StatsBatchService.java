@@ -26,19 +26,14 @@ public class StatsBatchService {
     private final MetricStatisticsRepository metricStatisticsRepository;
     private final CommercialDistrictRepository commercialDistrictRepository;
 
-/*
     @PostConstruct
     public void initializeStats() {
         log.info("Initializing statistics...");
         updateMinMaxStatistics();
     }
-*/
 
     public void updateMinMaxStatistics() {
-        List<String> placeList = commercialDistrictRepository.findAllPlaces();
-        log.info("Found places from DB: {}", placeList);
-
-        // 지표-버킷 매핑 수정
+        // 지표-버킷 매핑
         Map<String, BucketFieldMapping> fieldMappings = Map.of(
                 "stay_visit_ratio", new BucketFieldMapping("result_stay_visit_bucket", "visitor_data", "stay_visit_ratio"),
                 "total_population", new BucketFieldMapping("result_bucket", "visitor_data", "total_population"),
@@ -48,70 +43,63 @@ public class StatsBatchService {
                 "stay_duration_change_rate", new BucketFieldMapping("date_stay_duration", "visitor_data", "stay_duration_change_rate")
         );
 
-        for (String place : placeList) {
-            for (Map.Entry<String, BucketFieldMapping> entry : fieldMappings.entrySet()) {
-                String field = entry.getKey();
-                BucketFieldMapping mapping = entry.getValue();
-                try {
-                    String minQuery;
-                    String maxQuery;
+        // 모든 필드에 대해 전역 min/max 계산
+        for (Map.Entry<String, BucketFieldMapping> entry : fieldMappings.entrySet()) {
+            String field = entry.getKey();
+            BucketFieldMapping mapping = entry.getValue();
 
-                    if (field.equals("congestion_change_rate") || field.equals("stay_duration_change_rate")) {
-                        minQuery = String.format("""
-                                from(bucket: "%s")
-                                    |> range(start: 2023-08-30T00:00:00Z, stop: now())
-                                    |> filter(fn: (r) => r["place"] == "%s")
-                                    |> filter(fn: (r) => r["_measurement"] == "%s")
-                                    |> filter(fn: (r) => r["_field"] == "%s")
-                                    |> group(columns:[])
-                                    |> min()
-                                """, mapping.bucket(), place, mapping.measurement(), mapping.fieldName());
+            try {
+                // 전역 min/max 쿼리
+                String minQuery = String.format("""
+                            from(bucket: "%s")
+                                |> range(start: 2023-08-30T00:00:00Z, stop: now())
+                                |> filter(fn: (r) => r["_measurement"] == "%s")
+                                |> filter(fn: (r) => r["_field"] == "%s")
+                                |> group(columns:[])
+                                |> min()
+                        """, mapping.bucket(), mapping.measurement(), mapping.fieldName());
 
-                        maxQuery = String.format("""
-                                from(bucket: "%s")
-                                    |> range(start: 2023-08-30T00:00:00Z, stop: now())
-                                    |> filter(fn: (r) => r["place"] == "%s")
-                                    |> filter(fn: (r) => r["_measurement"] == "%s")
-                                    |> filter(fn: (r) => r["_field"] == "%s")
-                                    |> group(columns:[])
-                                    |> max()
-                                """, mapping.bucket(), place, mapping.measurement(), mapping.fieldName());
-                    } else {
-                        minQuery = String.format("""
-                                from(bucket: "%s")
-                                    |> range(start: 2023-08-30T00:00:00Z, stop: now())
-                                    |> filter(fn: (r) => r["place"] == "%s")
-                                    |> filter(fn: (r) => r["_measurement"] == "%s")
-                                    |> filter(fn: (r) => r["_field"] == "%s")
-                                    |> group(columns:[])
-                                    |> min()
-                                    |> yield(name: "min")
-                                """, mapping.bucket(), place, mapping.measurement(), mapping.fieldName());
+                String maxQuery = String.format("""
+                            from(bucket: "%s")
+                                |> range(start: 2023-08-30T00:00:00Z, stop: now())
+                                |> filter(fn: (r) => r["_measurement"] == "%s")
+                                |> filter(fn: (r) => r["_field"] == "%s")
+                                |> group(columns:[])
+                                |> max()
+                        """, mapping.bucket(), mapping.measurement(), mapping.fieldName());
 
-                        maxQuery = String.format("""
-                                from(bucket: "%s")
-                                    |> range(start: 2023-08-30T00:00:00Z, stop: now())
-                                    |> filter(fn: (r) => r["place"] == "%s")
-                                    |> filter(fn: (r) => r["_measurement"] == "%s")
-                                    |> filter(fn: (r) => r["_field"] == "%s")
-                                    |> group(columns:[])
-                                    |> max()
-                                    |> yield(name: "max")
-                                """, mapping.bucket(), place, mapping.measurement(), mapping.fieldName());
-                    }
+                // 전역 min/max 계산
+                double minVal = executeQuery(minQuery);
+                double maxVal = executeQuery(maxQuery);
 
-                    double minVal = executeQuery(minQuery);
-                    double maxVal = executeQuery(maxQuery);
+                log.info("Global stats for {}: min={}, max={}", field, minVal, maxVal);
 
-                    log.info("Stats for {}.{}: min={}, max={}", place, field, minVal, maxVal);
+                // 전역 min/max 저장
+                saveGlobalMetricStatistics(field, minVal, maxVal);
 
-                    saveMetricStatistics(place, field, minVal, maxVal);
-                } catch (Exception e) {
-                    log.error("Error processing stats for {}.{}: {}", place, field, e.getMessage());
-                }
+            } catch (Exception e) {
+                log.error("Error processing global stats for {}: {}", field, e.getMessage());
             }
         }
     }
+
+    // 전역 min/max 저장 메서드
+    private void saveGlobalMetricStatistics(String field, double minVal, double maxVal) {
+        MetricStatistics stats = metricStatisticsRepository
+                .findByPlaceAndField("GLOBAL", field)
+                .orElse(MetricStatistics.builder()
+                        .place("GLOBAL") // 전역 필드임을 표시
+                        .field(field)
+                        .build());
+
+        stats.setMinValue(minVal);
+        stats.setMaxValue(maxVal);
+        stats.setLastUpdated(LocalDateTime.now());
+
+        metricStatisticsRepository.save(stats);
+        log.info("Saved global stats for {}", field);
+    }
+
 
     // 버킷과 필드 이름을 함께 관리하기 위한 레코드
     private record BucketFieldMapping(String bucket, String measurement, String fieldName) {}
