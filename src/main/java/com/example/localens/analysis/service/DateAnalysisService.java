@@ -27,7 +27,7 @@ public class DateAnalysisService {
         for (Entry<String, Double> entry : rawValues.entrySet()) {
             String field = entry.getKey();
             double rawValue = entry.getValue();
-            double normalized = metricStatsService.normalizeValue(place, field, rawValue);
+            double normalized = metricStatsService.normalizeValue(place, rawValue);
             normalizedMap.put(field, (int) Math.round(normalized * 100));
         }
 
@@ -41,7 +41,7 @@ public class DateAnalysisService {
         for (Entry<String, Double> entry : rawValues.entrySet()) {
             String field = entry.getKey();
             Double rawValue = entry.getValue();
-            double normalized = metricStatsService.normalizeValue(place, field, rawValue);
+            double normalized = metricStatsService.normalizeValue(place, rawValue);
             normalizedValues.put(field, (int) Math.round(normalized * 100));
         }
 
