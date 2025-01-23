@@ -19,23 +19,25 @@ public class MetricComparator {
             Map<String, Integer> metrics1,
             Map<String, Integer> metrics2) {
 
-        var differences = metrics1.entrySet().stream()
+        log.info("Comparing metrics - First: {}, Second: {}", metrics1, metrics2);
+
+        List<MetricDifference> differences = metrics1.entrySet().stream()
                 .map(entry -> {
                     String metric = entry.getKey();
-                    int diff = metrics2.get(metric) - entry.getValue();
-                    log.info("Comparing metric: {}, value1: {}, value2: {}, diff: {}",
-                            metric, entry.getValue(), metrics2.get(metric), diff);
+                    int value1 = entry.getValue();
+                    int value2 = metrics2.getOrDefault(metric, 0);
+                    int diff = value2 - value1;
+
+                    log.info("Comparing {} - First: {}, Second: {}, Difference: {}",
+                            metric, value1, value2, diff);
+
                     return new MetricDifference(metric, diff);
                 })
                 .sorted(Comparator.comparing(MetricDifference::getDifference).reversed())
                 .limit(TOP_DIFFERENCES_LIMIT)
                 .toList();
 
-        log.info("Selected top differences: {}",
-                differences.stream()
-                        .map(d -> String.format("%s: %d", d.getMetricName(), d.getDifference()))
-                        .collect(Collectors.joining(", ")));
-
+        log.info("Selected top differences: {}", differences);
         return differences;
     }
 
