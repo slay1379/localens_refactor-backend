@@ -19,9 +19,7 @@ public class MetricComparator {
             Map<String, Integer> metrics1,
             Map<String, Integer> metrics2) {
 
-        log.info("Comparing metrics - First: {}, Second: {}", metrics1, metrics2);
-
-        List<MetricDifference> differences = metrics1.entrySet().stream()
+        return metrics1.entrySet().stream()
                 .map(entry -> {
                     String metric = entry.getKey();
                     int value1 = entry.getValue();
@@ -33,12 +31,11 @@ public class MetricComparator {
 
                     return new MetricDifference(metric, diff);
                 })
-                .sorted(Comparator.comparing(MetricDifference::getDifference).reversed())
+                .filter(diff -> diff.getDifference() != 0)  // 차이가 0인 것은 제외
+                .sorted(Comparator.comparing(MetricDifference::getDifference,
+                        Comparator.reverseOrder()))  // 절대값이 큰 순서대로 정렬
                 .limit(TOP_DIFFERENCES_LIMIT)
                 .toList();
-
-        log.info("Selected top differences: {}", differences);
-        return differences;
     }
 
     private MetricDifference createMetricDifference(String metric, Integer value1, Map<String, Integer> metrics2) {
