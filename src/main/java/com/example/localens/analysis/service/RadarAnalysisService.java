@@ -12,6 +12,7 @@ import com.influxdb.query.FluxTable;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -141,15 +142,26 @@ public class RadarAnalysisService {
         }
     }
 
+    private static final Map<String, String> FIELD_MAPPINGS = Map.of(
+            "stayPerVisitor", "stay_to_visitor",
+            "population", "total_population",
+            "stayVisit", "stay_visit_ratio",
+            "congestion", "congestion_change_rate",
+            "stayTimeChange", "stay_duration_change_rate",
+            "visitConcentration", "visit_concentration"
+    );
+
     private Map<String, Integer> normalizeData(String place, Map<String, Double> rawData) {
-        Map<String, Integer> normalizedMap = new LinkedHashMap<>();
-        for (Map.Entry<String, Double> entry : rawData.entrySet()) {
-            String field = entry.getKey();
-            double rawValue = entry.getValue();
-            double normalized = metricStatsService.normalizeValue(field, rawValue);  // place가 아닌 field 전달
-            normalizedMap.put(field, (int) Math.round(normalized));  // 100 곱하기 제거
-        }
-        return normalizedMap;
+        return rawData.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        e -> (int) Math.round(metricStatsService.normalizeValue(
+                                FIELD_MAPPINGS.get(e.getKey()),
+                                e.getValue()
+                        )),
+                        (v1, v2) -> v1,
+                        LinkedHashMap::new
+                ));
     }
 
     private AnalysisRadarDistrictInfoDTO createDistrictInfo(CommercialDistrict district) {
