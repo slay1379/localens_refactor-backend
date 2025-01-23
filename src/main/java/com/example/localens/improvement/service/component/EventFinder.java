@@ -44,14 +44,10 @@ public class EventFinder {
             return Collections.emptyList();
         }
 
-        List<String> eventUuidPrefixes = eventMetricsRepository.findEventUuidByMetricsUuidIn(metricUuids);
-        log.info("Found event UUID prefixes: {}", eventUuidPrefixes);
+        List<String> eventUuids = eventMetricsRepository.findEventUuidByMetricsUuidIn(metricUuids);
+        log.info("Found event UUIDs: {}", eventUuids);
 
-        if (eventUuidPrefixes.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        return eventRepository.findAllByEventUuidPrefix(eventUuidPrefixes);
+        return eventRepository.findAllById(eventUuids);
     }
 
     private String convertMetricNameToDbName(String metricName) {

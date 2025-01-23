@@ -17,10 +17,10 @@ import lombok.Setter;
 public class EventMetrics {
 
     @Id
-    @Column(name = "event_uuid", columnDefinition = "BINARY(16)")
+    @Column(name = "event_uuid", columnDefinition = "BINARY(36)")
     private UUID eventUuid;
 
     @Id
-    @Column(name = "metrics_uuid", columnDefinition = "BINARY(16)")
+    @Column(name = "metrics_uuid", columnDefinition = "BINARY(36)")
     private UUID metricsUuid;
 }
