@@ -21,21 +21,23 @@ import lombok.Setter;
 @AllArgsConstructor
 @Builder
 public class MetricStatistics {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "place", nullable = false)
+    private String place;  // GLOBAL 또는 특정 지역 ID
+
     @Column(name = "field", nullable = false)
-    private String field; // 필드 이름 (예: stay_visit_ratio, total_population 등)
+    private String field;
 
     @Column(name = "min_value", nullable = false)
-    private double minValue; // 모든 지역에서의 최소값
+    private double minValue;
 
     @Column(name = "max_value", nullable = false)
-    private double maxValue; // 모든 지역에서의 최대값
+    private double maxValue;
 
     @Column(name = "last_updated", nullable = false)
-    private LocalDateTime lastUpdated; // 마지막 업데이트 시간
+    private LocalDateTime lastUpdated;
 }
 

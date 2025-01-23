@@ -121,17 +121,23 @@ public class StatsBatchService {
     }
 
     private double executeQuery(String query) {
-        List<FluxTable> tables = influxDBClientWrapper.query(query);
-        log.debug("Query result tables: {}", tables);
+        try {
+            List<FluxTable> tables = influxDBClientWrapper.query(query);
+            if (tables.isEmpty() || tables.get(0).getRecords().isEmpty()) {
+                log.warn("No data found for query: {}", query);
+                throw new IllegalStateException("No data returned from query");
+            }
 
-        if (tables.isEmpty() || tables.get(0).getRecords().isEmpty()) {
-            log.warn("No data found for query: {}", query);
-            return 0.0;
+            FluxRecord record = tables.get(0).getRecords().get(0);
+            Object value = record.getValueByKey("_value");
+            if (value == null) {
+                throw new IllegalStateException("Null value returned from query");
+            }
+
+            return Double.parseDouble(value.toString());
+        } catch (Exception e) {
+            log.error("Query execution failed: {}", query, e);
+            throw new RuntimeException("Failed to execute query", e);
         }
-
-        Object value = tables.get(0).getRecords().get(0).getValueByKey("_value");
-        double result = value != null ? Double.parseDouble(value.toString()) : 0.0;
-        log.info("Query value: {}", result);
-        return result;
     }
 }
