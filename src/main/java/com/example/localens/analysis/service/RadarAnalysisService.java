@@ -5,6 +5,7 @@ import com.example.localens.analysis.dto.AnalysisRadarDistrictInfoDTO;
 import com.example.localens.analysis.dto.DistrictDTO;
 import com.example.localens.analysis.dto.RadarDataDTO;
 import com.example.localens.analysis.dto.RadarDistrictInfoDTO;
+import com.example.localens.analysis.dto.RadarTimeSeriesDataDTO;
 import com.example.localens.analysis.repository.CommercialDistrictRepository;
 import com.example.localens.influx.InfluxDBClientWrapper;
 import com.influxdb.query.FluxRecord;
@@ -63,13 +64,14 @@ public class RadarAnalysisService {
         return buildRadarDataDTO(district, place, rawData);
     }
 
-    public RadarDataDTO<AnalysisRadarDistrictInfoDTO> getRadarDataByDate(Integer districtUuid, LocalDateTime date) {
+    public RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> getRadarDataByDate(
+            Integer districtUuid, LocalDateTime targetDate) {
         CommercialDistrict district = districtRepository.findById(districtUuid)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid districtUuid: " + districtUuid));
+                .orElseThrow(() -> new IllegalArgumentException("Invalid districtUuid"));
 
         String place = district.getDistrictName();
-        String dateRange = createDateRange(date);
-        log.info("Getting radar data for place: {} at date: {}", place, date);
+        String dateRange = createDateRange(targetDate);
+        log.info("Getting radar data for place: {} at date: {}", place, targetDate);
 
         Map<String, Double> rawData = new LinkedHashMap<>();
         rawData.put("stayPerVisitor", executeQuery(createQuery("stay_per_visitor_bucket", place, "stay_to_visitor", dateRange)));
@@ -79,9 +81,13 @@ public class RadarAnalysisService {
         rawData.put("stayTimeChange", executeQuery(createQuery("date_stay_duration", place, "stay_duration_change_rate", dateRange)));
         rawData.put("visitConcentration", executeQuery(createQuery("date_stay_visit", place, "stay_visit_ratio", dateRange)));
 
-        log.info("Raw data for place {} at date {}: {}", place, date, rawData);
+        RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> result = new RadarTimeSeriesDataDTO<>();
+        result.setDistrictInfo(createDistrictInfo(district));
+        result.setOverallData(normalizeData(place, rawData));
+        result.setTopTwo(findTopTwo(normalizeData(place, rawData)));
+        result.setTimeSeriesData(Collections.singletonList(targetDate));
 
-        return buildRadarDataDTO(district, place, rawData);
+        return result;
     }
 
     private String createQuery(String bucket, String place, String field, String timeRange) {
@@ -97,10 +103,9 @@ public class RadarAnalysisService {
 
     // 날짜 범위 생성 메서드
     private String createDateRange(LocalDateTime date) {
-        String formattedStart = date.atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
-        String formattedEnd = date.plusDays(1).atZone(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT);
-
-        return String.format("start: %s, stop: %s", formattedStart, formattedEnd);
+        return String.format("start: %s, stop: %s",
+                date.toLocalDate().atStartOfDay(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT),
+                date.toLocalDate().plusDays(1).atStartOfDay(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT));
     }
 
     private RadarDataDTO<AnalysisRadarDistrictInfoDTO> buildRadarDataDTO(

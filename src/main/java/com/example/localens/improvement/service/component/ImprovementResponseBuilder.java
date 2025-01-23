@@ -2,6 +2,7 @@ package com.example.localens.improvement.service.component;
 
 import com.example.localens.analysis.dto.AnalysisRadarDistrictInfoDTO;
 import com.example.localens.analysis.dto.RadarDataDTO;
+import com.example.localens.analysis.dto.RadarTimeSeriesDataDTO;
 import com.example.localens.improvement.constant.ImprovementConstants;
 import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO;
 import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO.ComparisonData;
@@ -24,10 +25,10 @@ import org.springframework.stereotype.Component;
 public class ImprovementResponseBuilder {
 
     public CommercialDistrictComparisonDTO buildResponse(
-            RadarDataDTO<AnalysisRadarDistrictInfoDTO> radar1Data,
-            RadarDataDTO<AnalysisRadarDistrictInfoDTO> radar2Data,
-            Map<String, Integer> metrics1,
-            Map<String, Integer> metrics2,
+            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar1StartData,
+            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar1EndData,
+            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar2StartData,
+            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar2EndData,
             List<MetricDifference> differences,
             List<Event> events) {
 
@@ -36,11 +37,51 @@ public class ImprovementResponseBuilder {
                         .map(this::convertToRecommendedEvent)
                         .toList())
                 .comparisonData(buildComparisonData(
-                        radar1Data,
-                        radar2Data,
-                        metrics1,
-                        metrics2,
+                        radar1StartData,
+                        radar1EndData,
+                        radar2StartData,
+                        radar2EndData,
                         differences))
+                .build();
+    }
+
+    private ComparisonData buildComparisonData(
+            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar1StartData,
+            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar1EndData,
+            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar2StartData,
+            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar2EndData,
+            List<MetricDifference> differences) {
+
+        return ComparisonData.builder()
+                .before(buildDistrictSnapshot(radar1StartData))
+                .after(buildDistrictSnapshot(radar2EndData))
+                .changes(differences.stream()
+                        .map(diff -> MetricChange.builder()
+                                .name(diff.getMetricName())
+                                .value(diff.getDifference())
+                                .build())
+                        .toList())
+                .build();
+    }
+
+    private DistrictSnapshot buildDistrictSnapshot(
+            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radarData) {
+
+        return DistrictSnapshot.builder()
+                .overallData(Collections.singletonList(createMetricsData(radarData.getOverallData())))
+                .dates(Collections.singletonList(
+                        radarData.getTimeSeriesData().get(0).format(ImprovementConstants.DISTRICT_DATE_FORMATTER)))
+                .build();
+    }
+
+    private MetricsData createMetricsData(Map<String, Integer> metrics) {
+        return MetricsData.builder()
+                .population(metrics.get("population"))
+                .stayVisit(metrics.get("stayVisit"))
+                .congestion(metrics.get("congestion"))
+                .stayPerVisitor(metrics.get("stayPerVisitor"))
+                .visitConcentration(metrics.get("visitConcentration"))
+                .stayTimeChange(metrics.get("stayTimeChange"))
                 .build();
     }
 
@@ -59,44 +100,5 @@ public class ImprovementResponseBuilder {
         return String.format("%s ~ %s",
                 start.format(ImprovementConstants.EVENT_DATE_FORMATTER),
                 end.format(ImprovementConstants.EVENT_DATE_FORMATTER));
-    }
-
-    private ComparisonData buildComparisonData(
-            RadarDataDTO<AnalysisRadarDistrictInfoDTO> radar1Data,
-            RadarDataDTO<AnalysisRadarDistrictInfoDTO> radar2Data,
-            Map<String, Integer> metrics1,
-            Map<String, Integer> metrics2,
-            List<MetricDifference> differences) {
-
-        return ComparisonData.builder()
-                .before(buildDistrictSnapshot(radar1Data, metrics1))
-                .after(buildDistrictSnapshot(radar2Data, metrics2))
-                .changes(differences.stream()
-                        .map(diff -> MetricChange.builder()
-                                .name(diff.getMetricName())
-                                .value(diff.getDifference())
-                                .build())
-                        .toList())
-                .build();
-    }
-
-    private DistrictSnapshot buildDistrictSnapshot(
-            RadarDataDTO<AnalysisRadarDistrictInfoDTO> radarData,
-            Map<String, Integer> metrics) {
-
-        var metricsData = MetricsData.builder()
-                .population(metrics.get("population"))
-                .stayVisit(metrics.get("stayVisit"))
-                .congestion(metrics.get("congestion"))
-                .stayPerVisitor(metrics.get("stayPerVisitor"))
-                .visitConcentration(metrics.get("visitConcentration"))
-                .stayTimeChange(metrics.get("stayTimeChange"))
-                .build();
-
-        return DistrictSnapshot.builder()
-                .overallData(Collections.singletonList(metricsData))
-                .dates(Collections.singletonList(
-                        LocalDate.now().format(ImprovementConstants.DISTRICT_DATE_FORMATTER)))
-                .build();
     }
 }
