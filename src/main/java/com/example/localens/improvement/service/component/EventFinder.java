@@ -44,10 +44,43 @@ public class EventFinder {
             return Collections.emptyList();
         }
 
-        List<String> eventUuids = eventMetricsRepository.findEventUuidByMetricsUuidIn(metricUuids);
-        log.info("Found event UUIDs: {}", eventUuids);
+        List<String> eventUuidStrings = eventMetricsRepository.findEventUuidByMetricsUuidIn(metricUuids);
+        log.info("Found event UUID strings (before conversion): {}", eventUuidStrings);
 
-        return eventRepository.findAllById(eventUuids);
+        List<String> convertedUuids = eventUuidStrings.stream()
+                .map(this::convertAsciiToHexUuid)
+                .distinct()
+                .toList();
+        log.info("Converted UUIDs: {}", convertedUuids);
+
+        return eventRepository.findAllById(convertedUuids);
+    }
+
+    private String convertAsciiToHexUuid(String asciiUuid) {
+        try {
+            // 하이픈 제거
+            String cleanAscii = asciiUuid.replace("-", "");
+
+            // ASCII 문자열을 16진수로 변환
+            StringBuilder hexUuid = new StringBuilder();
+            for (int i = 0; i < cleanAscii.length(); i += 2) {
+                String pair = cleanAscii.substring(i, i + 2);
+                int asciiValue = Integer.parseInt(pair, 16);
+                hexUuid.append(String.format("%02x", (byte) asciiValue));
+            }
+
+            // UUID 형식으로 하이픈 추가
+            String result = hexUuid.toString();
+            return String.format("%s-%s-%s-%s-%s",
+                    result.substring(0, 8),
+                    result.substring(8, 12),
+                    result.substring(12, 16),
+                    result.substring(16, 20),
+                    result.substring(20));
+        } catch (Exception e) {
+            log.error("Error converting UUID: {} - {}", asciiUuid, e.getMessage());
+            return asciiUuid;  // 변환 실패시 원래 값 반환
+        }
     }
 
     private String convertMetricNameToDbName(String metricName) {
