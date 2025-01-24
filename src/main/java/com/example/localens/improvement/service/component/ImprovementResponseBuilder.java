@@ -53,7 +53,6 @@ public class ImprovementResponseBuilder {
                 endData.getOverallData());
 
         return EventComparisonData.builder()
-                .eventId(event.getEventUuid().toString())
                 .after(buildDistrictSnapshot(startData))
                 .before(buildDistrictSnapshot(endData))
                 .changes(differences.stream()

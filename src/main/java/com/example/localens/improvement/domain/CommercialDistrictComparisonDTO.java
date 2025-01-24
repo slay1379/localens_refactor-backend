@@ -26,7 +26,6 @@ public class CommercialDistrictComparisonDTO {
     @Getter
     @Builder
     public static class EventComparisonData {
-        private String eventId;
         private DistrictSnapshot before;
         private DistrictSnapshot after;
         private List<MetricChange> changes;
