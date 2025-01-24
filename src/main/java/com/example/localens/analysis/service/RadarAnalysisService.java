@@ -51,13 +51,15 @@ public class RadarAnalysisService {
         String place = district.getDistrictName();
         log.info("Getting radar data for place: {}", place);
 
+        LocalDateTime now = LocalDateTime.now();
+
         Map<String, Double> rawData = new LinkedHashMap<>();
-        rawData.put("stayPerVisitor", executeQuery(createQuery("stay_per_visitor_bucket", place, "stay_to_visitor", CURRENT_RANGE)));
-        rawData.put("population", executeQuery(createQuery("result_bucket", place, "total_population", CURRENT_RANGE)));
-        rawData.put("stayVisit", executeQuery(createQuery("result_stay_visit_bucket", place, "stay_visit_ratio", CURRENT_RANGE)));
-        rawData.put("congestion", executeQuery(createQuery("date_congestion", place, "congestion_change_rate", DATE_COMPARE_RANGE)));
-        rawData.put("stayTimeChange", executeQuery(createQuery("date_stay_duration", place, "stay_duration_change_rate", DATE_COMPARE_RANGE)));
-        rawData.put("visitConcentration", executeQuery(createQuery("date_stay_visit", place, "stay_visit_ratio", DATE_COMPARE_RANGE)));
+        rawData.put("stayPerVisitor", executeQuery(createQuery("stay_per_visitor_bucket", place, "stay_to_visitor", CURRENT_RANGE, now)));
+        rawData.put("population", executeQuery(createQuery("result_bucket", place, "total_population", CURRENT_RANGE, now)));
+        rawData.put("stayVisit", executeQuery(createQuery("result_stay_visit_bucket", place, "stay_visit_ratio", CURRENT_RANGE, now)));
+        rawData.put("congestion", executeQuery(createDateCompareQuery("date_congestion", place, "congestion_change_rate", DATE_COMPARE_RANGE, now)));
+        rawData.put("stayTimeChange", executeQuery(createDateCompareQuery("date_stay_duration", place, "stay_duration_change_rate", DATE_COMPARE_RANGE, now)));
+        rawData.put("visitConcentration", executeQuery(createDateCompareQuery("date_stay_visit", place, "stay_visit_ratio", DATE_COMPARE_RANGE, now)));
 
         log.info("Raw data for place {}: {}", place, rawData);
 
@@ -71,15 +73,15 @@ public class RadarAnalysisService {
 
         String place = district.getDistrictName();
         String dateRange = createDateRange(targetDate);
-        log.info("Getting radar data for place: {} at date: {}", place, CURRENT_RANGE);
+        log.info("Getting radar data for place: {} at date: {}", place, targetDate);
 
         Map<String, Double> rawData = new LinkedHashMap<>();
-        rawData.put("stayPerVisitor", executeQuery(createQuery("stay_per_visitor_bucket", place, "stay_to_visitor", CURRENT_RANGE)));
-        rawData.put("population", executeQuery(createQuery("result_bucket", place, "total_population", CURRENT_RANGE)));
-        rawData.put("stayVisit", executeQuery(createQuery("result_stay_visit_bucket", place, "stay_visit_ratio", CURRENT_RANGE)));
-        rawData.put("congestion", executeQuery(createQuery("date_congestion", place, "congestion_change_rate", DATE_COMPARE_RANGE)));
-        rawData.put("stayTimeChange", executeQuery(createQuery("date_stay_duration", place, "stay_duration_change_rate", DATE_COMPARE_RANGE)));
-        rawData.put("visitConcentration", executeQuery(createQuery("date_stay_visit", place, "stay_visit_ratio", DATE_COMPARE_RANGE)));
+        rawData.put("stayPerVisitor", executeQuery(createQuery("stay_per_visitor_bucket", place, "stay_to_visitor", CURRENT_RANGE, targetDate)));
+        rawData.put("population", executeQuery(createQuery("result_bucket", place, "total_population", CURRENT_RANGE, targetDate)));
+        rawData.put("stayVisit", executeQuery(createQuery("result_stay_visit_bucket", place, "stay_visit_ratio", CURRENT_RANGE, targetDate)));
+        rawData.put("congestion", executeQuery(createDateCompareQuery("date_congestion", place, "congestion_change_rate", DATE_COMPARE_RANGE, targetDate)));
+        rawData.put("stayTimeChange", executeQuery(createDateCompareQuery("date_stay_duration", place, "stay_duration_change_rate", DATE_COMPARE_RANGE, targetDate)));
+        rawData.put("visitConcentration", executeQuery(createDateCompareQuery("date_stay_visit", place, "stay_visit_ratio", DATE_COMPARE_RANGE, targetDate)));
 
         log.info("Raw data for place {}: {}", place, rawData);
 
@@ -92,18 +94,33 @@ public class RadarAnalysisService {
         return result;
     }
 
-    private String createQuery(String bucket, String place, String field, String timeRange) {
+    private String createQuery(String bucket, String place, String field, String timeRange, LocalDateTime targetDate) {
         return String.format("""
-                from(bucket: "%s")
-                    |> range(%s)
-                    |> filter(fn: (r) => r["place"] == "%s")
-                    |> filter(fn: (r) => r["_field"] == "%s")
-                    |> mean()
-                    |> yield(name: "mean")
-                """, bucket, timeRange, place, field);
+               from(bucket: "%s")
+                   |> range(%s)
+                   |> filter(fn: (r) => r["place"] == "%s")
+                   |> filter(fn: (r) => r["_field"] == "%s")
+                   |> filter(fn: (r) => r["p_yyyymm"] == "%s")
+                   |> mean()
+                   |> yield(name: "mean")
+               """, bucket, timeRange, place, field, targetDate.format(DateTimeFormatter.ofPattern("yyyyMM")));
     }
 
-    // 날짜 범위 생성 메서드
+    private String createDateCompareQuery(String bucket, String place, String field, String timeRange, LocalDateTime targetDate) {
+        String currentYearMonth = targetDate.format(DateTimeFormatter.ofPattern("yyyyMM"));
+        String previousYearMonth = targetDate.minusYears(1).format(DateTimeFormatter.ofPattern("yyyyMM"));
+
+        return String.format("""
+               from(bucket: "%s")
+                   |> range(%s)
+                   |> filter(fn: (r) => r["place"] == "%s")
+                   |> filter(fn: (r) => r["_field"] == "%s")
+                   |> filter(fn: (r) => r["p_yyyymm"] == "%s" or r["p_yyyymm"] == "%s")
+                   |> mean()
+                   |> yield(name: "mean")
+               """, bucket, timeRange, place, field, currentYearMonth, previousYearMonth);
+    }
+
     private String createDateRange(LocalDateTime date) {
         return String.format("start: %s, stop: %s",
                 date.toLocalDate().atStartOfDay(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT),
