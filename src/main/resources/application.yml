@@ -17,8 +17,8 @@ spring:
     show-sql: true
 
 influxdb:
-  url: http://98.83.145.125:8086
-  token: DzFccT9Op233fL1U3-1bKzeywQKUD8CReyhdVVjF0nKd1SZDo_B16HpQT1LGoTadAZzbiCon9YWH9hyaobofDA==
+  url: http://54.226.31.23:8086
+  token: O6DYXkejhxk-dd4CQE656AFUUxLsDndVHoVK1x56BXOXwVRNn_dpSgh-iXFL1qdbRvppJ9Jhdn4sPxiS-v0Ngw==
   org: dev
   bucket: hourly
   measurement: visitor_data
