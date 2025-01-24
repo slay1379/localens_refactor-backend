@@ -54,8 +54,8 @@ public class ImprovementResponseBuilder {
 
         return EventComparisonData.builder()
                 .eventId(event.getEventUuid().toString())
-                .startData(buildDistrictSnapshot(startData))
-                .endData(buildDistrictSnapshot(endData))
+                .after(buildDistrictSnapshot(startData))
+                .before(buildDistrictSnapshot(endData))
                 .changes(differences.stream()
                         .map(diff -> MetricChange.builder()
                                 .name(diff.getMetricName())
