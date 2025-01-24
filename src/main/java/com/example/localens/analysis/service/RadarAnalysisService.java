@@ -31,9 +31,9 @@ public class RadarAnalysisService {
     private final InfluxDBClientWrapper influxDBClientWrapper;
 
     private static final String CURRENT_RANGE =
-            "start: 2024-05-30T00:00:00Z, stop: 2025-01-17T23:59:59Z";
+            "start: 2024-05-30T00:00:00Z, stop: 2025-02-01T23:59:59Z";
     private static final String DATE_COMPARE_RANGE =
-            "start: 2023-08-30T00:00:00Z, stop: 2025-01-17T23:59:59Z";
+            "start: 2023-08-30T00:00:00Z, stop: 2025-02-01T23:59:59Z";
 
     private static final Map<String, String> keyToKoreanMap = Map.of(
             "population", "유동인구 수",
