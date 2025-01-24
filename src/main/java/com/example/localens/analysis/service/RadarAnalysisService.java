@@ -74,12 +74,12 @@ public class RadarAnalysisService {
         log.info("Getting radar data for place: {} at date: {}", place, targetDate);
 
         Map<String, Double> rawData = new LinkedHashMap<>();
-        rawData.put("stayPerVisitor", executeQuery(createQuery("stay_per_visitor_bucket", place, "stay_to_visitor", dateRange)));
-        rawData.put("population", executeQuery(createQuery("result_bucket", place, "total_population", dateRange)));
-        rawData.put("stayVisit", executeQuery(createQuery("result_stay_visit_bucket", place, "stay_visit_ratio", dateRange)));
-        rawData.put("congestion", executeQuery(createQuery("date_congestion", place, "congestion_change_rate", dateRange)));
-        rawData.put("stayTimeChange", executeQuery(createQuery("date_stay_duration", place, "stay_duration_change_rate", dateRange)));
-        rawData.put("visitConcentration", executeQuery(createQuery("date_stay_visit", place, "stay_visit_ratio", dateRange)));
+        rawData.put("stayPerVisitor", executeQuery(createQuery("stay_per_visitor_bucket", place, "stay_to_visitor", CURRENT_RANGE)));
+        rawData.put("population", executeQuery(createQuery("result_bucket", place, "total_population", CURRENT_RANGE)));
+        rawData.put("stayVisit", executeQuery(createQuery("result_stay_visit_bucket", place, "stay_visit_ratio", CURRENT_RANGE)));
+        rawData.put("congestion", executeQuery(createQuery("date_congestion", place, "congestion_change_rate", DATE_COMPARE_RANGE)));
+        rawData.put("stayTimeChange", executeQuery(createQuery("date_stay_duration", place, "stay_duration_change_rate", DATE_COMPARE_RANGE)));
+        rawData.put("visitConcentration", executeQuery(createQuery("date_stay_visit", place, "stay_visit_ratio", DATE_COMPARE_RANGE)));
 
         RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> result = new RadarTimeSeriesDataDTO<>();
         result.setDistrictInfo(createDistrictInfo(district));
