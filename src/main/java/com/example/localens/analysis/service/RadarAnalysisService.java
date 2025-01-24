@@ -51,7 +51,7 @@ public class RadarAnalysisService {
         String place = district.getDistrictName();
         log.info("Getting radar data for place: {}", place);
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.of(2024, 8, 1, 0, 0);
 
         Map<String, Double> rawData = new LinkedHashMap<>();
         rawData.put("stayPerVisitor", executeQuery(createQuery("stay_per_visitor_bucket", place, "stay_to_visitor", CURRENT_RANGE, now)));
