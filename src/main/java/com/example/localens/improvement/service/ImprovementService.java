@@ -37,30 +37,16 @@ public class ImprovementService {
     private final ImprovementResponseBuilder improvementResponseBuilder;
 
     public CommercialDistrictComparisonDTO compareDistricts(Integer districtUuid1, Integer districtUuid2) {
-        LocalDateTime startMonth = LocalDateTime.now().withDayOfMonth(1);
-        LocalDateTime endMonth = startMonth.plusMonths(1);
+        RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar1Data = radarAnalysisService.getRadarDataByDate(
+                districtUuid1, LocalDateTime.now());
+        RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar2Data = radarAnalysisService.getRadarDataByDate(
+                districtUuid2, LocalDateTime.now());
 
-        RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar1StartData =
-                radarAnalysisService.getRadarDataByDate(districtUuid1, startMonth);
-        RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar1EndData =
-                radarAnalysisService.getRadarDataByDate(districtUuid1, endMonth);
-        RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar2StartData =
-                radarAnalysisService.getRadarDataByDate(districtUuid2, startMonth);
-        RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar2EndData =
-                radarAnalysisService.getRadarDataByDate(districtUuid2, endMonth);
-
-        List<MetricDifference> differences = metricComparator.findSignificantDifferences(
-                radar1EndData.getOverallData(),
-                radar2EndData.getOverallData());
+        List<MetricDifference> differences = metricComparator.findSignificantDifferences(radar1Data.getOverallData(),
+                radar2Data.getOverallData());
 
         List<Event> recommendedEvents = eventFinder.findRelevantEvents(differences);
 
-        return improvementResponseBuilder.buildResponse(
-                radar1StartData,
-                radar1EndData,
-                radar2StartData,
-                radar2EndData,
-                differences,
-                recommendedEvents);
+        return improvementResponseBuilder.buildResponse(districtUuid2, recommendedEvents);
     }
 }

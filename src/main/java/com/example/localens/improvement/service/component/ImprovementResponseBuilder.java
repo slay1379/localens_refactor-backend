@@ -3,10 +3,12 @@ package com.example.localens.improvement.service.component;
 import com.example.localens.analysis.dto.AnalysisRadarDistrictInfoDTO;
 import com.example.localens.analysis.dto.RadarDataDTO;
 import com.example.localens.analysis.dto.RadarTimeSeriesDataDTO;
+import com.example.localens.analysis.service.RadarAnalysisService;
 import com.example.localens.improvement.constant.ImprovementConstants;
 import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO;
 import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO.ComparisonData;
 import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO.DistrictSnapshot;
+import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO.EventComparisonData;
 import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO.MetricChange;
 import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO.MetricsData;
 import com.example.localens.improvement.domain.CommercialDistrictComparisonDTO.RecommendedEvent;
@@ -23,38 +25,37 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class ImprovementResponseBuilder {
+    private final RadarAnalysisService radarAnalysisService;
+    private final MetricComparator metricComparator;
 
-    public CommercialDistrictComparisonDTO buildResponse(
-            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar1StartData,
-            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar1EndData,
-            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar2StartData,
-            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar2EndData,
-            List<MetricDifference> differences,
-            List<Event> events) {
+    public CommercialDistrictComparisonDTO buildResponse(Integer districtUuid, List<Event> events) {
+        List<RecommendedEvent> recommendedEvents = events.stream()
+                .map(this::convertToRecommendedEvent)
+                .toList();
+
+        List<EventComparisonData> comparisonDataList = events.stream()
+                .map(event -> buildEventComparisonData(districtUuid,event))
+                .toList();
 
         return CommercialDistrictComparisonDTO.builder()
-                .recommendedEvents(events.stream()
-                        .map(this::convertToRecommendedEvent)
-                        .toList())
-                .comparisonData(buildComparisonData(
-                        radar1StartData,
-                        radar1EndData,
-                        radar2StartData,
-                        radar2EndData,
-                        differences))
+                .recommendedEvents(recommendedEvents)
+                .comparisonData(comparisonDataList)
                 .build();
     }
 
-    private ComparisonData buildComparisonData(
-            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar1StartData,
-            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar1EndData,
-            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar2StartData,
-            RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar2EndData,
-            List<MetricDifference> differences) {
+    private EventComparisonData buildEventComparisonData(Integer districtUuid, Event event) {
+        RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> startData = radarAnalysisService.getRadarDataByDate(
+                districtUuid, event.getEventStart());
+        RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> endData = radarAnalysisService.getRadarDataByDate(
+                districtUuid, event.getEventEnd());
 
-        return ComparisonData.builder()
-                .before(buildDistrictSnapshot(radar1StartData))
-                .after(buildDistrictSnapshot(radar2EndData))
+        List<MetricDifference> differences = metricComparator.findSignificantDifferences(startData.getOverallData(),
+                endData.getOverallData());
+
+        return EventComparisonData.builder()
+                .eventId(event.getEventUuid().toString())
+                .startData(buildDistrictSnapshot(startData))
+                .endData(buildDistrictSnapshot(endData))
                 .changes(differences.stream()
                         .map(diff -> MetricChange.builder()
                                 .name(diff.getMetricName())
