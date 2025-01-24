@@ -28,7 +28,7 @@ public class CommercialDistrictComparisonDTO {
     public static class EventComparisonData {
         private DistrictSnapshot before;
         private DistrictSnapshot after;
-        private List<MetricChange> changes;
+        private MetricChange changes;
     }
 
 
@@ -37,14 +37,14 @@ public class CommercialDistrictComparisonDTO {
     public static class ComparisonData {
         private DistrictSnapshot before;
         private DistrictSnapshot after;
-        private List<MetricChange> changes;
+        private MetricChange changes;
     }
 
     @Getter
     @Builder
     public static class DistrictSnapshot {
-        private List<MetricsData> overallData;
-        private List<String> dates;
+        private MetricsData overallData;
+        private String dates;
     }
 
     @Getter

@@ -34,7 +34,7 @@ public class ImprovementResponseBuilder {
                 .toList();
 
         List<EventComparisonData> comparisonDataList = events.stream()
-                .map(event -> buildEventComparisonData(districtUuid,event))
+                .map(event -> buildEventComparisonData(districtUuid, event))
                 .toList();
 
         return CommercialDistrictComparisonDTO.builder()
@@ -55,22 +55,18 @@ public class ImprovementResponseBuilder {
         return EventComparisonData.builder()
                 .after(buildDistrictSnapshot(startData))
                 .before(buildDistrictSnapshot(endData))
-                .changes(differences.stream()
-                        .map(diff -> MetricChange.builder()
-                                .name(diff.getMetricName())
-                                .value(diff.getDifference())
-                                .build())
-                        .toList())
+                .changes(differences.isEmpty() ? null : MetricChange.builder()
+                        .name(differences.get(0).getMetricName())
+                        .value(differences.get(0).getDifference())
+                        .build())
                 .build();
     }
 
     private DistrictSnapshot buildDistrictSnapshot(
             RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radarData) {
-
         return DistrictSnapshot.builder()
-                .overallData(Collections.singletonList(createMetricsData(radarData.getOverallData())))
-                .dates(Collections.singletonList(
-                        radarData.getTimeSeriesData().get(0).format(ImprovementConstants.DISTRICT_DATE_FORMATTER)))
+                .overallData(createMetricsData(radarData.getOverallData()))
+                .dates(radarData.getTimeSeriesData().get(0).format(ImprovementConstants.DISTRICT_DATE_FORMATTER))
                 .build();
     }
 
