@@ -71,7 +71,7 @@ public class RadarAnalysisService {
 
         String place = district.getDistrictName();
         String dateRange = createDateRange(targetDate);
-        log.info("Getting radar data for place: {} at date: {}", place, targetDate);
+        log.info("Getting radar data for place: {} at date: {}", place, CURRENT_RANGE);
 
         Map<String, Double> rawData = new LinkedHashMap<>();
         rawData.put("stayPerVisitor", executeQuery(createQuery("stay_per_visitor_bucket", place, "stay_to_visitor", CURRENT_RANGE)));
@@ -80,6 +80,8 @@ public class RadarAnalysisService {
         rawData.put("congestion", executeQuery(createQuery("date_congestion", place, "congestion_change_rate", DATE_COMPARE_RANGE)));
         rawData.put("stayTimeChange", executeQuery(createQuery("date_stay_duration", place, "stay_duration_change_rate", DATE_COMPARE_RANGE)));
         rawData.put("visitConcentration", executeQuery(createQuery("date_stay_visit", place, "stay_visit_ratio", DATE_COMPARE_RANGE)));
+
+        log.info("Raw data for place {}: {}", place, rawData);
 
         RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> result = new RadarTimeSeriesDataDTO<>();
         result.setDistrictInfo(createDistrictInfo(district));
