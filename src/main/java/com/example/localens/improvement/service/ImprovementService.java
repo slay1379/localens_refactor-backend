@@ -37,10 +37,12 @@ public class ImprovementService {
     private final ImprovementResponseBuilder improvementResponseBuilder;
 
     public CommercialDistrictComparisonDTO compareDistricts(Integer districtUuid1, Integer districtUuid2) {
+        LocalDateTime targetDate = LocalDateTime.of(2025, 1, 17, 23, 59, 59);
+
         RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar1Data = radarAnalysisService.getRadarDataByDate(
-                districtUuid1, LocalDateTime.now());
+                districtUuid1, targetDate);
         RadarTimeSeriesDataDTO<AnalysisRadarDistrictInfoDTO> radar2Data = radarAnalysisService.getRadarDataByDate(
-                districtUuid2, LocalDateTime.now());
+                districtUuid2, targetDate);
 
         List<MetricDifference> differences = metricComparator.findSignificantDifferences(radar1Data.getOverallData(),
                 radar2Data.getOverallData());
