@@ -31,9 +31,9 @@ public class RadarAnalysisService {
     private final InfluxDBClientWrapper influxDBClientWrapper;
 
     private static final String CURRENT_RANGE =
-            "start: 2024-05-30T00:00:00Z, stop: 2025-02-01T23:59:59Z";
+            "start: 2024-08-01T00:00:00Z, stop: 2025-01-24T23:59:59Z";
     private static final String DATE_COMPARE_RANGE =
-            "start: 2023-08-30T00:00:00Z, stop: 2025-02-01T23:59:59Z";
+            "start: 2024-08-01T00:00:00Z, stop: 2025-01-24T23:59:59Z";
 
     private static final Map<String, String> keyToKoreanMap = Map.of(
             "population", "유동인구 수",
@@ -107,17 +107,16 @@ public class RadarAnalysisService {
 
     private String createDateCompareQuery(String bucket, String place, String field, String timeRange, LocalDateTime targetDate) {
         String currentYearMonth = targetDate.format(DateTimeFormatter.ofPattern("yyyyMM"));
-        String previousYearMonth = targetDate.minusYears(1).format(DateTimeFormatter.ofPattern("yyyyMM"));
 
         return String.format("""
                from(bucket: "%s")
                    |> range(%s)
                    |> filter(fn: (r) => r["place"] == "%s")
                    |> filter(fn: (r) => r["_field"] == "%s")
-                   |> filter(fn: (r) => r["p_yyyymm"] == "%s" or r["p_yyyymm"] == "%s")
+                   |> filter(fn: (r) => r["p_yyyymm"] == "%s")
                    |> mean()
                    |> yield(name: "mean")
-               """, bucket, timeRange, place, field, currentYearMonth, previousYearMonth);
+               """, bucket, timeRange, place, field, currentYearMonth);
     }
 
     private String createDateRange(LocalDateTime date) {

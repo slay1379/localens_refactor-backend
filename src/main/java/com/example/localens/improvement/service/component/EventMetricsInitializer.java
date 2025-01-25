@@ -11,6 +11,7 @@ import com.example.localens.improvement.domain.model.MetricDifference;
 import com.example.localens.improvement.repository.EventMetricsRepository;
 import com.example.localens.improvement.repository.EventRepository;
 import com.example.localens.improvement.repository.MetricRepository;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -48,8 +49,8 @@ public class EventMetricsInitializer implements CommandLineRunner {
             try {
                 RadarDataDTO<AnalysisRadarDistrictInfoDTO> startData = radarAnalysisService.getRadarDataByDate(
                         event.getEventPlaceInt(), event.getEventStart());
-                RadarDataDTO<AnalysisRadarDistrictInfoDTO> endData =
-                        radarAnalysisService.getRadarDataByDate(event.getEventPlaceInt(), event.getEventEnd());
+                RadarDataDTO<AnalysisRadarDistrictInfoDTO> endData = radarAnalysisService.getRadarDataByDate(
+                        event.getEventPlaceInt(), event.getEventEnd());
 
                 List<MetricDifference> differences = calculateDifferences(
                         startData.getOverallData(),
