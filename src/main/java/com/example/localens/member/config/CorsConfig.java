@@ -1,4 +1,4 @@
-/*package com.example.localens.member.config;
+package com.example.localens.member.config;
 
 import java.util.Arrays;
 import org.springframework.context.annotation.Bean;
@@ -27,4 +27,4 @@ public class CorsConfig {
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
-}*/
+}
