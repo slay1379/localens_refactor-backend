@@ -79,6 +79,22 @@ public class EventMetricsInitializer implements CommandLineRunner {
         }
     }
 
+    private List<MetricDifference> calculateDifferences(Map<String, Integer> startMetrics, Map<String, Integer> endMetrics) {
+        return startMetrics.entrySet().stream()
+                .map(entry -> {
+                    String metric = entry.getKey();
+                    double startValue = entry.getValue();
+                    double endValue = endMetrics.getOrDefault(metric, 0);
+
+                    double diff = endValue - startValue;
+                    log.info("metric: {}, startValue: {}, endValue: {}", metric, startValue, endValue);
+
+                    return new MetricDifference(metric, (int) diff);
+                })
+                .sorted(Comparator.comparing(MetricDifference::getDifference, Comparator.reverseOrder()))
+                .collect(Collectors.toList());
+    }
+
     private String convertMetricNameToDbName(String metricName) {
         return switch (metricName) {
             case "stayVisit" -> "STAY_VISIT_RATIO";
@@ -101,30 +117,5 @@ public class EventMetricsInitializer implements CommandLineRunner {
             case "stayTimeChange" -> "STAY_TIME_CHANGE";
             default -> metricName;
         };
-    }
-
-    private List<MetricDifference> calculateDifferences(Map<String, Integer> startMetrics, Map<String, Integer> endMetrics) {
-        return startMetrics.entrySet().stream()
-                .map(entry -> {
-                    String metric = entry.getKey();
-                    double startValue = entry.getValue();
-                    double endValue = endMetrics.getOrDefault(metric, 0);
-
-                    MetricStatistics stats = metricStatisticsRepository.findByPlaceAndField("GLOBAL",
-                            convertMetricNameToGlobalDbName(metric)).orElse(null);
-
-                    double normalizedDiff = 0;
-                    if (stats != null && stats.getMaxValue() != stats.getMinValue()) {
-                        double normalizedStart = ((startValue - stats.getMinValue()) /
-                                (stats.getMaxValue() - stats.getMinValue())) * 100;
-                        double normalizedEnd = ((endValue - stats.getMinValue()) /
-                                (stats.getMaxValue() - stats.getMinValue())) * 100;
-                        normalizedDiff = normalizedEnd - normalizedStart;
-                    }
-
-                    return new MetricDifference(metric, (int) normalizedDiff);
-                })
-                .sorted(Comparator.comparing(MetricDifference::getDifference, Comparator.reverseOrder()))
-                .collect(Collectors.toList());
     }
 }

@@ -76,8 +76,8 @@ public class RadarAnalysisService {
         log.info("Getting radar data for place: {} at date: {}", place, targetDate);
 
         Map<String, Double> rawData = new LinkedHashMap<>();
-        rawData.put("stayPerVisitor", executeQuery(createQuery("stay_per_visitor_bucket", place, "stay_to_visitor", CURRENT_RANGE)));
-        rawData.put("population", executeQuery(createQuery("result_bucket", place, "total_population", CURRENT_RANGE)));
+        rawData.put("stayPerVisitor", executeQuery(createDateCompareQuery("date_stay_per_visitor", place, "stay_to_visitor", DATE_COMPARE_RANGE, targetDate)));
+        rawData.put("population", executeQuery(createDateCompareQuery("date_compare_population", place, "total_population", DATE_COMPARE_RANGE, targetDate)));
         rawData.put("stayVisit", executeQuery(createQuery("result_stay_visit_bucket", place, "stay_visit_ratio", CURRENT_RANGE)));
         rawData.put("congestion", executeQuery(createDateCompareQuery("date_congestion", place, "congestion_change_rate", DATE_COMPARE_RANGE, targetDate)));
         rawData.put("stayTimeChange", executeQuery(createDateCompareQuery("date_stay_duration", place, "stay_duration_change_rate", DATE_COMPARE_RANGE, targetDate)));
