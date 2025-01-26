@@ -104,7 +104,6 @@ public class PopulationDetailsService {
                 )
         );
 
-        // 연령대별 체류 패턴 변환
         dto.setAgeGroupStayPattern(
                 AgeGroupStayPatternDTO.from(
                         castMapMapDouble(raw.get("ageGroupStayPattern"))

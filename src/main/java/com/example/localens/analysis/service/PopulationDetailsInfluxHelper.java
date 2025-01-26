@@ -36,7 +36,7 @@ public class PopulationDetailsInfluxHelper {
     private final InfluxDBClientWrapper influxDBClientWrapper;
     private final CommercialDistrictRepository commercialDistrictRepository;
 
-    private static final String CURRENT_RANGE = "start: 2023-08-01T00:00:00Z, stop: 2025-01-18T23:59:59Z";
+    private static final String CURRENT_RANGE = "start: 2023-08-01T00:00:00Z, stop: 2025-02-01T23:59:59Z";
 
     /**
      * 시간대별 유동인구
