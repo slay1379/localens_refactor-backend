@@ -42,8 +42,8 @@ public class ImprovementController {
 
     @GetMapping("/recommendations/{districtUuid1}/{districtUuid2}")
     public ResponseEntity<CommercialDistrictComparisonDTO> compareDistricts(
-            @PathVariable Integer districtUuid1,
-            @PathVariable Integer districtUuid2) {
+            @PathVariable("districtUuid1") Integer districtUuid1,
+            @PathVariable("districtUuid2") Integer districtUuid2) {
         CommercialDistrictComparisonDTO result = improvementService.compareDistricts(districtUuid1, districtUuid2);
 
         return ResponseEntity.ok(result);
