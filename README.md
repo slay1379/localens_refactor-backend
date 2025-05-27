@@ -1,41 +1,85 @@
-# BackEnd
+# 🌇 상권 분석 프로젝트 (LG 유플러스 기업 과제)
 
-## 코드 스타일 가이드
-- 이 프로젝트는 **Google Java Style Guide**를 따릅니다.
-- **대문자로 표기할 약어 명시**: 약어의 중간 단어를 소문자로 표기하고, 프로젝트 별로 모두 대문자로 표기할 약어의 목록을 명시합니다.
-  - 예: `HttpApiUrl` (API만 대문자로 표기), `HTTPAPIURL` (모두 대문자 표기).
-- **패키지 이름은 소문자로 구성**: 언더스코어(`_`)나 대문자를 사용하지 않고 소문자로 작성합니다.
-  - 예: `package com.navercorp.apigateway` (Good), `package com.navercorp.apiGateway` (Bad).
-- **클래스 및 인터페이스 이름**: 클래스와 인터페이스는 **대문자 카멜표기법**(Pascal case)을 사용합니다.
-  - 예: `public class Reservation` (Good), `public class reservation` (Bad).
-- **테스트 클래스는 'Test'로 끝남**: JUnit 등으로 작성한 테스트 클래스는 `'Test'`로 끝납니다.
-  - 예: `public class WatcherTest`.
-- **메서드 이름에 소문자 카멜표기법 적용**: 메서드는 첫 단어를 소문자로 시작하는 소문자 카멜표기법을 사용합니다.
-  - 예: `renderHtml()`, `toString()`.
-- **상수는 대문자와 언더스코어로 구성**: 상수는 대문자로 작성하고 단어는 언더스코어로 구분합니다.
-  - 예: `public final int UNLIMITED = -1;`.
-- **변수에 소문자 카멜표기법 적용**: 멤버 변수, 지역 변수, 메서드 파라미터에는 소문자 카멜표기법을 사용합니다.[]
-  - 예: `private boolean authorized;`
-- **static import에만 와일드 카드 허용**: 일반 import에서는 와일드카드(`*`)를 사용하지 않으며, static import에서만 허용합니다.
-- **제한자 선언의 순서**: 제한자는 Java Language Specification에 명시된 순서로 작성합니다.
-  - 예: `public static final`.
-- **배열에서 대괄호는 타입 뒤에 선언**: 배열 선언 시 대괄호(`[]`)는 타입 뒤에 붙입니다.
-  - 예: `String[] names` (Good), `String names[]` (Bad).
-- **중괄호는 K&R 스타일로 선언**: 클래스, 메서드, 조건문 등의 블록을 감쌉니다. 열고 닫는 중괄호의 위치에 주의합니다.
-  - 예: `if (condition) { ... } else { ... }`
+<br/>
 
-## 커밋 컨벤션
-- **태그 형식**: `[태그]: 설명` 형태로 작성합니다.
-  - 예: `feat: 사용자 로그인 기능 추가`
-- **태그 목록**:
-  - `feat` : 새로운 기능 추가
-  - `fix` : 버그 수정
-  - `docs` : 문서 수정 (README 등)
-  - `style` : 코드 스타일 변경 (포매팅, 세미콜론 누락 등, 코드 변경 없음)
-  - `refactor` : 코드 리팩토링 (기능 변화 없음)
-  - `test` : 테스트 코드 추가 또는 수정
-  - `chore` : 빌드 업무 수정, 패키지 매니저 설정 등 (프로덕션 코드 변경 없음)
-- **예시**:
-  - `feat: 상권 분석 API 추가`
-  - `fix: 유동 인구 데이터 수집 시 발생하는 NPE 오류 수정`
-  - `docs: README 파일 업데이트`
+<div align="center">
+  <img src="images/navLogo.webp" alt="로고" width="300">
+</div>
+
+<br/>
+
+## 👏 프로젝트 배경
+
+▶️ 기존 상권 분석 로직의 경우 카드 소비액, 점포 수, 매출액 등을 기반으로 상권 분석을 수행함  
+▶️ LG 유플러스가 제공하는 유동 인구 데이터를 활용하여 상권 분석 로직을 보완하고 타 서비스와 차별되는 상권 분석 서비스를 만들고자 함
+<br/>
+
+## ⭐ 프로젝트 소개
+
+▶️ 유동인구 데이터를 활용해 서울 내에서 상권 군집 유형을 정하는데 유의미한 파생 피처들을 뽑아 클러스터링하여 상권 군집 유형 제시  
+▶️ 상권 간의 유형 비교를 통해 유형 변화를 위한 개선 방안 제시  
+▶️ 서비스 자체적으로 갖고 있는 파생 피처 데이터들을 바탕으로 사용자가 직접 지표를 커스텀하여 군집 유형을 정하는데 유의미한 데이터인지 파악 가능
+<br/>
+
+## ⚒️ 기술 스택
+
+<div align="start">
+  <h3>Framework</h3>
+  <img src="https://img.shields.io/badge/Spring%20Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Java-007396?style=flat-square&logo=Java&logoColor=white"/>
+</div>
+<div align="start">
+  <h3>Database</h3>
+  <img src="https://img.shields.io/badge/MySQL-4479A1?style=flat-square&logo=MySQL&logoColor=white"/>
+  <img src="https://img.shields.io/badge/InfluxDB-22ADF6?style=flat-square&logo=InfluxDB&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=Redis&logoColor=white"/>
+</div>
+<div align="start">
+  <h3>Infrastructure</h3>
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=Docker&logoColor=white"/>
+  <img src="https://img.shields.io/badge/AWS-232F3E?style=flat-square&logo=amazonaws&logoColor=white"/>
+</div>
+
+## 🔃 주요 기능
+
+<h3>✔️ 로그인</h3>
+<p>로그인을 통해 회원이 사용할 수 있는 여러 기능들을 사용할 수 있어요.</p>
+<img src="images/login.png" alt="로그인">
+
+<h3>✔️ 상권 선택</h3>
+<p>서울 지역에 있는 12개의 상권 중 하나를 클릭해주세요.</p>
+<img src="images/choose.png" alt="상권 선택">
+
+<h3>✔️ 상권 분석 결과</h3>
+<p>선택한 상권에 대한 기본 분석 결과를 제공해요.</p>
+<img src="images/result1.png" alt="결과1">
+
+<h3>✔️ 상권 상세 분석</h3>
+<p>상권 유형을 정하는데 사용한 파생피처와 관련 지표들에 대한 수치를 시각화해서 보여줘요.</p>
+<img src="images/detail.png" alt="상세">
+
+<h3>✔️ 비교할 상권 선택</h3>
+<p>현재 선택한 상권과 비교할 상권을 선택해주세요.</p>
+<img src="images/choose2.png" alt="비교 선택">
+
+<h3>✔️ 상권 비교 분석</h3>
+<p>상권 간의 주요 차이점을 비교해서 제시해줘요.</p>
+<img src="images/result2.png" alt="결과2">
+
+<h3>✔️ 개선 방향 제시</h3>
+<p>상권의 유형을 변화시키려면 어떤 지표에 주목해야 하고 어떤 방안이 실제로 효과가 있었는지를 제시해줘요.</p>
+<img src="images/improve.png" alt="개선">
+
+<h3>✔️ 지표 커스텀</h3>
+<p>서비스 내에 갖고 있는 파생 피처 데이터들을 활용해 사용자가 알고 싶어하는 지표 값을 커스텀하여 생성할 수 있어요.</p>
+<img src="images/custom.png" alt="커스텀">
+
+<br/>
+
+## 🚧 아키텍쳐
+
+<p>서비스의 아키텍쳐와 유스케이스 명세서입니다.</p>
+
+<img src="images/architec.png" alt="아키텍쳐">
+<br/>
+<img src="images/capstone_usecase.png" alt="유스케이스">
